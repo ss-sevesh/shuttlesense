@@ -1,0 +1,4 @@
+# Import-tested local CPU feasibility environment.
+numpy==2.5.3
+opencv-python==5.0.0.93
+onnxruntime==1.30.0

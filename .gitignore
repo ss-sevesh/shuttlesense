@@ -10,6 +10,16 @@ playwright-report/
 *.key
 data/
 uploads/
+__pycache__/
+.venv/
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.webm
+!tests/fixtures/preview.webm
+*.pt
+*.onnx
 artifacts/*
 !artifacts/shuttlesense-preview.png
 !artifacts/shuttlesense-desktop.png
