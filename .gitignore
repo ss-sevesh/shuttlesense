@@ -1,0 +1,16 @@
+node_modules/
+.next/
+test-results/
+playwright-report/
+.playwright-mcp/
+*.tsbuildinfo
+.env*
+!.env.example
+*.pem
+*.key
+data/
+uploads/
+artifacts/*
+!artifacts/shuttlesense-preview.png
+!artifacts/shuttlesense-desktop.png
+!artifacts/shuttlesense-practice.png
