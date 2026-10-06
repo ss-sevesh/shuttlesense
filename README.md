@@ -15,6 +15,10 @@ All match statistics, coaching explanations, heatmap values, and movement trails
 
 For a new coding session, start with [the handoff notes](tasks/HANDOFF.md) and the [task checklist](tasks/todo.md).
 
+Tracking feasibility preparation and local Python checks are documented in [the evaluation protocol](docs/evaluation.md). The [first-video report](docs/first-video.md) records an offline person-detection experiment; stable identity tracking and coaching are not connected to the UI yet.
+
+The [white-player tracking report](docs/white-tracking.md) and [ground-contact review](docs/ground-contact.md) record short-segment experiments, camera stability checks and remaining validation limits. Run `python analysis/test_feasibility.py` for offline regression checks after installing `analysis/requirements.txt`.
+
 Source font and image assets are included locally. `scripts/prepare-assets.mjs <image-path>` is a one-time asset preparation helper, not required to run the app. The test video is a generated one-second green frame used solely to verify native playback.
 
 Verified with 5 Playwright checks, axe scans in light/dark themes, and a clean production browser console. Desktop Lighthouse: performance 100, accessibility 100. Captures and the audit are in `artifacts/`. The local taste skill informed the palette, typography, and spacing; product interactions were reviewed against the current [Web Interface Guidelines](https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md). Design dials: variance 6, motion 3, density 5.

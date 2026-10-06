@@ -1,16 +1,23 @@
 # ShuttleSense task breakdown
 
-All tasks are pending. Paths below are proposed because the workspace has no application yet. S means roughly 1-2 files; M means roughly 3-5 files. Check actual scope before starting, and split a task if it exceeds one focused session. Checkpoints record evidence; they do not require repeated permission within an authorized build.
+Analysis tasks remain pending unless checked below; the desktop frontend exists. Paths below are proposed for analysis implementation. S means roughly 1-2 files; M means roughly 3-5 files. Check actual scope before starting, and split a task if it exceeds one focused session. Checkpoints record evidence; they do not require repeated permission within an authorized build.
+
+Feasibility preparation: [evaluation protocol](../docs/evaluation.md), manual annotation validator, and synthetic court/side-change regression checks are available. The [first-video report](../docs/first-video.md) records a real detector baseline on user-supplied, permission-confirmed footage and initial manual court mapping. Identity tracking, representative annotations, and a qualified coaching reviewer are still needed; Checkpoint A remains open.
 
 ## Phase 1: Prove the coaching premise
 
 ### Task 1: Define a representative evaluation set
 - [ ] Collect consented singles footage and annotate rally boundaries, outcomes, player identities, orientation changes, and uncertain events; separate tuning and held-out recordings.
-- [ ] Record supported capture conditions and the proposed metrics, including coverage and abstentions.
+- [x] Record supported capture conditions and the proposed metrics, including coverage and abstentions.
 **Verify:** Inspect annotations against source timestamps; validate interval ordering and bounds with one small script.
 **Depends on:** None. **Scope:** S. **Likely files:** `docs/evaluation.md`, `analysis/check_annotations.py`. Private footage stays outside Git.
 
 ### Task 2: Test player tracking on real footage
+- Segment checkpoint complete: twelve reviewed contact examples include five approximate support-shoe contacts, six uncertain and one airborne. These sparse assistant labels do not establish accuracy or coverage. Define the movement-point convention and obtain independent labels next.
+- Camera stability: six local floor patches checked in all 826 frames of the restarted segment; each frame has at least four high-correlation matches with zero pixel shift. This supports a fixed mapping for that segment; foot-position accuracy and coverage remain open.
+- Ground-contact progress: [six-frame review](../docs/ground-contact.md) checks one manual grounded point and six independent floor landmarks at 13s. Uncertain/airborne contacts abstain; calibration stability, position accuracy and valid-time coverage remain unmeasured.
+- Follow-up: manual reseeding after the first source edit tracks 826 frames through 40s with no missing proposals; 12 distributed snapshots follow the selected white player. Separate segment boundaries are saved; full identity accuracy and court-position validation remain open.
+- Progress: [white-player tests](../docs/white-tracking.md) compare native MIL and detector-assisted MIL on 12s/40s excerpts. Drift and a same-angle edit are documented; full identity/coverage evaluation and verified court mapping remain pending.
 - [ ] Run one existing pretrained detector/tracker on representative clips and inspect court-relative position estimates after manual calibration.
 - [ ] Record identity accuracy, invalid intervals, runtime, memory, model license, and failures; decide whether the recording contract is viable.
 **Verify:** Compare output to Task 1 annotations, including occlusion and a side change; leave one runnable coordinate/identity regression check.
