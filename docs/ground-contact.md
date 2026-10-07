@@ -132,6 +132,19 @@ It consumes reviewed contacts and does not automatically detect shoes or jumps.
 
 ### Reviewer instructions
 
+In plain language, a review means looking at the saved pictures of the white-shirt
+player and answering: are both shoes touching the floor, just one, neither, or
+is it too hard to tell? When both touch, mark the two places where the soles meet
+the floor. We then map those marks onto the court and find the point halfway
+between them. A rectangle around the player cannot tell us those exact places.
+
+The video and all 81 pictures already exist locally; the user does not need to
+provide another file or know how to edit JSON to understand this step. The packet
+is at `data/feasibility/two-shoe-review/`; `source-000404.png` is the first centre
+picture. The structured file is for recording a review, not a prerequisite for
+discussing the pictures. Assistant visual inspection can help explain them, but
+does not supply an independent human reference or establish accuracy.
+
 An independent reviewer is another person who marks the original source without
 seeing the assistant's marks or tracker predictions. No reviewer has been
 identified yet. Do not describe another assistant pass as independent human review.
@@ -197,3 +210,24 @@ Declare an estimator and any position-error gate before scoring. No gate is agre
 yet. A box-bottom centre may be tested as a midpoint estimator, but remains a proxy
 and cannot certify contact status. Broader phone footage, identity review, calibration
 checks, and coaching review are still needed. Task 2 and Checkpoint A remain open.
+
+### Check a returned packet
+
+`analysis/check_foot_review.py` checks labels against the untouched blank packet.
+It rejects missing/reordered samples, changed source metadata or timestamps,
+invalid coordinates, and shoe marks on frames without two grounded contacts.
+It reports status counts and the number of labels suitable for midpoint comparison.
+`--complete` also requires a reviewer ID and no pending samples. It does not
+verify that marks are correct or that a reviewer worked independently, and does
+not score a tracker. Preserve the blank file and save edits in a separate folder.
+
+```sh
+# Inspect the current blank packet: expected result is 27 pending, zero eligible.
+python analysis/check_foot_review.py data/feasibility/two-shoe-review/review.json --original data/feasibility/two-shoe-review/review.json
+# After a person has completed a separate copy:
+python analysis/check_foot_review.py data/feasibility/two-shoe-review-person/review.json --original data/feasibility/two-shoe-review/review.json --complete
+```
+
+The shared synthetic checks exercise accepted labels and rejection of unfinished,
+altered, dropped, reordered and malformed labels. A structurally valid packet is
+still only a person's observations; it is not proof of tracking accuracy.

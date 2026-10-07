@@ -13,6 +13,7 @@ Feasibility preparation: [evaluation protocol](../docs/evaluation.md), manual an
 **Depends on:** None. **Scope:** S. **Likely files:** `docs/evaluation.md`, `analysis/check_annotations.py`. Private footage stays outside Git.
 
 ### Task 2: Test player tracking on real footage
+- Label preparation: added a returned-packet checker and plain-language review guidance. The local packet still has 27 pending labels and zero eligible midpoints; no independent review or position score exists. Synthetic validation checks pass.
 - Latest step: defined a conservative two-grounded-shoe midpoint experiment and prepared 27 regularly sampled, unmarked source frames plus context for independent review. All labels remain pending; airborne/one-grounded/unclear frames produce no midpoint. See [review protocol](../docs/ground-contact.md#two-shoe-review-protocol). No accuracy or coverage result yet.
 - Segment checkpoint complete: twelve reviewed contact examples include five approximate support-shoe contacts, six uncertain and one airborne. These sparse assistant labels do not establish accuracy or coverage. Define the movement-point convention and obtain independent labels next.
 - Camera stability: six local floor patches checked in all 826 frames of the restarted segment; each frame has at least four high-correlation matches with zero pixel shift. This supports a fixed mapping for that segment; foot-position accuracy and coverage remain open.

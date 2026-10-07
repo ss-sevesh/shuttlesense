@@ -2,6 +2,26 @@
 
 ## Current state
 
+Latest continuation: added `analysis/check_foot_review.py` to check returned
+two-shoe labels against the original blank packet without scoring a tracker.
+It preserves the source/schedule/context, checks contact states and image bounds,
+requires explanations for missing contacts, and can reject unfinished reviews.
+Shared synthetic checks pass; the real blank packet reports 27 pending and zero
+eligible midpoint labels. `--complete` correctly rejects that blank packet.
+No human labels, accuracy measurement or heatmap were produced. The desktop UI
+and the pre-existing generated `next-env.d.ts` change remain untouched.
+
+The user said they did not understand "review" and had nothing to provide.
+Explain it as looking at saved pictures and marking where shoes touch the floor;
+the video and pictures are already local. Do not assume the user can edit JSON
+or repeatedly ask for a completed file. The first centre picture was opened to
+illustrate the task, without creating a label. Plain-language guidance and checker
+commands are in `docs/ground-contact.md`. Next: help obtain human observations,
+retain their provenance, then compare a declared estimator with matching labels.
+Independent review and a position-error gate remain unavailable; Task 2 and
+Checkpoint A stay open. This is a completed label-checking preparation step,
+not completed foot-position feasibility.
+
 Latest session: the next foot-position experiment is prepared, with no desktop UI
 source changes. The test target is the court midpoint of two visible grounded shoe
 contacts, not body centre or the previous support-shoe labels. The user asked about

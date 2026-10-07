@@ -4,6 +4,7 @@ from copy import deepcopy
 import numpy as np
 
 from check_annotations import validate
+from check_foot_review import validate_review
 from court import calibrate, project, project_contact, project_foot_midpoint, reference_error_m
 from detect import people, prepare
 from prepare_foot_review import sample_frames
@@ -19,6 +20,37 @@ def rejects(action):
 
 
 def main():
+    blank = {
+        "version": 1, "kind": "unlabeled_two_shoe_review", "frame_size": [640, 480],
+        "reviewer": None, "samples": [
+            {"source_frame": 10, "time_s": 1, "context": [],
+             "contact_status": "pending", "shoes_px": None, "note": ""},
+            {"source_frame": 20, "time_s": 2, "context": [],
+             "contact_status": "pending", "shoes_px": None, "note": ""}],
+    }
+    assert validate_review(blank, blank)["pending"] == 2
+    rejects(lambda: validate_review(blank, blank, complete=True))
+    reviewed = deepcopy(blank)
+    reviewed["reviewer"] = "synthetic-reviewer"
+    reviewed["samples"][0].update(contact_status="both_grounded", shoes_px=[[10, 20], [30, 40]])
+    reviewed["samples"][1].update(contact_status="airborne", note="Neither shoe touches the floor")
+    counts = validate_review(reviewed, blank, complete=True)
+    assert counts["both_grounded"] == counts["airborne"] == 1 and counts["pending"] == 0
+    for field, value in (("reviewer", None), ("frame_size", [1280, 720]),
+                         ("samples", reviewed["samples"][:1]),
+                         ("samples", reviewed["samples"][::-1])):
+        invalid = deepcopy(reviewed)
+        invalid[field] = value
+        rejects(lambda: validate_review(invalid, blank, complete=True))
+    for index, field, value in ((0, "shoes_px", [[640, 20], [30, 40]]),
+                                (0, "shoes_px", [[True, 20], [30, 40]]),
+                                (0, "shoes_px", [[10, float("nan")], [30, 40]]),
+                                (0, "shoes_px", [[10, 20], [10, 20]]),
+                                (0, "time_s", 1.1), (0, "contact_status", []),
+                                (1, "shoes_px", [[10, 20], [30, 40]]), (1, "note", "")):
+        invalid = deepcopy(reviewed)
+        invalid["samples"][index][field] = value
+        rejects(lambda: validate_review(invalid, blank, complete=True))
     frames = sample_frames(374, 1200, 30, 3)
     assert frames == list(range(404, 1185, 30)) and len(frames) == 27
     assert all(374 <= frame - 3 < frame + 3 < 1200 for frame in frames)
