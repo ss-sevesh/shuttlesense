@@ -387,3 +387,47 @@ same-video check using future context, not a new-clip validation. No heatmap
 integration is justified. Next: obtain denser contact observations around jumps
 and test a different contact cue; reserve a new clip for checking a rule that
 first survives tuning. Task 2 and Checkpoint A remain open.
+
+## Coarse movement preview
+
+The user requested a faster prototype and a quick end to the heatmap effort.
+Further foot-contact research is deferred. The first usable preview now reuses
+the existing player tracker: `analysis/movement_preview.py` projects box-bottom
+centres into a 6-column, 8-row grid over a single manually bounded camera segment.
+Each frame contributes at most one source-frame duration. Missing proposals,
+reseed requests and explicitly rejected identities contribute no occupancy;
+off-court positions are reported separately and never clamped into edge cells.
+No held positions or interpolated samples are introduced across gaps.
+
+For `[12.466667s,40s)` at 30 fps, all 826 tracker proposals were available:
+27.366667 seconds project inside the court and 0.166667 seconds fall outside.
+The duration accounting totals 27.533333 seconds. Box positions remain unverified
+proposals; these counts are not valid ground-contact time or an accuracy result.
+The five outside samples are excluded rather than forced into the heatmap.
+Jump bias and stance changes remain in this intentionally approximate preview.
+
+Open `/movement`, or select **View tracked clip movement** from the workspace.
+The page displays real local derived data, relative cell shading and duration
+accounting, with no sample weakness marker or inferred drill. The original
+coaching dashboard still uses fictional demo data. This completes the prototype
+heatmap preview, not automatic upload processing or the production accuracy gate.
+
+```sh
+python analysis/test_movement_preview.py
+python analysis/movement_preview.py --tracks data/feasibility/white-segment-02/tracks.json --corners 413 241 873 239 987 688 277 692 --start 12.466666666666667 --end 40 --fps 30 --side near --output data/feasibility/movement-preview/results.json
+```
+
+The exporter refuses to overwrite existing results. Choose a different output
+path for reruns; the page reads the canonical local path shown above. Supply FPS
+from the source video and only one continuous, calibrated tracking segment.
+This preview does not automatically detect camera cuts or new player identities.
+The underlying footage, model and results stay ignored by Git; private data is
+excluded from Next.js deployment tracing and the page is rendered at request time.
+Without local results it shows an unavailable state rather than fictional values.
+
+The occupancy check covers normalization, off-court exclusion, missing frames,
+orientation and duplicate rejection. Browser checks cover displayed cell duration,
+missing/invalid files, light/dark accessibility and viewport overflow; the existing
+dashboard checks still pass. Next: a short pretrained TrackNetV3 experiment for
+shuttle-trail replay, followed by upload/replay integration. Precise contacts can
+be revisited if a later feature demonstrably needs them.

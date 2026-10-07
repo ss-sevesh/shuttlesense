@@ -34,6 +34,41 @@ used normal sandbox execution without escalation. No Codex restart was needed.
 
 ## Current state
 
+Latest scope update (2026-10-08): user wants the prototype built faster and the
+heatmap effort wrapped up. Further RTMPose/contact-labeling research is deferred.
+`analysis/movement_preview.py` reuses the saved white-player boxes for a 6x8
+coarse occupancy grid over the single stable-camera segment [12.466667s,40s).
+826 proposals: 27.366667s mapped, 0.166667s outside, no missing proposal time.
+These are approximate box-bottom positions including jump bias, not valid-contact
+coverage or independently verified tracking. Accuracy targets were not lowered.
+
+The real derived grid is visible at `/movement`, linked from the existing
+workspace as “View tracked clip movement.” No sample rally/weakness claims are
+mixed into that page. The original demo dashboard remains intact. Private
+`data/feasibility/movement-preview/results.json` is generated locally, ignored
+by Git and excluded from Next.js deployment traces. Absent/invalid local results
+show an unavailable state; this is not new-upload processing. Export command and
+limits are in `docs/ground-contact.md`, Coarse movement preview.
+
+Sandbox shortcut added: `npm.cmd run sandbox:fix -- -CheckOnly` and then
+`npm.cmd run sandbox:fix`, using approved execution outside a broken sandbox.
+`AGENTS.md` now puts this direction at session startup; do not ask the user to
+repeat the fix or search conversations. Script finds the runtime lock in the
+latest sandbox log, handles plain/JSON-escaped paths, and stops only matching
+helpers inside the expected runtime directory. Dry run verified; no helpers were
+stopped while the sandbox worked. Retry a normal command before browser tools.
+
+Verification: occupancy regression and shared geometry checks pass; all six
+Playwright checks pass, including movement data, missing/corrupt results, light/
+dark accessibility and viewport overflow. Production build passes, `/movement`
+is dynamic, and the private result is absent from deployment trace files. The
+live movement page was visually inspected and had a clean browser console.
+The build regenerated `next-env.d.ts`; it has no remaining diff and is not included
+in this checkpoint.
+Next: pretrained TrackNetV3 on one short rally, inspect raw misses/false detections
+and a shuttle-trail overlay before integrating upload/replay. Do not restart
+grounded-foot labeling. Task 2 and Checkpoint A remain open for validated release.
+
 Latest continuation (2026-10-08): resumed the interrupted contact-rule experiment
 and applied the recorded sandbox repair after confirming the same runtime lock
 in the latest log. Stopped only the two matching `node_repl.exe` helpers; normal
@@ -233,4 +268,4 @@ After feasibility, build the smallest upload -> queued analysis -> persisted res
 
 ## Resume prompt
 
-> Continue ShuttleSense tracking feasibility. Read AGENTS.md, tasks/HANDOFF.md, tasks/todo.md and docs/ground-contact.md. Preserve the desktop UI. The permission-confirmed videoplayback.mp4 is local and the selected player wears white. Detector-assisted MIL and manual restart were tested through 40s; fixed floor-patch checks support camera stability only for [12.466667s,40s). Twelve selected frames have five approximate support-shoe annotations, six uncertain and one airborne. Define the intended movement point and obtain consistent independent labels before evaluating foot positions or producing real heatmaps. Task 2 and Checkpoint A remain open. Explain technical terms simply as you work. Keep private footage/model/artifacts out of Git.
+> Continue ShuttleSense’s working prototype. Read AGENTS.md first: the sandbox repair shortcut is there, and the user should not have to explain it again. Read tasks/HANDOFF.md and tasks/todo.md. The approximate movement heatmap is complete at /movement using local saved boxes; further shoe-contact experiments are deferred. Preserve the desktop dashboard. Next, test pretrained TrackNetV3 on one short rally from the permission-confirmed local videoplayback.mp4 and inspect a shuttle-trail overlay before upload/replay integration. Do not claim racket detection, exact court landing positions, or coaching from shuttle coordinates alone. Keep footage, weights and analysis results private. Production accuracy gates remain open. Explain results simply, update the handoff, and commit/push completed work.

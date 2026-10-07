@@ -1,5 +1,46 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { mkdir, readFile, writeFile, unlink } from "node:fs/promises";
+
+test("tracked movement shows source data, handles missing or invalid results, and stays accessible", async ({ page }) => {
+  const path = "data/feasibility/movement-preview/results.json";
+  const original = await readFile(path).catch((error: NodeJS.ErrnoException) => { if (error.code === "ENOENT") return null; throw error; });
+  const grid = Array.from({ length: 8 }, () => Array(6).fill(0));
+  grid[6][2] = 2;
+  const preview = { version: 1, kind: "approximate_box_movement", player_id: "white-shirt", start_s: 10, end_s: 14, grid_seconds: grid, mapped_s: 2, outside_s: 1, missing_s: 1, proposal_samples: 3, contact_verified: false };
+  const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
+  await mkdir("data/feasibility/movement-preview", { recursive: true });
+  try {
+    await writeFile(path, JSON.stringify(preview));
+    await page.goto("/");
+    await page.getByRole("link", { name: "View tracked clip movement" }).click();
+    await expect(page).toHaveURL(/\/movement$/);
+    await expect(page.getByRole("img", { name: /^Approximate tracked movement heatmap/ })).toBeVisible();
+    await expect(page.locator("svg rect title")).toHaveText("Row 7, column 3: 2.00 seconds of approximate positions");
+    await expect(page.locator("dd")).toHaveText(["4.00s", "2.00s", "1.00s", "1.00s", "3"]);
+    await expect(page.getByText("Front-right needs attention")).toHaveCount(0);
+    for (const colorScheme of ["light", "dark"] as const) {
+      await page.emulateMedia({ colorScheme });
+      await page.reload();
+      expect((await new AxeBuilder({ page }).analyze()).violations.map(v => v.id)).toEqual([]);
+    }
+    for (const width of [320, 1440]) {
+      await page.setViewportSize({ width, height: 1000 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    }
+    await unlink(path);
+    await page.reload();
+    await expect(page.getByText("No movement analysis is available yet.")).toBeVisible();
+    await writeFile(path, JSON.stringify({ ...preview, mapped_s: 100 }));
+    await page.reload();
+    await expect(page.getByText("Movement analysis could not be loaded.", { exact: false })).toBeVisible();
+    await expect(page.getByRole("img")).toHaveCount(0);
+    expect(errors).toEqual([]);
+  } finally {
+    if (original) await writeFile(path, original);
+    else await unlink(path).catch((error: NodeJS.ErrnoException) => { if (error.code !== "ENOENT") throw error; });
+  }
+});
 
 test("rally evidence filters correctly and survives reload", async ({ page }) => {
   const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));

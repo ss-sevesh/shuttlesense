@@ -1,5 +1,17 @@
 # ShuttleSense
 
+Local tracked movement preview: open `/movement`, or choose **View tracked clip
+movement** in the workspace. It shows a coarse heatmap from saved player boxes,
+separate from the fictional coaching dashboard. Exact shoe contact is deferred.
+See [the preview report](docs/ground-contact.md#coarse-movement-preview) for the
+export command. Private results must exist locally; they are excluded from Git
+and deployment bundles. This does not automatically analyze new uploads.
+
+Windows sandbox shortcut (only after a setup failure; run with approved execution
+outside the sandbox): `npm.cmd run sandbox:fix -- -CheckOnly`, then
+`npm.cmd run sandbox:fix`. Retry a sandbox command immediately. Session agents
+must read [AGENTS.md](AGENTS.md), which now points directly to this repair.
+
 Desktop web prototype for a badminton coaching workspace, built with Next.js, React, TypeScript, native CSS, and Phosphor icons.
 
 ```sh

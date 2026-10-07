@@ -6,6 +6,12 @@ Feasibility preparation: [evaluation protocol](../docs/evaluation.md), manual an
 
 ## Phase 1: Prove the coaching premise
 
+Prototype shortcut (2026-10-08): coarse real-track movement preview is available at
+`/movement`; precise shoe-contact work is deferred at the user's request. Task 2
+and the later production checkpoints remain open. Next narrow experiment is a
+pretrained TrackNetV3 shuttle-trail replay, followed by upload/replay integration;
+do not spend another session labeling shoes to unblock this prototype.
+
 ### Task 1: Define a representative evaluation set
 - [ ] Collect consented singles footage and annotate rally boundaries, outcomes, player identities, orientation changes, and uncertain events; separate tuning and held-out recordings.
 - [x] Record supported capture conditions and the proposed metrics, including coverage and abstentions.

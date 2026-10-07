@@ -8,6 +8,14 @@ Status: the desktop frontend prototype is implemented with fictional sample data
 
 ## Working assumptions
 
+Prototype scope update (2026-10-08): prioritize a working prototype over precise
+shoe-contact research. `/movement` now shows coarse box-bottom occupancy from the
+saved tracked clip, explicitly approximate and separate from sample coaching.
+Further foot-contact experiments are deferred. This closes the initial heatmap
+preview, not the production accuracy gates or upload-to-analysis integration.
+Next, test pretrained TrackNetV3 on a short rally for a shuttle-trail replay;
+shuttle coordinates alone do not provide player coverage or coaching conclusions.
+
 - First audience: college and club singles players who already record matches.
 - First success criterion: a player can review the report in five minutes and choose one useful drill supported by replay evidence.
 - Supported recording: one stationary phone in landscape, showing the full court and both players. Arbitrary angles, moving cameras, and doubles are later extensions.
