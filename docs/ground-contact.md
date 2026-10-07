@@ -106,3 +106,94 @@ foot midpoint, or estimated body-floor position), collect consistent independent
 labels, and evaluate an appropriate estimator. The rectangle alone is insufficient
 for exact ground-contact claims. No automatic foot detector, heatmap or coaching
 claim was added; the desktop frontend remains illustrative and unchanged.
+
+## Two-shoe review protocol
+
+The next narrow experiment uses the **court midpoint of two visible grounded
+shoe contacts**. This means halfway between the shoes on the floor, not the
+player's body centre or weight-bearing centre. It is a test convention, not a
+claim that it is the best movement measure. Its useful coverage must be measured.
+Existing one-support-shoe labels cannot be reused as midpoint reference labels.
+
+When both feet are in the air, even if one is lower, neither is a floor contact.
+The court transform applies to the floor plane; see the
+[OpenCV homography explanation](https://docs.opencv.org/4.x/d9/dab/tutorial_homography.html).
+The rectangle tracker can continue during a jump, but that does not establish
+the floor position beneath the player. Do not project the lower airborne shoe,
+hold the previous position as measured, or draw a measured path across the gap.
+With one grounded shoe, that shoe can be a separately named support-contact
+measurement; it must not silently replace the two-shoe midpoint.
+
+`project_foot_midpoint` maps the two contacts separately and then averages their
+court coordinates. Perspective changes distances, so averaging pixels first
+would give a different point. It returns no midpoint for `one_grounded`,
+`airborne`, `uncertain` or `occluded`; malformed grounded points are rejected.
+It consumes reviewed contacts and does not automatically detect shoes or jumps.
+
+### Reviewer instructions
+
+An independent reviewer is another person who marks the original source without
+seeing the assistant's marks or tracker predictions. No reviewer has been
+identified yet. Do not describe another assistant pass as independent human review.
+
+1. Copy the private packet into a separate reviewer folder. Keep original blank
+   labels, each person's labels, and any later agreed corrections separate.
+   Record the reviewer name or private ID in `reviewer`.
+2. Review the white-shirt player at the centre frame (`source_frame`). The two
+   surrounding frames help judge whether a shoe touches the floor, but mark
+   coordinates in the centre frame only. Replay the original video if needed.
+   Zoom is allowed; convert picks back to the original 1280x720 pixel coordinates.
+3. Replace `pending` with `both_grounded`, `one_grounded`, `airborne`, `occluded`
+   or `uncertain`. Use `airborne` only when neither shoe touches the floor; unequal
+   foot heights do not change that. Use `uncertain` for blur or unclear contact,
+   `occluded` when the needed contacts are hidden. Never infer contact from a
+   rectangle edge, shadow alone, or the lowest shoe.
+4. For `both_grounded`, mark the middle of each visible sole-to-floor contact
+   extent in `shoes_px: [[x1,y1],[x2,y2]]`. A raised heel with a clear forefoot
+   contact is marked at that contact, not at the ankle or heel. Either shoe
+   order is accepted. Both points must be inside the decoded image. For every
+   other status, leave `shoes_px` null and explain the reason in `note`.
+5. Finish every scheduled sample, including difficult ones; do not select only
+   easy contacts. Keep tracker proposals and old exploratory labels hidden until
+   the independent marks are saved. Record status disagreements before agreeing
+   corrections; do not discard them to improve a score.
+
+### Prepared local packet
+
+The sampling schedule was fixed before labeling: source frames 404 through 1184
+at steps of 30 frames, in the previously reviewed segment `[374,1200)`.
+There are 27 centre samples, at decoded timestamps 13.466667 through 39.466667s,
+and 81 unmarked PNG images including context at three frames before/after each
+sample (0.1s for this source). No context crosses the segment boundary. Unlike
+the earlier deliberately selected examples, these samples have a regular
+schedule; they still cover only one short tuning segment of one broadcast video.
+
+The private `data/feasibility/two-shoe-review/review.json` records the source
+hash, decoded dimensions/timestamps, schedule and blank labels. All 27 remain
+`pending`; no new contacts, estimator error or coverage have been measured.
+First, middle and final exported centre frames were visually inspected. All 81
+PNG images exactly matched their freshly decoded source pixels; all centre
+timestamps and the source hash were checked. Deliberately substituting the wrong
+pixel-first averaging rule made the midpoint regression fail, as intended.
+The exporter uses original footage and never reads tracker results or old marks.
+It refuses an existing output directory to protect returned labels.
+
+```sh
+python analysis/prepare_foot_review.py videoplayback.mp4 --output data/feasibility/two-shoe-review --start-frame 374 --end-frame 1200 --step-frames 30 --context-frames 3 --player-id white-shirt
+python analysis/test_feasibility.py
+```
+
+Choose a new private output directory to rerun. The checks cover projection
+before averaging, shoe order, missing positions during jumps, invalid points,
+and sampling boundaries. They are synthetic checks, not real tracking scores.
+
+After independent labels: report each contact-status count over all 27 samples,
+reviewer disagreement, and eligible two-shoe midpoint count. Report valid
+predictions over all samples as well as over eligible samples, and position error
+only against the same midpoint definition (sample count, median and high-percentile
+distance in metres). Uniform samples estimate sampled availability, not exact
+valid-time coverage; this small tuning packet cannot establish whole-match quality.
+Declare an estimator and any position-error gate before scoring. No gate is agreed
+yet. A box-bottom centre may be tested as a midpoint estimator, but remains a proxy
+and cannot certify contact status. Broader phone footage, identity review, calibration
+checks, and coaching review are still needed. Task 2 and Checkpoint A remain open.

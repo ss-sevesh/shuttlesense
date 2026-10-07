@@ -4,8 +4,9 @@ from copy import deepcopy
 import numpy as np
 
 from check_annotations import validate
-from court import calibrate, project, project_contact, reference_error_m
+from court import calibrate, project, project_contact, project_foot_midpoint, reference_error_m
 from detect import people, prepare
+from prepare_foot_review import sample_frames
 from track import checked_box, matching_detection, overlap
 
 
@@ -18,6 +19,12 @@ def rejects(action):
 
 
 def main():
+    frames = sample_frames(374, 1200, 30, 3)
+    assert frames == list(range(404, 1185, 30)) and len(frames) == 27
+    assert all(374 <= frame - 3 < frame + 3 < 1200 for frame in frames)
+    for args in ((374, 1200, 0, 0), (374, 1200, 30, 30), (374, 390, 30, 3),
+                 (1200, 374, 30, 3), (374, 1200, 30, -1), (374.0, 1200, 30, 3)):
+        rejects(lambda: sample_frames(*args))
     assert overlap([0, 0, 10, 10], [0, 0, 10, 10]) == 1
     assert overlap([0, 0, 10, 10], [20, 20, 10, 10]) == 0
     first = {"box_xywh": [1, 1, 10, 10]}
@@ -52,6 +59,20 @@ def main():
     rejects(lambda: people(np.zeros((1, 10, 85)), 416, 1))
     corners = [[100, 100], [300, 100], [400, 500], [0, 500]]
     matrix = calibrate(corners)
+    shoes = [corners[0], corners[2]]
+    np.testing.assert_allclose(project_foot_midpoint(matrix, shoes, "near", "both_grounded"),
+                               [0.5, 0.5], atol=1e-6)
+    np.testing.assert_allclose(project_foot_midpoint(matrix, shoes[::-1], "far", "both_grounded"),
+                               [0.5, 0.5], atol=1e-6)
+    np.testing.assert_allclose(project_foot_midpoint(matrix, corners[:2], "far", "both_grounded"),
+                               [0.5, 1], atol=1e-6)
+    assert not np.allclose(project(matrix, np.mean(shoes, axis=0), "near"), [0.5, 0.5])
+    for status in ("one_grounded", "airborne", "uncertain", "occluded"):
+        assert project_foot_midpoint(matrix, None, "unknown", status) is None
+    for points in (None, [[1, 2]], [[1, 2], [float("nan"), 3]]):
+        rejects(lambda: project_foot_midpoint(matrix, points, "near", "both_grounded"))
+    rejects(lambda: project_foot_midpoint(matrix, shoes, "near", "grounded"))
+    rejects(lambda: project_foot_midpoint(matrix, shoes, "unknown", "both_grounded"))
     np.testing.assert_allclose(project_contact(matrix, corners[0], "near", "grounded"), [0, 0], atol=1e-6)
     for status in ("airborne", "uncertain", "occluded"):
         assert project_contact(matrix, None, "unknown", status) is None
@@ -98,7 +119,7 @@ def main():
     invalid = deepcopy(document)
     invalid["rallies"].append({"id": "r2", "start_s": 2, "end_s": 4, "outcome": "won"})
     rejects(lambda: validate(invalid))
-    print("PASS: synthetic annotation, calibration, side-change, and detector decoding checks")
+    print("PASS: synthetic annotation, calibration, foot midpoint, review sampling, side-change, and detector checks")
 
 
 if __name__ == "__main__":

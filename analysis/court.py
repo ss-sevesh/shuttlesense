@@ -49,6 +49,19 @@ def project_contact(matrix, foot_px, side, contact_status):
     return project(matrix, foot_px, side)
 
 
+def project_foot_midpoint(matrix, shoes_px, side, contact_status):
+    """Midpoint on the court, only when both shoe contacts are reviewed grounded."""
+    if contact_status in ("one_grounded", "airborne", "uncertain", "occluded"):
+        return None
+    if contact_status != "both_grounded":
+        raise ValueError("Unknown two-shoe contact status")
+    shoes = np.asarray(shoes_px, dtype=np.float64)
+    if shoes.shape != (2, 2) or not np.isfinite(shoes).all():
+        raise ValueError("Expected two finite shoe contact points")
+    # Perspective does not preserve midpoints: map each floor contact first.
+    return (project(matrix, shoes[0], side) + project(matrix, shoes[1], side)) / 2
+
+
 def reference_error_m(matrix, pixel, expected_xy, court_size_m):
     """Independent floor landmark residual, using global near-side coordinates."""
     expected = np.asarray(expected_xy, dtype=np.float64)

@@ -2,6 +2,33 @@
 
 ## Current state
 
+Latest session: the next foot-position experiment is prepared, with no desktop UI
+source changes. The test target is the court midpoint of two visible grounded shoe
+contacts, not body centre or the previous support-shoe labels. The user asked about
+unequal foot heights during jumps: if both shoes are airborne, neither is a floor
+contact. Keep rectangle tracking separate from missing floor positions; do not
+guess the lower shoe onto the court. One grounded shoe is not a two-shoe midpoint.
+
+`analysis/court.py` now has `project_foot_midpoint`, mapping each shoe before
+averaging on the court and returning no midpoint for one-grounded, airborne,
+uncertain or occluded frames. `analysis/prepare_foot_review.py` exported a private
+blank packet to `data/feasibility/two-shoe-review/`: 27 samples at frames
+404:30:1184 (13.466667-39.466667s), plus +/-3-frame context, 81 unmarked PNGs.
+All samples remain pending. See `docs/ground-contact.md#two-shoe-review-protocol`
+for simple reviewer instructions and rerun commands. No independent reviewer was
+identified; the user needed the term explained. Do not invent independent labels,
+estimator accuracy, valid-time coverage, or a real heatmap. Next: obtain independent
+labels under this convention, report disagreements/eligible sample counts, then
+evaluate a declared estimator against matching midpoint labels. A position-error
+acceptance gate is not agreed. Task 2 and Checkpoint A remain open.
+
+Verification: shared synthetic checks pass, including projection order, jump
+abstention and sampling bounds. A deliberately wrong midpoint calculation fails
+the regression. All 81 PNGs match decoded source pixels, the hash and centre
+timestamps were checked, and three distributed centre frames were visually inspected.
+Private footage, models and review artifacts stay ignored. A pre-existing
+generated `next-env.d.ts` change was left untouched and excluded from this work.
+
 Session-ready checkpoint: the camera/ground-contact experiment for the manually
 restarted white-player segment is complete. Review now includes twelve selected
 frames: five approximate grounded support-shoe contacts, six uncertain, one

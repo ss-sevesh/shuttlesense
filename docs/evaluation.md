@@ -92,6 +92,11 @@ unknown labels. It cannot verify permission, source duration, point accuracy, or
 annotation truth: replay against the source separately. Regression checks use
 invented geometry and labels; they do not measure tracking quality.
 
+The separate [two-shoe review protocol](ground-contact.md#two-shoe-review-protocol)
+defines a narrower movement target and a blank 27-sample packet. Its two-contact
+`shoes_px` format is not the single `foot_px` format above; do not mix support-shoe
+points with two-shoe midpoints when scoring. Independent labels remain pending.
+
 ## Court calibration
 
 `analysis/court.py` uses the installed OpenCV four-point transform. Mark singles
