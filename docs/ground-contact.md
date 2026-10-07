@@ -321,3 +321,69 @@ Next: decide whether this strict two-grounded-shoe midpoint has useful coverage,
 then investigate contact estimation and test on an untouched segment. Independent
 human review remains needed for an independent accuracy claim. No real heatmap,
 coaching claim or desktop UI change was added; Task 2 and Checkpoint A remain open.
+
+## Shoe-motion contact experiment
+
+The interrupted experiment was resumed after applying the sandbox repair recorded
+in `tasks/HANDOFF.md`. `analysis/foot_motion.py` reuses RTMPose on the three original
+context images per sample: centre minus three frames, centre, and centre plus
+three frames. For each shoe, it takes the larger of the two image displacement
+speeds, normalized by the centre tracker box height. A pair is a contact candidate
+only when both speeds are below the threshold and all three shoe proxies exist.
+This tests **both-grounded versus other definite states**, not individual shoe
+contact classification. It never outputs court positions.
+
+The split was source frame 800: 14 earlier tuning samples and 13 later checking
+samples. The later samples were excluded from threshold selection. Thresholds
+0.1 through 1.5 box heights per second were tried on tuning samples, minimizing
+`2 * false positives + false negatives`, with the lowest threshold breaking ties.
+The selected threshold was **1.2**. Responses below 0.3 still cause abstention.
+Uncertain and occluded labels are excluded from confusion counts; these remain
+assistant observations, not independent human ground truth.
+
+| Outcome | Earlier tuning | Later checking |
+| --- | ---: | ---: |
+| Correct both-grounded candidates | 4 | 1 |
+| False both-grounded candidates | 1 | 1 |
+| Correct rejections of definite other states | 3 | 3 |
+| Missed both-grounded labels | 0 | 0 |
+| Missing-proxy abstentions on definite labels | 1 | 0 |
+| Uncertain/occluded labels excluded | 5 | 8 |
+
+The later check accepted two definite samples: one was both grounded (frame 1034),
+one had a raised trailing shoe (1094). It rejected the only labeled airborne
+sample (914). Five additional candidates over all 27 samples had uncertain labels,
+so they cannot be counted as correct contacts. These counts are too small for an
+accuracy claim; the later check contains only one both-grounded reference.
+
+The motion-only rule fails its intended purpose. The tuning false contact at
+frame 494 has maximum shoe speed 0.513 box heights/s, while the both-grounded
+frame 554 reaches 1.183. Lowering the threshold enough to reject that raised shoe
+would also reject this grounded pair. Image motion, pose jitter and changing
+shoe orientation overlap with actual raised-shoe motion.
+
+Three private sequence sheets were inspected with the selected threshold fixed:
+frames 482-506 and 1082-1106 around the two false positives, and frames 890-938
+around takeoff and landing. Images are shown every two frames; inference uses
+context at plus/minus three frames. The sheets show slow raised shoes passing
+the rule and predictions changing across the landing. Only the existing centre
+frames have saved reference labels: this visual follow-up does not supply dense
+contact labels or measured takeoff/landing timing accuracy.
+
+Private results are in `data/feasibility/foot-motion-assistant-01/`; a fresh
+rerun in `foot-motion-assistant-02/` reproduced the threshold, counts and sample
+predictions. The first folder also holds `sequence-494.jpg`, `sequence-914.jpg`,
+`sequence-1094.jpg`, `sequence-check.json` and `inspect_sequences.py`.
+
+```sh
+python analysis/test_foot_motion.py
+python analysis/foot_motion.py --packet data/feasibility/two-shoe-review/review.json --review data/feasibility/two-shoe-assistant/review.json --tracks data/feasibility/white-segment-02/tracks.json --model data/models/rtmpose-m-wholebody/end2end.onnx --split-frame 800 --output data/feasibility/foot-motion-assistant-rerun
+python data/feasibility/foot-motion-assistant-01/inspect_sequences.py
+```
+
+The motion check covers displacement, timing, missing proxies, abstention and
+false contacts; pose and shared synthetic checks also pass. This is an offline
+same-video check using future context, not a new-clip validation. No heatmap
+integration is justified. Next: obtain denser contact observations around jumps
+and test a different contact cue; reserve a new clip for checking a rule that
+first survives tuning. Task 2 and Checkpoint A remain open.

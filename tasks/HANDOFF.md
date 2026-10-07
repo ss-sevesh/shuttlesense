@@ -34,6 +34,31 @@ used normal sandbox execution without escalation. No Codex restart was needed.
 
 ## Current state
 
+Latest continuation (2026-10-08): resumed the interrupted contact-rule experiment
+and applied the recorded sandbox repair after confirming the same runtime lock
+in the latest log. Stopped only the two matching `node_repl.exe` helpers; normal
+sandbox execution then succeeded. Read this repair section before requesting
+generic unsandboxed access if the error recurs.
+
+`analysis/foot_motion.py` tests RTMPose shoe motion across +/-3-frame context.
+Tuned on source frames <800, checked on >=800; threshold 1.2 box heights/s.
+Earlier counts: TP4/FP1/TN3/FN0, one abstention, five excluded uncertain/occluded.
+Later counts: TP1/FP1/TN3/FN0, zero abstentions, eight excluded. The later false
+contact is frame1094 (raised trailing shoe); the tuning false contact is frame494.
+The only labeled airborne sample914 was rejected, but one example cannot establish
+jump accuracy. Motion ranges overlap: slowing the threshold to reject frame494
+also rejects a grounded pair. This rule fails as a two-grounded contact gate.
+
+Three private sequence sheets around takeoff/landing and both false positives
+were inspected. Only existing centre frames have reference labels; no dense
+timing accuracy or new-clip validation was claimed. Private results and sheets
+are in `data/feasibility/foot-motion-assistant-01/`; rerun `foot-motion-assistant-02`
+reproduced counts and predictions. See the final section of `docs/ground-contact.md`
+for interpretation and rerun commands. Motion, pose and shared checks pass.
+Next: denser contact observations and a different cue, then a reserved new clip
+if the rule survives tuning. Keep this failed baseline out of the heatmap.
+Task 2/Checkpoint A remain open; desktop UI and existing `next-env.d.ts` untouched.
+
 Latest continuation: the user explicitly requested assistant labeling and starting
 the pose experiment. All 27 fixed samples are now labeled in private
 `data/feasibility/two-shoe-assistant/review.json`: 5 both grounded, 8 one grounded,
