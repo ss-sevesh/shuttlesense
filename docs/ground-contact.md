@@ -231,3 +231,93 @@ python analysis/check_foot_review.py data/feasibility/two-shoe-review-person/rev
 The shared synthetic checks exercise accepted labels and rejection of unfinished,
 altered, dropped, reordered and malformed labels. A structurally valid packet is
 still only a person's observations; it is not proof of tracking accuracy.
+
+## Assistant labels and first RTMPose experiment
+
+At the user's request, Codex visually labeled all 27 scheduled samples using the
+81 unmarked source/context images and enlarged shoe crops. No pose or tracker
+overlays were shown while labeling. These are **assistant annotations**, not
+independent human ground truth. The untouched original packet remains pending;
+the completed copy is `data/feasibility/two-shoe-assistant/review.json`.
+It records assistant provenance in `reviewer` and a reason for every contact state.
+
+| Assistant contact state | Samples |
+| --- | ---: |
+| Both grounded | 5 |
+| One grounded | 8 |
+| Airborne | 1 |
+| Uncertain | 11 |
+| Occluded | 2 |
+
+The five approximate two-contact labels are:
+
+| Source frame | Contact pixels, either shoe order |
+| --- | --- |
+| 434 | (580,522), (613,550) |
+| 554 | (519,568), (637,567) |
+| 674 | (543,570), (644,576) |
+| 704 | (478,523), (514,554) |
+| 1034 | (670,539), (748,517) |
+
+Only 5/27 samples (18.5%) support this strict midpoint definition under this
+assistant review. This is sampled availability in one short segment, not exact
+valid-time coverage. Uncertain frames were retained rather than guessed.
+
+`analysis/foot_pose.py` runs the pretrained **RTMPose-m COCO+UBody wholebody**
+ONNX release `c8b76419` on timestamp-matched white-player tracker boxes.
+This is the 133-keypoint RTMPose-m variant with an official ONNX download in the
+[OpenMMLab model zoo](https://github.com/open-mmlab/mmpose/tree/main/projects/rtmpose#wholebody-2d-133-keypoints).
+The [model archive](https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/onnx_sdk/rtmpose-m_simcc-ucoco_dw-ucoco_270e-256x192-c8b76419_20230728.zip)
+and extracted files are private under `data/models/rtmpose-m-wholebody/`.
+Model SHA-256: `94ca58fa2d6c4530b6957ac9548084ebc2fa27ed71e4e01f0b73844306ed01a6`.
+
+Preprocessing follows the downloaded `pipeline.json`: 1.25 box padding,
+192x256 affine crop, BGR-to-RGB conversion, and supplied mean/std normalization.
+Decoding follows the [official SimCC example](https://github.com/open-mmlab/mmpose/blob/main/projects/rtmpose/examples/onnxruntime/main.py):
+axis argmax, split ratio 2, minimum of the two maximum axis responses, inverse
+crop mapping. Foot indices 17-22 are the two big toes, small toes and heels in
+the [COCO-WholeBody definition](https://github.com/open-mmlab/mmpose/blob/main/configs/_base_/datasets/coco_wholebody.py).
+No new Python dependencies or model training were added.
+
+Before scoring, the experiment fixed a simple shoe-contact proxy: average the
+big-toe, small-toe and heel pixels separately for each shoe. All six responses
+must be >=0.3 and all foot points must be inside the image. This threshold is
+not a calibrated probability or ground-contact confidence. The proxy can sit
+above the actual sole contact, especially with raised heels.
+
+The model produced proxies for all 27 samples, including the airborne one.
+**Ground contact is not automatically detected.** Court projection and error
+comparison use the assistant's both-grounded states as a manual gate; all other
+samples keep their court midpoint null. Each shoe proxy is projected separately
+before averaging. The existing manual corners and 5.18x13.4m court dimensions
+were reused; calibration uncertainty is not included in these errors.
+
+| Comparison on the same five assistant midpoint labels | Median | 90th percentile | Maximum |
+| --- | ---: | ---: | ---: |
+| RTMPose shoe proxy | 0.217m | 0.259m | 0.267m |
+| Tracked box bottom centre | 0.211m | 0.334m | 0.358m |
+
+This small conditional comparison does not establish improvement or validated
+accuracy. Private `data/feasibility/foot-pose-assistant-01/results.json` preserves
+all 133 landmarks/responses, sample timestamps, inference times, source-image and
+input hashes, proxy availability and errors. Its 27 overlays and three overview
+sheets were visually checked: boxes select the white-shirt player in these
+samples, not a certification of full-frame tracker identity. The five eligible
+shoe overlays were also inspected. Red dots are landmarks, yellow circles are
+proxies, green circles are assistant labels.
+
+```sh
+python analysis/check_foot_review.py data/feasibility/two-shoe-assistant/review.json --original data/feasibility/two-shoe-review/review.json --complete
+python analysis/test_foot_pose.py
+python analysis/test_feasibility.py
+python analysis/foot_pose.py --packet data/feasibility/two-shoe-review/review.json --review data/feasibility/two-shoe-assistant/review.json --tracks data/feasibility/white-segment-02/tracks.json --model data/models/rtmpose-m-wholebody/end2end.onnx --corners 413 241 873 239 987 688 277 692 --output data/feasibility/foot-pose-assistant-rerun
+```
+
+Use a new output directory on reruns; existing results are never overwritten.
+The pose check covers RGB normalization, aspect ratio, inverse coordinate
+mapping, SimCC scores, proxy averaging, low responses, out-of-image points and
+invalid inputs. Both runnable checks and the completed-label check passed.
+Next: decide whether this strict two-grounded-shoe midpoint has useful coverage,
+then investigate contact estimation and test on an untouched segment. Independent
+human review remains needed for an independent accuracy claim. No real heatmap,
+coaching claim or desktop UI change was added; Task 2 and Checkpoint A remain open.

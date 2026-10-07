@@ -1,6 +1,61 @@
 # ShuttleSense session handoff
 
+## Codex Windows sandbox repair (2026-10-07)
+
+Sandbox commands failed before execution with `helper_unknown_error: setup
+refresh had errors`, even after restarting Codex. Approved commands outside the
+sandbox still worked. The underlying error in
+`C:/Users/11SEV/.codex/.sandbox/sandbox.2026-10-07.log` was runtime read/execute
+permission validation failing for
+`C:/Users/11SEV/AppData/Local/OpenAI/Codex/runtimes/cua_node/71e3f41277f96d73/bin/node_repl.exe`
+because Windows reported the file was in use (`os error 32`).
+
+Fix: through an approved command outside the sandbox, stop only the running
+`node_repl.exe` helpers whose executable path matches that runtime. Two helpers
+were stopped; Codex itself remained running. Retry a sandbox command immediately
+so setup can validate permissions before those helpers restart.
+
+```powershell
+$runtimePath = 'C:\Users\11SEV\AppData\Local\OpenAI\Codex\runtimes\cua_node\71e3f41277f96d73\bin\node_repl.exe'
+Get-CimInstance Win32_Process -Filter "Name = 'node_repl.exe'" |
+    Where-Object { $_.ExecutablePath -eq $runtimePath } |
+    ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction Stop }
+```
+
+If this recurs, inspect the latest sandbox log and process executable paths first;
+the runtime directory hash and process IDs can change. Stopping these helpers can
+interrupt browser/computer-use sessions. They were not permanently blocked, and
+no files or settings were changed by this repair. The lock may recur when helpers
+restart; switching back to browser tools has not been verified.
+
+Verification: `Get-Location` succeeded inside the sandbox, followed by creating,
+reading and deleting `.sandbox-access-check.tmp` in the workspace. Both checks
+used normal sandbox execution without escalation. No Codex restart was needed.
+
 ## Current state
+
+Latest continuation: the user explicitly requested assistant labeling and starting
+the pose experiment. All 27 fixed samples are now labeled in private
+`data/feasibility/two-shoe-assistant/review.json`: 5 both grounded, 8 one grounded,
+1 airborne, 11 uncertain, 2 occluded. Assistant provenance is explicit; these are
+not independent human ground truth. The original blank packet is unchanged.
+Labels were saved before any model predictions were viewed.
+
+`analysis/foot_pose.py` runs official RTMPose-m COCO+UBody wholebody ONNX
+`c8b76419` using the existing tracker boxes, CPU ONNXRuntime and installed deps.
+Toe/toe/heel centroids are shoe proxies, not automatically detected floor contacts.
+All 27 samples have proxies, including the jump; court mapping is manually gated
+by assistant both-grounded labels. On those five samples, median midpoint
+difference is 0.217m versus 0.211m for box bottom centre. No clear improvement or
+independent accuracy is established. Details, rerun commands and limitations are
+in `docs/ground-contact.md`, Assistant labels and first RTMPose experiment.
+
+The completed-label check, `python analysis/test_foot_pose.py`, and shared
+synthetic checks pass. All 27 overlays and five eligible shoe crops were visually
+inspected. Private model, annotations and results remain ignored. Next: assess
+whether two-grounded-shoe coverage is useful, then contact estimation and an
+untouched-segment test. Task 2 and Checkpoint A remain open. Desktop UI and the
+pre-existing generated `next-env.d.ts` change remain untouched.
 
 Latest continuation: added `analysis/check_foot_review.py` to check returned
 two-shoe labels against the original blank packet without scoring a tracker.
