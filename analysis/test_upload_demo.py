@@ -1,9 +1,13 @@
 """Small geometry check for the local upload demo."""
 import numpy as np
 from court import calibrate
-from upload_demo import mapped_people
+from upload_demo import mapped_people, ordered_corners
 
 matrix = calibrate([[0, 0], [100, 0], [100, 100], [0, 100]])
+assert np.allclose(ordered_corners([[0, 0], [0, 100], [100, 100], [100, 0]]),
+                   [[0, 0], [100, 0], [100, 100], [0, 100]])
+user_corners = [[.2536976, .3272163], [.1437962, .9151830], [.8463434, .9425728], [.7395234, .3199123]]
+calibrate(ordered_corners(user_corners) * [1280, 720])
 result = mapped_people([
     {'box_xywh': [40, 60, 10, 20]},
     {'box_xywh': [40, 10, 10, 20]},

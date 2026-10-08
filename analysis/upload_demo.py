@@ -12,6 +12,15 @@ from court import calibrate, project
 from detect import prepare, people
 
 
+def ordered_corners(corners):
+    """Upright court view: two far corners above the two near corners."""
+    points = np.asarray(corners, dtype=float).reshape(4, 2)
+    rows = points[np.argsort(points[:, 1])]
+    far = rows[:2][np.argsort(rows[:2, 0])]
+    near = rows[2:][np.argsort(rows[2:, 0])[::-1]]
+    return np.concatenate([far, near])
+
+
 def mapped_people(detections, matrix, width, height):
     result = []
     for item in detections:
@@ -35,6 +44,7 @@ def main():
     corners = np.asarray(args.corners).reshape(4, 2)
     if not np.isfinite(corners).all() or np.any(corners < 0) or np.any(corners > 1):
         parser.error('Court corners must be inside the picture')
+    corners = ordered_corners(corners)
     capture = cv2.VideoCapture(str(args.video))
     try:
         if not capture.isOpened():

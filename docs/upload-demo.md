@@ -1,8 +1,8 @@
 # Local upload demo
 
 Run `npm.cmd run dev`, open http://127.0.0.1:3000, choose **Upload Match**,
-and select a video. Click **Mark court corners** on its first frame: far-left,
-far-right, near-right, near-left singles-court corners. Click **Show boxes &
+and select a video. Click **Mark court corners** on its first frame: click each
+of the four singles-court corners once, in any order. Click **Show boxes &
 heatmap**, then play the video. Yellow boxes represent the near side and blue
 boxes the far side. The selector changes the heatmap side.
 
@@ -18,7 +18,9 @@ coordinates rotate so that the selected side is shown at the bottom.
 Video playback selects the latest fresh sample; boxes disappear outside the
 analyzed interval. The heatmap covers the whole analyzed interval.
 
-This is a fixed-camera demonstration with approximate positions. It does not
+This is an upright fixed-camera demonstration with approximate positions. The
+two far corners must be above the two near corners; click order is normalized.
+It does not
 maintain player identities, detect edits, identify shoe contacts, or use TrackNet.
 Use full-court footage without cuts or side changes. The existing dashboard's
 sample statistics remain illustrative and are not replaced by this result.

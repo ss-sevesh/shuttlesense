@@ -61,7 +61,11 @@ export async function POST(request: Request) {
     return Response.json(JSON.parse(stdout), { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Local demo analysis failed", error instanceof Error ? error.message : "Unknown error");
-    return Response.json({ error: "Analysis failed. Use a readable video with a fixed full-court view, and mark the corners clockwise. Check that the local Python detector is installed." }, { status: 422 });
+    const detail = error && typeof error === "object" && "stderr" in error ? String(error.stderr) : "";
+    const message = detail.includes("Court corners") || detail.includes("Degenerate court") ?
+      "The court corners do not form a valid court. Reset them and click each of the four distinct singles-court corners once. Keep the far baseline above the near baseline." :
+      "Analysis failed. Use a readable video with an upright, fixed full-court view. Check that the local Python detector is installed.";
+    return Response.json({ error: message }, { status: 422 });
   } finally {
     try { if (directory) {
       const child = relative(root, directory);

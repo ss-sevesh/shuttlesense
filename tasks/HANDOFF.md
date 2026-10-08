@@ -2,6 +2,13 @@
 
 ## Latest continuation: local upload boxes and heatmap demo (2026-10-08)
 
+Follow-up 422 fix: actual dev-server log showed the user's four valid court
+corners clicked counterclockwise. upload_demo now arranges the four points by
+far/near row and left/right before calibration. Accept any click order for an
+upright camera (far corners above near corners); geometry validation retained.
+UI instructions updated and invalid geometry gets a specific reset message.
+Regression browser test uses the user's exact click coordinates with real video.
+
 Follow-up: Show boxes & heatmap now remains clickable before calibration and
 starts the corner picker, with keyboard focus and progress on the button.
 Previously it silently stayed disabled until four corners were marked.

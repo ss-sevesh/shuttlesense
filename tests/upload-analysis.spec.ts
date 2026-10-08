@@ -45,7 +45,8 @@ test("uploaded footage produces synchronized boxes and side heatmaps", async ({ 
   await page.locator('input[name="match-video"]').setInputFiles("videoplayback.mp4");
   await expect(page.getByText("Local preview", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Mark court corners", exact: true }).click();
-  for (const [x,y] of [[413/1280,241/720],[873/1280,239/720],[987/1280,687/720],[276/1280,692/720]]) {
+  // Replay the user's counterclockwise clicks that previously failed calibration.
+  for (const [x,y] of [[.2536976075,.3272162711],[.1437962148,.9151830120],[.8463434357,.9425727670],[.7395233904,.3199123364]]) {
     const picker = page.locator(".corner-picker");
     const rect = (await picker.boundingBox())!;
     await picker.click({ position: { x: x*rect.width, y: y*rect.height } });

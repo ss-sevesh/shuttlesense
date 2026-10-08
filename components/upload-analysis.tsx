@@ -6,7 +6,6 @@ import { CourtMap } from "@/components/court-map";
 type Point = [number, number];
 type Person = { box: [number, number, number, number]; court: Point; side: "near" | "far" };
 type Result = { duration: number; analyzedSeconds: number; sampleHz: number; samples: { time: number; people: Person[] }[] };
-const cornersOrder = ["far-left", "far-right", "near-right", "near-left"];
 
 export function UploadAnalysis({ file, url, onReady, onError }: { file: File; url: string; onReady: () => void; onError: () => void }) {
   const video = useRef<HTMLVideoElement>(null);
@@ -77,7 +76,7 @@ export function UploadAnalysis({ file, url, onReady, onError }: { file: File; ur
           <video ref={video} src={url} controls={!picking} playsInline preload="auto" onLoadedMetadata={onReady} onError={onError}/>
           {!picking && result && <svg className="analysis-boxes" viewBox="0 0 1000 1000" preserveAspectRatio="none" role="img" aria-label={`${boxes.length} detected people in court at this video time`}>
             {boxes.map((person, index) => <rect key={index} data-side={person.side} x={person.box[0]*1000} y={person.box[1]*1000} width={person.box[2]*1000} height={person.box[3]*1000} fill="none" stroke={person.side === "near" ? "#ffe766" : "#67e9ff"} strokeWidth="2.5" vectorEffect="non-scaling-stroke"/>)}</svg>}
-          {picking && <button ref={picker} className="corner-picker" aria-label={`Mark ${cornersOrder[corners.length]} court corner. Arrow keys move the crosshair; Enter marks it.`}
+          {picking && <button ref={picker} className="corner-picker" aria-label={`Mark court corner ${corners.length+1} of 4. Arrow keys move the crosshair; Enter marks it.`}
             onKeyDown={event => {
               const offsets: Record<string, Point> = { ArrowLeft: [-.01,0], ArrowRight: [.01,0], ArrowUp: [0,-.01], ArrowDown: [0,.01] };
               if (offsets[event.key]) { event.preventDefault(); const delta = offsets[event.key]; setCursor(point => [Math.max(0,Math.min(1,point[0]+delta[0])),Math.max(0,Math.min(1,point[1]+delta[1]))]); }
@@ -99,7 +98,7 @@ export function UploadAnalysis({ file, url, onReady, onError }: { file: File; ur
           <button className="text-button" disabled={busy} onClick={markCourt}> {corners.length ? "Reset court corners" : "Mark court corners"}</button>
           <button className="primary-button" disabled={busy} onClick={() => { if (picking) picker.current?.focus(); else if (corners.length !== 4) markCourt(); else void analyze(); }}>{busy ? "Analyzing…" : picking ? `Mark corner ${corners.length+1}/4 on the video` : "Show boxes & heatmap"}</button>
         </div>
-        <p className="analysis-status" role="status">{busy ? "Detecting players in the first 30 seconds. This may take up to 90 seconds…" : picking ? `Click the ${cornersOrder[corners.length]} singles-court corner (${corners.length+1}/4). Or use arrow keys and Enter.` : result ? `Ready · ${result.analyzedSeconds.toFixed(1)} seconds analyzed. Play the video to see the boxes.` : corners.length === 4 ? "Court marked. Ready to analyze." : "Mark the four court corners on the first frame, clockwise from far-left. Use a fixed full-court view."}</p>
+        <p className="analysis-status" role="status">{busy ? "Detecting players in the first 30 seconds. This may take up to 90 seconds…" : picking ? `Click each singles-court corner once, in any order (${corners.length+1}/4). Or use arrow keys and Enter.` : result ? `Ready · ${result.analyzedSeconds.toFixed(1)} seconds analyzed. Play the video to see the boxes.` : corners.length === 4 ? "Court marked. Ready to analyze." : "Mark the four court corners on the first frame, in any order. Use an upright, fixed full-court view."}</p>
         <p className="inline-error" role="alert">{error}</p>
       </div>
       {result && <section className="analysis-map" aria-labelledby="upload-heatmap-heading">
