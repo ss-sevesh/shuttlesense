@@ -44,6 +44,12 @@ assert boundaries(signals,[{**s,'xy_px':None} for s in raw],30)['serves']==[]
 assert boundaries([{**s,'shuttle_moving':False} for s in signals],raw,30)['quiet_candidates']==[]
 assert boundaries([{**s,'players_court_xy':[[.3,.3],[.3,.7]]} for s in signals],raw,30)['serves']==[]
 assert boundaries([{**s,'pose':[]} for s in signals],raw,30)['serves']==[]
+hidden = deepcopy(signals)
+for s in hidden:
+    if s['pose']:
+        s['pose'][1] = {'body_visible':True,'serve_ready':False,'wrists_observed':False}
+assert boundaries(hidden,raw,30)['serves']==[]
+assert boundaries(hidden,raw,30,allow_occluded_server=True)['serves'][0]['server_pose_status']=='wrist_occluded_launch_proxy'
 # A detection miss breaks stationary evidence; it cannot count toward the two seconds.
 missing = deepcopy(raw); missing[90]['xy_px']=None
 assert boundaries(signals,missing,30)['serves'][0]['previous_end_s'] is None

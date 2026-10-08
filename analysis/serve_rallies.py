@@ -63,7 +63,7 @@ def launch(raw, start, stop, server, receiver):
     return None
 
 
-def boundaries(signals, raw, fps, quiet_s=2., stationary_px=12., setup_hold=.4):
+def boundaries(signals, raw, fps, quiet_s=2., stationary_px=12., setup_hold=.4, allow_occluded_server=False):
     if not all(math.isfinite(v) and v > 0 for v in (fps, quiet_s, stationary_px, setup_hold)):
         raise ValueError('Expected positive finite thresholds')
     events, quiet, setups = [], [], []
@@ -125,7 +125,8 @@ def boundaries(signals, raw, fps, quiet_s=2., stationary_px=12., setup_hold=.4):
         stops += [s['time_s'] for s in raw if s.get('chunk_start') and s['time_s'] > t]
         stop = min([t+1.5, raw[-1]['time_s'], *stops])-1e-6
         boxes = signal['players_box_xywh']
-        options = [(launch(raw,prep_start,stop,boxes[i],boxes[1-i]),i) for i in range(2) if poses[i]['serve_ready']]
+        options = [(launch(raw,prep_start,stop,boxes[i],boxes[1-i]),i) for i in range(2)
+                   if poses[i]['serve_ready'] or (allow_occluded_server and not poses[i].get('wrists_observed',True))]
         options = [(time,i) for time,i in options if time is not None]
         if not options: continue
         launched, server = min(options)
@@ -135,6 +136,7 @@ def boundaries(signals, raw, fps, quiet_s=2., stationary_px=12., setup_hold=.4):
         events.append({'setup_start_s': prep_start, 'launch_s': launched, 'server_side': ['far','near'][server],
                        'previous_end_s': max(endings) if endings else None, 'epoch': epoch,
                        'previous_end_status': 'stationary_and_quiet_then_next_serve' if endings else 'uncertain',
+                       'server_pose_status':'readiness_proxy' if poses[server]['serve_ready'] else 'wrist_occluded_launch_proxy',
                        'review_status': 'provisional'})
         last_launch = launched
     return {'serves':events, 'quiet_candidates':quiet, 'setup_candidates':setups}

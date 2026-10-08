@@ -1,5 +1,57 @@
 # ShuttleSense session handoff
 
+## Latest continuation: ByteTrack + MediaPipe + pretrained BST (2026-10-08)
+
+User dropped the HF pipeline, authorized implementation, and explicitly asked
+for parallel agents. Separate agents built player tracking/poses and pretrained
+BST, then an independent review caught raw-observation validation gaps. Root
+fixed both consumers by reusing shuttle_evidence; regressions passed.
+
+New analysis/player_pose.py uses official YOLO11n-pose person boxes + ByteTrack
+30Hz GPU and per-ID MediaPipe0.10.35 full VIDEO task15Hz CPU, isolated
+data/player-pose-env. Largest initially on-court person per side is locked;
+no silent replacement ID. Follow locked players off court. conf0.1,imgsz960 and
+full-frame-rate tracking resolved far-player fragmentation in this clip.
+data/feasibility/player-pose-01/players.json: source59.633333–74.633333s,
+225samples, both IDs tracked225/225, nearpose225,farpose223. Runtime51.063s
+including MediaPipe shutdown timeouts. Four pose snapshots inspected.
+
+New analysis/bst_shots.py loads actual official BST-0 JnB_bone seq10025-class
+checkpoint, pinned sourcefb9b310bf4c8a8e3d89c75e61bc06a7ac3de62df,
+weightSHA c4d41bb8248f0f79f7a7182ac2b38ec021ef51edd4978dfa31d17291b530afc8.
+Maps MediaPipe33->COCO17, matches bbox diagonal/center normalization, bone
+vectors and padding. This available variant uses poses and shuttle only;
+court coordinates are not consumed by BST-0. MediaPipe differs from MMPose
+training inputs; scores remain experimental. Original downloaded sources and
+weight under ignored data/bst-official. Strict safe weight loading. See
+docs/bst-shots.md for provenance and source URLs. Existing HF-named CUDA env
+is reused for dependencies only, not the rejected analyzer code.
+
+Root analysis/tracked_rallies.py combines proximity + wrist peaks with0.25s
+suppression and serve-first boundaries. Hidden server wrists use explicit
+opt-in opponent-readiness + shuttle-launch fallback; default old runner intact.
+Source video/report hashes match; raw inference rows must cover the declared
+clip with no inpainting/gaps. Shared boundary tests now cover occluded wrists.
+Final result: near serve60.266667s, 15hit candidates; actual BST GPU inferred
+all15windows in~0.56s,6accepted experimentallabels,9unknown/review. Next serve/
+stationary end not observed; end=null. No measured accuracy or full match run.
+
+Final private result data/feasibility/tracked-rallies-final-05/{results.json,
+overlay.mp4,review.html}; input shots at tracked-rallies-02/shots.json. Browser
+server running session89249 http://127.0.0.1:8004/review.html. Restart:
+python analysis/serve_review.py data/feasibility/tracked-rallies-final-05/review.html --video data/feasibility/tracked-rallies-final-05/overlay.mp4 --port 8004
+Chrome test analysis/test_tracked_review.cjs passed decode, event/rally replay,
+bounded pause, live pose angles,2maps,206ranges,404filedenial, no page errors.
+Screenshot artifacts/tracked-pose-rally-review.png inspected. Seven BST adapter
+tests, player lock test, tracked cues/missing/gap/inpainting tests, shared serve,
+shuttle, feasibility and compilation all passed. Reviewed consumers against
+pinned BST normalization. Actual validated BST rerun reproduced all15outputs.
+Docs docs/player-pose.md,docs/bst-shots.md,docs/tracked-rallies.md.
+
+User review is next. Upload UI is still separate; no main app changes in this
+slice. Remaining issues: false/missed hit events, image-plane pose estimates,
+MediaPipe domain shift, identity loss on other footage and uncertain endings.
+
 ## Latest continuation: Hugging Face pipeline result (2026-10-08)
 
 User requested an actual Bot-Derpy/racquet-sports-analyzer result before deciding
