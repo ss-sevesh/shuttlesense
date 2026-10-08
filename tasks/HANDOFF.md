@@ -1,5 +1,32 @@
 # ShuttleSense session handoff
 
+## Latest session close (2026-10-08)
+
+The user requested automatic rally start/end suggestions, then chose to close
+the session before implementation. Next session should pick up this request;
+the older manual-review-only priority below is superseded for the next experiment.
+Use existing YOLOX player detections plus pretrained TrackNetV3 shuttle positions
+and a simple temporal rule, first on a short continuous clip. Proposed start cues:
+both players in court, visible moving shuttle, and increased player activity.
+Proposed end cues need combined evidence: shuttle missing for at least two seconds
+plus sustained low player activity. Missing detections alone can be occlusion;
+downward flight alone is normal during rallies and does not establish landing.
+Walking to service positions is a possible later cue, not an implemented feature.
+Keep boundaries provisional and reviewable; compare with manually marked rallies
+before reporting accuracy. Account for camera cuts and unfinished clip boundaries.
+
+This session only inspected the repository/setup and the official TrackNetV3
+README (https://github.com/qaz812345/TrackNetV3). No rally detector, new model,
+real-video review UI, or rally evaluation was implemented. PyTorch/torchvision
+are absent; ONNXRuntime and OpenCV are available. Check/download official weights
+and install only inference dependencies actually needed. Keep footage and weights
+under ignored data/. The existing heatmap uses YOLOX/MIL box-bottom occupancy,
+not TrackNet or validated foot contact. Earlier heatmap and terminal fixes are
+already pushed; their build and six Playwright checks passed in earlier work.
+Current working tree also contains a generated next-env.d.ts change; preserve it
+and exclude it from this documentation-only commit. Sandbox reads worked during
+this session, so no repair was needed. Startup instructions are saved in AGENTS.md.
+
 ## Codex Windows sandbox repair (2026-10-07)
 
 Sandbox commands failed before execution with `helper_unknown_error: setup
