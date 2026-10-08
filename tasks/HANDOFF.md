@@ -1,5 +1,32 @@
 # ShuttleSense session handoff
 
+## Latest continuation: automatic video-edit handling (2026-10-08)
+
+Implemented `analysis/video_edits.py` and connected it to `analysis/rallies.py`.
+Uses the existing six floor landmarks against a reference court frame to exclude
+close-ups, plus adjacent-frame changed-pixel fraction to detect same-angle edits.
+The reference time/landmarks and cut threshold are explicit CLI inputs; no manual
+cut times were supplied in the new 100s run. Fixed-camera heuristic only.
+
+Private run `data/feasibility/rally-edits-100s/`: 13 edit/view transitions,
+18 excluded samples, nine candidate spans instead of two merged intervals.
+Same-angle cuts at 12.466667, 53.666667 and 93.3s were confirmed visually in
+adjacent source frames. Original two-second quiet rule unchanged; all first eight
+candidates end at edits, ninth unfinished. These are NOT nine confirmed rallies
+or validated serve/end times. See `docs/rally-detection.md` for commands/list.
+
+Open that run's `review.html` locally for candidate replay. Synthetic regression
+includes an actual generated video with same-view cut, non-court frames and
+return; checks exact edit times/view gating. Shared feasibility checks and Chrome
+decode/seek/play/end-pause/full-replay checks pass. No frontend or new dependencies.
+Private video/results remain ignored; pre-existing next-env.d.ts diff preserved.
+Sandbox worked without repair.
+
+Next: compare candidates with marked serve/point-ending times, then expose
+reviewed suggestions in real-video UI. Starts may lag serves; edit endings can
+include walking. Keep user correction and unknown outcomes; TrackNet remains
+deferred. The longer baseline failure below is retained as experiment history.
+
 ## Latest continuation: longer rally test (2026-10-08)
 
 User approved testing a longer passage containing pauses. Ran the unchanged

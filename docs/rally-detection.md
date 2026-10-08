@@ -86,3 +86,52 @@ No thresholds were changed to hide this failure. Next experiment should handle
 same-angle edits and exclude close-ups before testing a shorter between-point
 quiet rule on this broadcast clip. Shuttle evidence is an option if that still
 merges points; no TrackNet install or app integration was done in this test.
+
+## Edit-aware prototype, 2026-10-08
+
+`analysis/video_edits.py` now checks consecutive source frames, reusing the six
+previous floor-line landmarks. A view is usable when at least four fixed 25x25
+grayscale reference patches correlate >=0.8. This excludes the close-ups without
+letting missing player detections establish a point ending. A view transition
+breaks the rally candidate. Within a matching court view, a cut is suggested when
+at least 5.5% of court pixels change by more than 25 grayscale levels between
+adjacent frames (320x180 analysis image). All settings/edits are retained in JSON.
+The fixed reference and threshold are tuned for this video, not moving cameras.
+
+```powershell
+python analysis/rallies.py videoplayback.mp4 --detections data/feasibility/rally-motion-100s/detections.json --corners 413 241 873 239 987 687 276 692 --view-reference 13 --landmarks 377 358 639 357 903 356 339 488 638 487 936 486 --output data/feasibility/rally-edits-100s
+python analysis/test_rallies.py
+```
+
+This run supplies **no manual cuts**, keeps the original two-second quiet rule,
+and reuses saved person detections. It finds 13 edit/view transitions, including
+same-angle edits at 12.466667, 53.666667 and 93.3s. Before/after source frames for
+those three edits were visually inspected: players jump to different positions
+and the displayed score changes. The 10 other transitions match entry/exit of
+the previously observed close-ups. 18 detector samples (3.6s at 5 Hz) are excluded
+as non-court views. No further edits or boundaries are claimed to be absent.
+
+| Candidate | Start–end (seconds) |
+| --- | --- |
+| 1 | 0.8–12.466667 |
+| 2 | 13.4–41.5 |
+| 3 | 43.4–48.266667 |
+| 4 | 49.2–53.666667 |
+| 5 | 55.4–59.566667 |
+| 6 | 60.8–80.966667 |
+| 7 | 82.6–85.966667 |
+| 8 | 87.2–93.3 |
+| 9 | 94.8–100 (unfinished) |
+
+These are nine reviewable spans, not nine verified complete rallies. The first
+eight end at edits, not inferred shuttle landings; starts can lag a serve and
+ends can include walking. There are no quiet-rule endings in this run. Boundary
+precision/recall/timing accuracy remain unmeasured; this is tuning material.
+
+Private `data/feasibility/rally-edits-100s/review.html` plays these intervals within
+the original video. Native Chrome decoding, seeking/playback, end pause and full
+replay pass. The runnable synthetic check includes a generated video with a
+same-view edit, a close-up and a return to court; it checks detected times and
+view exclusion. Existing detector/geometry checks pass. No main app changes,
+new packages or TrackNet weights. Next: compare these candidates with marked
+serve/point-ending times, then expose reviewed suggestions in the real-video UI.

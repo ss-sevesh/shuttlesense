@@ -10,6 +10,7 @@ import numpy as np
 
 from court import calibrate, project
 from detect import digest
+from video_edits import inspect_video
 
 
 def motion(samples, corners, cuts, max_gap):
@@ -22,9 +23,10 @@ def motion(samples, corners, cuts, max_gap):
         time = sample['time_s']
         if not math.isfinite(time) or (last_time is not None and time <= last_time):
             raise ValueError('Detection times must be finite and increasing')
-        reset = last_time is None or time - last_time > max_gap or any(last_time < c <= time for c in cuts)
+        edits = [] if last_time is None else [c for c in cuts if last_time < c <= time]
+        reset = last_time is None or time - last_time > max_gap or bool(edits)
         players = [[], []]
-        for detection in sample['person_detections']:
+        for detection in sample['person_detections'] if sample.get('court_view', True) else []:
             if not math.isfinite(detection['score']) or not 0 <= detection['score'] <= 1:
                 raise ValueError('Invalid detection score')
             box = np.asarray(detection['box_xywh'], dtype=float)
@@ -41,6 +43,8 @@ def motion(samples, corners, cuts, max_gap):
             speed = max(float(np.linalg.norm((b[:2] + b[2:] / 2) - (p[:2] + p[2:] / 2))) /
                         ((b[3] + p[3]) / 2) / (time - last_time) for b, p in zip(boxes, previous))
         result.append({'time_s': time, 'motion_heights_per_s': speed, 'reset': reset,
+                       'reset_at_s': min(edits) if edits else last_time,
+                       'court_view': sample.get('court_view', True),
                        'both_players_visible': all(b is not None for b in boxes)})
         previous, last_time = boxes, time
     return result
@@ -63,7 +67,7 @@ def separate(samples, end, threshold=.5, quiet_s=2., min_s=2.):
         if speed is not None and (not math.isfinite(speed) or speed < 0):
             raise ValueError('Invalid motion speed')
         if sample['reset']:
-            finish(previous, 'camera_cut_or_sample_gap')
+            finish(sample.get('reset_at_s', previous), 'camera_cut_or_sample_gap')
             start = last_active = quiet_start = None
         if speed is None:
             # Unknown visibility cannot establish a quiet rally ending.
@@ -85,16 +89,18 @@ def separate(samples, end, threshold=.5, quiet_s=2., min_s=2.):
 
 def review_page(video, output, rallies):
     source = html.escape(Path(os.path.relpath(video.resolve(), output.resolve())).as_posix(), quote=True)
+    endings = {'camera_cut_or_sample_gap': 'video edit or recording gap',
+               'low_player_motion': 'players slowed down', 'clip_end_unfinished': 'unfinished at clip end'}
     buttons = ''.join(f'<button data-start="{r["start_s"]}" data-end="{r["end_s"]}">'
-                      f'Candidate {i}: {r["start_s"]:.1f}–{r["end_s"]:.1f}s '
-                      f'({r["end_reason"]})</button>\n' for i, r in enumerate(rallies, 1))
+                      f'Possible rally {i}: {r["start_s"]:.1f}–{r["end_s"]:.1f}s '
+                      f'({endings[r["end_reason"]]})</button>\n' for i, r in enumerate(rallies, 1))
     return f'''<!doctype html><html lang="en"><meta charset="utf-8">
 <title>ShuttleSense rally suggestions</title>
 <style>body{{font:18px system-ui;max-width:1000px;margin:30px auto;background:#151b20;color:white}}
 video{{width:100%}}button{{display:block;padding:12px;margin:8px 0;cursor:pointer}}</style>
 <h1>Provisional rally suggestions</h1>
-<p>Player motion only. Walking can trigger candidates; quiet play can be missed.
-No winners inferred. Compare these intervals with the original clip.</p>
+<p>These are possible rallies, found using player movement and optional video-edit checks.
+Starts and ends need review. Walking can trigger a start; no winners are inferred.</p>
 <video controls src="{source}"></video><div>{buttons or 'No candidates; inspect the original clip.'}</div>
 <button id="full">Play full clip</button>
 <script>
@@ -113,6 +119,9 @@ def main():
     parser.add_argument('--detections', type=Path, required=True)
     parser.add_argument('--corners', type=float, nargs=8, required=True)
     parser.add_argument('--cuts', type=float, nargs='*', default=[])
+    parser.add_argument('--view-reference', type=float, help='Time showing the fixed full court')
+    parser.add_argument('--landmarks', type=int, nargs=12, help='Six visible floor-line intersections, x y')
+    parser.add_argument('--cut-change', type=float, default=.055, help='Changed court pixel fraction for an edit')
     parser.add_argument('--motion', type=float, default=.5, help='Body heights per second')
     parser.add_argument('--quiet', type=float, default=2.)
     parser.add_argument('--minimum', type=float, default=2.)
@@ -129,17 +138,26 @@ def main():
             raise ValueError('Expected a nonempty sampled clip with valid settings')
         if not all(math.isfinite(c) and settings['start_s'] < c < settings['end_s'] for c in args.cuts):
             raise ValueError('Cuts must lie inside the sampled clip')
-        signals = motion(detections['samples'], np.array(args.corners).reshape(4, 2),
-                         args.cuts, 1.5 / settings['sample_hz'])
+        corners = np.array(args.corners).reshape(4, 2)
+        samples, edits = detections['samples'], []
+        if (args.view_reference is None) != (args.landmarks is None):
+            raise ValueError('Supply both --view-reference and --landmarks for automatic edits')
+        if args.view_reference is not None:
+            samples, edits = inspect_video(args.video, samples, corners, args.view_reference,
+                                           np.array(args.landmarks).reshape(6, 2), args.cut_change)
+        signals = motion(samples, corners, args.cuts + [e['time_s'] for e in edits],
+                         1.5 / settings['sample_hz'])
         rallies = separate(signals, settings['end_s'], args.motion, args.quiet, args.minimum)
         report = {'version': 1, 'kind': 'provisional_motion_rallies',
                   'video_sha256': detections['video_sha256'], 'detections_sha256': digest(args.detections),
                   'settings': {**settings, 'corners_px': args.corners, 'manual_cuts_s': args.cuts,
-                               'motion_heights_per_s': args.motion, 'quiet_s': args.quiet, 'minimum_s': args.minimum},
+                               'motion_heights_per_s': args.motion, 'quiet_s': args.quiet, 'minimum_s': args.minimum,
+                               'view_reference_s': args.view_reference, 'landmarks_px': args.landmarks,
+                               'cut_changed_fraction': args.cut_change},
                   'accuracy': None, 'limitations': ['Player motion is not proof of a rally',
                   'Walking and detector jitter can trigger starts; quiet rallies can split',
-                  'Manual cuts; fixed court view only; no shuttle evidence or winner inference'],
-                  'rallies': rallies, 'samples': signals}
+                  'Fixed court view only; edit heuristic needs review; no shuttle evidence or winner inference'],
+                  'video_edits': edits, 'rallies': rallies, 'samples': signals}
         args.output.mkdir(parents=True, exist_ok=False)
         (args.output / 'results.json').write_text(json.dumps(report, indent=2, allow_nan=False), encoding='utf-8')
         (args.output / 'review.html').write_text(review_page(args.video, args.output, rallies), encoding='utf-8')
