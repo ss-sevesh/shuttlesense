@@ -1,5 +1,32 @@
 # ShuttleSense session handoff
 
+## Latest continuation: simple rally prototype (2026-10-08)
+
+User requested simple rally separation for the prototype clip. Implemented
+`analysis/rallies.py`, reusing YOLOX detections and court geometry, with no new
+dependencies or desktop app changes. This replaces the proposed TrackNet-first
+experiment below with a smaller player-motion baseline; TrackNet remains deferred.
+Details and rerun commands: `docs/rally-detection.md`.
+
+Private first run: 5 Hz detections on [0,40), 200 samples, 8.882s detector wall
+time. Motion starts candidates; two seconds of low motion can end them. Missing
+players never count as quiet; the known 12.466667s cut is manually supplied.
+Suggestions: [0.8,12.4] (cut), [13.4,40] (unfinished clip). These are NOT two
+confirmed complete rallies or measured accuracy. One-second source frames were
+visually inspected; no quiet ending was detected in this excerpt.
+
+Open `data/feasibility/rally-suggestions-40s/review.html` for native local-video
+candidate replay; `results.json` retains signals/settings/provenance. Everything
+under data/ stays ignored. `python analysis/test_rallies.py` and shared feasibility
+checks pass. Local Chrome verified decode, seek/play, candidate-end pause and full
+replay with no page errors. Existing generated next-env.d.ts diff preserved.
+
+Next: run a longer clip with a between-point pause, manually compare boundaries,
+then add shuttle evidence only if motion is insufficient. Current prototype
+does not process new uploads or infer winners. Full production gates stay open.
+Sandbox lock recurred during startup; saved check/repair stopped only two matching
+helpers, and normal Get-Location succeeded immediately afterward.
+
 ## Latest session close (2026-10-08)
 
 The user requested automatic rally start/end suggestions, then chose to close
