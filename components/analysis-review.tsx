@@ -9,6 +9,13 @@ const number = new Intl.NumberFormat("en", { maximumFractionDigits: 1 });
 const clock = (seconds: number) => `${Math.floor(seconds / 60)}:${(seconds % 60).toFixed(1).padStart(4,"0")}`;
 const percent = (value: number, total: number) => total ? `${number.format(100 * value / total)}%` : "Unavailable";
 export function AnalysisReview({ data, videoUrl }: { data: ReviewData; videoUrl: string }) {
+  useEffect(() => {
+    if (window.location.hash === "#camera-values") {
+      const values = document.getElementById("camera-values");
+      values?.focus();
+      values?.scrollIntoView({ block: "center" });
+    }
+  }, []);
   const [time, setTime] = useState(0);
   const onTime = useCallback((time: number) => setTime(time), []);
   const [replay, setReplay] = useState<ReplayWindow | null>(null);
@@ -103,7 +110,7 @@ export function AnalysisReview({ data, videoUrl }: { data: ReviewData; videoUrl:
         </section>}
       </div>
       <aside className="review-sidebar" aria-label="Tracking values and heatmap">
-        <section className="review-live"><div className="review-event-heading"><h3>Camera values</h3><span>{clock(time)}</span></div><label htmlFor="review-side">Player <select id="review-side" value={side} onChange={e => setSide(e.target.value as Side)}><option value="near">Near player</option><option value="far">Far player</option></select></label><p>{person ? `Tracked player #${person.trackId} · ${person.poseDetected ? "Pose observed" : "Pose unavailable"}` : "Player tracking unavailable at this frame"}</p>
+        <section id="camera-values" className="review-live" tabIndex={-1} aria-label="Camera values"><div className="review-event-heading"><h3>Camera values</h3><span>{clock(time)}</span></div><label htmlFor="review-side">Player <select id="review-side" value={side} onChange={e => setSide(e.target.value as Side)}><option value="near">Near player</option><option value="far">Far player</option></select></label><p>{person ? `Tracked player #${person.trackId} · ${person.poseDetected ? "Pose observed" : "Pose unavailable"}` : "Player tracking unavailable at this frame"}</p>
           <dl className="review-measurements">{([['Left elbow','leftElbow'],['Right elbow','rightElbow'],['Left knee','leftKnee'],['Right knee','rightKnee'],['Wrist speed','wristSpeed']] as const).map(([label,key]) => <div key={key}><dt>{label}</dt><dd>{person?.measurements?.[key] == null ? "Unavailable" : `${number.format(person.measurements[key]!)} ${key === "wristSpeed" ? "body heights/s" : "°"}`}</dd></div>)}</dl><p>Angles come from visible 2D landmarks. Wrist speed is relative to box height, not metres per second.</p>
         </section>
         <section className="review-heatmap"><h3>{readable(side)} player movement</h3><CourtMap grid={map.grid}/><p>{number.format(map.seconds)} seconds of in-court positions. Brighter cells indicate more time. All activity is included, including between points.</p></section>

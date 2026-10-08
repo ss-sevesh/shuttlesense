@@ -1,5 +1,18 @@
 # ShuttleSense session handoff
 
+## Latest continuation: joint-angle shortcut (2026-10-09)
+
+Saved recording rows now say "View joint angles" and open /review/<id>#camera-values.
+The review focuses and scrolls to Camera values after asynchronous data loads.
+Left/right elbow and knee degrees plus relative wrist speed continue updating
+with playback; no inference or measurement changes. Production build and focused
+saved-recording browser flow passed, including the focused angle panel. Production
+server session66106 on127.0.0.1:3000. No model rerun or broad regression rerun.
+Sandbox startup currently fails on a locked VCRUNTIME140_1.dll in the cua runtime,
+not node_repl.exe; saved repair rejected this unfamiliar failure and stopped no
+processes. Latest log is still sandbox.2026-10-08.log. Approved commands were used
+for this change; do not claim the sandbox is repaired or kill unrelated processes.
+
 ## Latest continuation: reopen saved analysis from workspace (2026-10-08)
 
 User asked where the completed clip was saved and to display it in the UI.
