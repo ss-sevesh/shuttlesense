@@ -1,5 +1,25 @@
 # ShuttleSense session handoff
 
+## Latest continuation: reopen saved analysis from workspace (2026-10-08)
+
+User asked where the completed clip was saved and to display it in the UI.
+Workspace now lists completed local jobs in "Your saved video analyses", visible
+on the home page and My Matches. Recording links reopen the existing review with
+video, angles, relative wrist speed, shuttle proposals and experimental BST labels;
+no reupload or model inference is needed. Repeated earlier uploads remain separate
+entries; no footage or annotations were deleted. Reload workspace after a new job
+completes to see its entry. Dynamic server rendering reads only job status/request
+metadata and keeps private names out of prerendered build artifacts.
+
+Full phone job remains b5af3dc2-a4a0-42d0-838a-c84c6a6adae6, with original.mp4,
+normalized source.mp4, result.json and provenance under ignored data/analysis-jobs.
+Production server restarted on127.0.0.1:3000, terminal session51682.
+Saved recording browser flow passed; all six existing frontend checks passed
+(five in the full run, library test passed after narrowing its sample-row locator).
+Typecheck/build passed. Saved list screenshot visually inspected at
+artifacts/saved-video-analyses.png; required movement screenshot refreshed.
+No model rerun or accuracy assessment; prior uncertainty limits remain.
+
 ## Latest continuation: real upload review UI (2026-10-08)
 
 User asked to upload and verify actual camera, shot and rally values, applying

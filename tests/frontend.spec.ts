@@ -106,7 +106,7 @@ test("movement controls, library navigation, and report export work", async ({ p
   expect((await download).suggestedFilename()).toBe("shuttlesense-sample-report.txt");
   await page.getByRole("link", { name: "My Matches 1", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Your Matches", exact: true })).toBeVisible();
-  await page.locator(".match-library-row").click();
+  await page.getByRole("button", { name: /Evening singles/ }).click();
   await expect(page.getByRole("heading", { name: "A closer look", exact: true })).toBeVisible();
 });
 

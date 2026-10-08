@@ -223,6 +223,8 @@ strong { font-weight:600; }
 .library-thumbnail { width:78px;height:58px;display:grid;place-items:center;background:var(--court);border-radius:7px;color:var(--court-line); }
 .match-library-row { display:flex;align-items:center;gap:20px;padding:22px;border:0;border-top:1px solid var(--line);background:none;width:100%;text-align:left; }
 .match-library-row:hover { background:var(--soft); }
+.saved-recordings { margin-bottom:24px; }
+.saved-recordings .match-library-row>span:nth-child(2) { min-width:0;overflow-wrap:anywhere; }
 .match-library-row>span:nth-child(2) { display:grid;gap:8px; }
 .match-library-row>span:nth-child(2)>span { color:var(--muted);font-size:11px; }
 .library-result { margin-left:auto;color:var(--muted);font-size:11px; }

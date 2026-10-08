@@ -2,6 +2,23 @@ import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { existsSync, readFileSync } from 'node:fs';
 
+test('saved recording is discoverable from the workspace without uploading again', async ({ page }) => {
+  const id = 'b5af3dc2-a4a0-42d0-838a-c84c6a6adae6';
+  test.skip(!existsSync(`data/analysis-jobs/${id}/result.json`), 'Requires the saved private analysis');
+  await page.goto('/');
+  const saved = page.getByRole('region', { name: 'Your saved video analyses' });
+  const recording = saved.locator(`a[href="/review/${id}"]`);
+  await expect(recording).toContainText('WhatsApp Video');
+  await page.getByRole('link', { name: 'My Matches' }).click();
+  await page.reload();
+  await expect(recording).toBeVisible();
+  await page.screenshot({ path: 'artifacts/saved-video-analyses.png', fullPage: true });
+  await recording.click();
+  await expect(page.locator('.analysis-review')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('.review-summary')).toContainText('88 unknown');
+  await expect(page.locator('.review-camera video')).toHaveAttribute('src', `/api/analysis/${id}/video`);
+});
+
 async function upload(page: Page, file: string) {
   await page.goto('/');
   await page.getByRole('button', { name: 'Upload Match', exact: true }).click();
