@@ -34,7 +34,7 @@ test("tracked movement shows source data, handles missing or invalid results, an
     await writeFile(path, JSON.stringify({ ...preview, mapped_s: 100 }));
     await page.reload();
     await expect(page.getByText("Movement analysis could not be loaded.", { exact: false })).toBeVisible();
-    await expect(page.getByRole("img")).toHaveCount(0);
+    await expect(page.getByRole("main").getByRole("img")).toHaveCount(0);
     expect(errors).toEqual([]);
   } finally {
     if (original) await writeFile(path, original);

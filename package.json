@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "sandbox:fix": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/fix-sandbox.ps1",
+    "test:sandbox": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-sandbox-fix.ps1",
+    "screenshot": "playwright screenshot --channel chrome --viewport-size=1440,1000 --color-scheme light --full-page --wait-for-selector main http://127.0.0.1:3000/movement artifacts/movement-preview.png",
     "dev": "next dev --hostname 127.0.0.1 --port 3000",
     "build": "next build",
     "start": "next start --hostname 127.0.0.1 --port 3000",

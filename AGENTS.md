@@ -12,6 +12,17 @@ Retry `Get-Location` inside the sandbox immediately, before restarting browser
 tools. Do not run the repair when the sandbox works. If the script finds a
 different failure, inspect the latest log instead of killing unrelated processes.
 
+On Windows PowerShell, always invoke `npm.cmd`/`npx.cmd`, never the policy-blocked
+`.ps1` shims. Do not change the global execution policy. Child scripts explicitly
+set their own process policy. Use `npm.cmd run screenshot` to save the local
+movement preview under `artifacts/` after starting the app; browser MCP screenshot
+tools can display images, but their workspace roots currently reject file saving.
+
+The managed permission profile protects `.git`. Run Git mutations (`add`, `commit`,
+`push`) through approved `require_escalated` execution immediately, using the
+existing narrow prefix rules, rather than first trying a sandbox write. Keep
+read-only Git inspection sandboxed. Do not change Git ACLs or disable sandboxing.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know

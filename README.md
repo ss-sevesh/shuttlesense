@@ -15,11 +15,18 @@ must read [AGENTS.md](AGENTS.md), which now points directly to this repair.
 Desktop web prototype for a badminton coaching workspace, built with Next.js, React, TypeScript, native CSS, and Phosphor icons.
 
 ```sh
-npm install
-npm run dev
+npm.cmd install
+npm.cmd run dev
 ```
 
-Open http://127.0.0.1:3000. Use `npm run build` and `npm start` for a production preview. `npm run test:ui` runs the Playwright interaction and axe accessibility checks using an installed Chrome browser; `npm run typecheck` checks TypeScript.
+Open http://127.0.0.1:3000. Use `npm.cmd run build` and `npm.cmd start` for a production preview. `npm.cmd run test:ui` runs the Playwright interaction and axe accessibility checks using an installed Chrome browser; `npm.cmd run typecheck` checks TypeScript. On macOS/Linux use `npm` instead of `npm.cmd`.
+
+With the app running, `npm.cmd run screenshot` saves a desktop movement preview
+to `artifacts/movement-preview.png`. `npm.cmd run test:sandbox` checks the repair
+script using fake process commands; it never stops real helpers. The repair
+ignores old errors followed by successful setup. Git writes still use approved
+execution because the managed sandbox protects `.git`; this is an expected
+permission boundary, not a reason to weaken Windows permissions.
 
 The UI includes match overview, rally review, court heatmap, evidence links, drill instructions and completion, theme switching, report/plan downloads, and local video preview. Filters and selected rallies are reflected in the URL. Drill completion is saved locally.
 

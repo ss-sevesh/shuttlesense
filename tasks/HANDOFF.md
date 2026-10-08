@@ -34,6 +34,31 @@ used normal sandbox execution without escalation. No Codex restart was needed.
 
 ## Current state
 
+Latest terminal fixes (2026-10-08): Windows commands now explicitly use npm.cmd;
+Playwright's automatic server startup also selects npm.cmd on Windows. Screenshot
+saving uses `npm.cmd run screenshot` with the installed Playwright CLI, writing
+`artifacts/movement-preview.png`; verified and visually inspected. Browser MCP
+file saving still has mismatched workspace roots, so do not repeat that failing
+path or claim its host configuration was repaired. Display-only MCP screenshots
+remain usable. No global PowerShell execution policy or Codex permissions changed.
+
+Sandbox repair now checks the latest success/failure event and ignores resolved
+historical locks. Unknown errors and unrelated runtime paths remain rejected;
+process inspection denial reports the need for approved execution. The runnable
+`npm.cmd run test:sandbox` uses fake process commands and verifies stale-error
+handling, dry run, exact helper selection and JSON-escaped paths without stopping
+real processes. Both that check and a real check-only run pass.
+
+AGENTS.md now directs Git mutations through the existing approved escalation
+rules immediately, avoiding predictable .git/index.lock denials. Read-only Git
+remains sandboxed. The protected .git boundary is expected and unchanged.
+All six Playwright checks pass with automatic dev-server startup after scoping
+the unavailable-map assertion to the app's main region (Next's development error
+overlay contains its own images). A previous interrupted run also recorded
+computer-sleep network suspension and browser-launch timeout; a fresh run passed.
+The deliberate corrupt-file test logs its expected handled error; this is not a
+production failure. Type checking passes. App/heatmap behavior is unchanged.
+
 Latest scope update (2026-10-08): user wants the prototype built faster and the
 heatmap effort wrapped up. Further RTMPose/contact-labeling research is deferred.
 `analysis/movement_preview.py` reuses the saved white-player boxes for a 6x8
@@ -245,11 +270,11 @@ All match statistics, outcomes, heatmap values, shots, movement trails, explanat
 ## Run locally
 
 ```sh
-npm install
-npm run dev
-# Or: npm run build, then npm start
-npm run test:ui
-npm run typecheck
+npm.cmd install
+npm.cmd run dev
+# Or: npm.cmd run build, then npm.cmd start
+npm.cmd run test:ui
+npm.cmd run typecheck
 ```
 
 The default URL is http://127.0.0.1:3000. The previous session left a production server running, but check the port before starting another. A new session does not need the old process: start the server again if it has stopped. Playwright uses an installed Chrome browser.
