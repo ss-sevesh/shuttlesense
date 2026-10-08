@@ -1,7 +1,7 @@
 """Synthetic cue checks; no claim about real-video accuracy."""
 from copy import deepcopy
 import numpy as np
-from tracked_rallies import COCO, hit_candidates, tracked_signals, rally_intervals, mediapipe_posture, pose_measurements, validate_observations
+from tracked_rallies import COCO, hit_candidates, tracked_signals, rally_intervals, mediapipe_posture, pose_measurements, validate_observations, play_status
 
 
 def person(track=1, side='near', wrist=20):
@@ -41,6 +41,12 @@ cues={'serves':[{'launch_s':.1,'setup_start_s':0,'previous_end_s':None},
                 {'launch_s':3,'setup_start_s':2.8,'previous_end_s':2.0}]}
 rallies=rally_intervals(cues,[{'time_s':1.2},{'time_s':3.1}],0,5)
 assert abs(rallies[0]['end_s']-1.4)<1e-6 and rallies[1]['end_s'] is None
+assert play_status(1.2,rallies)=='possible_play'
+assert play_status(2,rallies)=='outside_play'
+assert play_status(4,rallies)=='end_uncertain_review'
+changed=deepcopy(cues)
+changed['serves'][0]['epoch']=1; changed['serves'][1]['epoch']=2
+assert rally_intervals(changed,[{'time_s':1.2},{'time_s':3.1}],0,5)[0]['end_s'] is None
 closed={'serves':[{'launch_s':.1,'setup_start_s':0,'previous_end_s':None,'epoch':0}],
         'quiet_candidates':[{'start_s':2,'observed_until_s':4,'epoch':0}]}
 interval=rally_intervals(closed,[{'time_s':1.2},{'time_s':4.5}],0,6)[0]

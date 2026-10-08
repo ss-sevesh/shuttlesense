@@ -40,6 +40,8 @@ There are 25 merged classes: unknown, twelve top-player shots and twelve
 bottom-player shots. The twelve translated names are net shot, defensive net
 shot, smash, lift, clear, drive, drop, push, net kill, cross-court net shot,
 short serve and long serve. Raw Chinese labels and class IDs are retained.
+Windows containing more than one tracked ID on either court side are excluded
+from classifier inference with `shot_status: identity_switch`.
 Scores are **uncalibrated softmax scores**, not measured probabilities of being
 correct. Results below 0.5, unknown-class predictions and player-side mismatches
 remain `shot_type: unknown`; the raw model prediction remains reviewable.
@@ -58,9 +60,9 @@ python analysis/test_bst_shots.py
 ```
 
 The report records source video hash, exact input-file hashes, checkpoint hash,
-window times, input tracking quality, raw class and review status. Six offline
+window times, input tracking quality, raw class and review status. Eight offline
 adapter tests cover normalization, joint ordering, missing data, bad inputs,
-stride/padding and player order. A private reference check also compares our
+stride/padding, player order and identity-switch rejection. A private reference check also compares our
 normalization and sequence policy directly against the pinned upstream functions.
 
 Actual 15-second demo: 15 candidate windows passed tracking-quality checks and

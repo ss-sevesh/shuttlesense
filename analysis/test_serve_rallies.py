@@ -44,6 +44,8 @@ assert boundaries(signals,[{**s,'xy_px':None} for s in raw],30)['serves']==[]
 assert boundaries([{**s,'shuttle_moving':False} for s in signals],raw,30)['quiet_candidates']==[]
 assert boundaries([{**s,'players_court_xy':[[.3,.3],[.3,.7]]} for s in signals],raw,30)['serves']==[]
 assert boundaries([{**s,'pose':[]} for s in signals],raw,30)['serves']==[]
+early=[{**s,'xy_px':[70,80] if s['time_s']<5.1 else [70-(s['time_s']-5.1)*60,80-(s['time_s']-5.1)*180]} for s in raw]
+assert boundaries(signals,early,30)['serves']==[]  # The posture hold must finish before launch.
 hidden = deepcopy(signals)
 for s in hidden:
     if s['pose']:
@@ -58,6 +60,12 @@ casual=deepcopy(signals)
 for s in casual:
     if s['pose']: s['pose'][1]['serve_ready']=False
 assert boundaries(casual,raw,30,server_side='near')['serves']==[]
+baseline=[{**s,'players_court_xy':[[.3,0],[.3,.92]]} for s in signals]
+assert boundaries(baseline,raw,30,server_side='near')['serves']==[]
+assert len(boundaries(baseline,raw,30,server_side='near',require_diagonal=False)['serves'])==1
+assert boundaries([{**s,'players_court_xy':[[.3,.6],[.3,.92]]} for s in baseline],raw,30,
+                  server_side='near',require_diagonal=False)['serves']==[]
+assert boundaries([{**s,'pose':[]} for s in baseline],raw,30,server_side='near',require_diagonal=False)['serves']==[]
 # A detection miss breaks stationary evidence; it cannot count toward the two seconds.
 missing = deepcopy(raw); missing[90]['xy_px']=None
 assert boundaries(signals,missing,30)['serves'][0]['previous_end_s'] is None

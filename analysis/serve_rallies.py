@@ -63,7 +63,7 @@ def launch(raw, start, stop, server, receiver):
     return None
 
 
-def boundaries(signals, raw, fps, quiet_s=2., stationary_px=12., setup_hold=.4, allow_occluded_server=False, server_side=None):
+def boundaries(signals, raw, fps, quiet_s=2., stationary_px=12., setup_hold=.4, allow_occluded_server=False, server_side=None, require_diagonal=True):
     if server_side not in (None,'near','far'): raise ValueError('Invalid required server side')
     if not all(math.isfinite(v) and v > 0 for v in (fps, quiet_s, stationary_px, setup_hold)):
         raise ValueError('Expected positive finite thresholds')
@@ -107,7 +107,10 @@ def boundaries(signals, raw, fps, quiet_s=2., stationary_px=12., setup_hold=.4, 
                 quiet.append({'start_s': candidate, 'observed_until_s': t, 'epoch': epoch})
         poses = signal.get('pose', [])
         floor_speed = signal.get('floor_motion_heights_per_s',speed)
-        prepared = (known and floor_speed is not None and floor_speed < .3 and diagonal(signal['players_court_xy']) and
+        positions = signal['players_court_xy']
+        geometry = diagonal(positions) if require_diagonal else (len(positions)==2 and all(p is not None for p in positions) and
+                    all(-.1 <= p[0] <= 1.1 for p in positions) and -.1 <= positions[0][1] < .49 and .51 < positions[1][1] <= 1.1)
+        prepared = (known and floor_speed is not None and floor_speed < .3 and geometry and
                     len(poses)==2 and all(p['body_visible'] for p in poses) and any(p['serve_ready'] for p in poses))
         if prepared and server_side is not None:
             prepared = poses[['far','near'].index(server_side)]['serve_ready']
@@ -131,7 +134,7 @@ def boundaries(signals, raw, fps, quiet_s=2., stationary_px=12., setup_hold=.4, 
         options = [(launch(raw,prep_start,stop,boxes[i],boxes[1-i]),i) for i in range(2)
                    if (server_side is None or ['far','near'][i]==server_side) and
                    (poses[i]['serve_ready'] or (allow_occluded_server and not poses[i].get('wrists_observed',True)))]
-        options = [(time,i) for time,i in options if time is not None]
+        options = [(time,i) for time,i in options if time is not None and time >= prep_start+setup_hold-1e-6]
         if not options: continue
         launched, server = min(options)
         if launched <= last_launch+2: continue

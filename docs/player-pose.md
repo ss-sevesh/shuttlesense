@@ -32,8 +32,21 @@ ground contacts or calibrated speeds.
 
 Tracking processes every source frame at a detector size of 960 to reduce small
 far-player misses. Pose sampling is 15 Hz, using a rounded source-frame stride.
-Both actual rates are written to settings. It is a short-clip prototype limited to 30 seconds;
-no automatic track-ID recovery or edit handling is claimed. Missing samples and
+Both actual rates are written to settings. The runner now accepts the entire
+requested video interval. Optional `--far-roi X Y WIDTH HEIGHT` adds a zoomed
+person detection pass (minimum detector size 1280), translates boxes into global
+coordinates and suppresses duplicates before one ByteTrack update. Small pose
+crops are enlarged to at least 256 pixels high; landmark coordinates are mapped
+back to the original crop. Enlargement does not restore missing image detail.
+
+Default identity selection still locks initial IDs. `--allow-reacquisition`
+permits a provisional new same-half ID only after a 0.5s missing interval and
+a unique candidate held for 0.3s. Ambiguous candidates are rejected. Each change
+is recorded in `identity_events` and player `identity_segment`; rally preparation
+resets and BST windows crossing IDs abstain. MediaPipe VIDEO state is retained
+per court half in this mode. Reacquisition does not prove personal identity.
+The actual tracker YAML values/hash and detector/pose sizes are recorded.
+No edit handling is claimed. Missing samples and
 low landmark scores must be respected by shot/rally consumers.
 
 The 59.633333–74.633333s test produced 225 pose samples: near ID 1 tracked and

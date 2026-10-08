@@ -1,5 +1,59 @@
 # ShuttleSense session handoff
 
+## Latest continuation: entire WhatsApp phone video (2026-10-08)
+
+User supplied root `WhatsApp Video 2026-10-08 at 7.09.26 PM.mp4`; processed
+the entire 320.5s clip, not a short sample. Original is untouched and ignored.
+FFmpeg normalized variable timing to 30fps, 9615 frames, 832x464, audio omitted
+from the analysis copy. Private input/provenance/results are under
+`data/feasibility/whatsapp-rallies-01/`. Original/CFR hashes and manual corners
+are recorded; slight handheld camera motion remains unvalidated.
+
+New shuttle_stream.py performs bounded-memory continuous official TrackNet
+eight-frame overlap averaging, checks CFR timestamps/frame count, no chunks or
+inpainting. Full CUDA run: 9615 rows, 2403 visible proposals (25% availability,
+not accuracy), 667.76s wall time. Spot checks confirm some real yellow shuttles.
+
+Full player_pose.py run: 4808 samples at15Hz, every frame tracked at30Hz;
+936.391s runtime. Near tracked4808, posed4807; far tracked4394 (91.4%), posed4254.
+Far-half ROI detection1280 plus full-frame640; small crops upscale256 high.
+Strict IDs fragmented: explicit optional unique-half reacquisition recorded16
+far changes, gaps remain. Full report stores tracker YAML values/hash, IDs and
+segments. Tracked config analysis/bytetrack-phone.yaml matches actual run.
+Independent review and selection/ROI/NMS/recovery checks passed.
+
+Tracked casual footage now permits opposing halves/baseline positions; old
+shared serve runner retains diagonal positions by default. Near observed pose
+and0.4s hold must finish BEFORE launch. Final timing regression removed one
+early-launch candidate. Missing/changed IDs reset cues; next-epoch endings
+cannot close an earlier rally. BST windows crossing IDs abstain even if pose
+is missing. Unknown-ending events are end_uncertain_review, excluded from
+playing-hit counts, since those windows can still contain walking/tossing.
+
+Actual final:111 contact candidates; real BST classified85 windows in2.02s,
+23 experimental labels,88 unknown (10 identity-switch abstentions,16 missing
+tracking,62 model review). Seven near serve starts at34.433,62.867,165.167,
+207.933,279.667,290.667,312.800s; ALL endings unknown, zero completed rally cuts.
+Fourteen contacts outside_play,97 end_uncertain_review. This is NOT reliable
+full rally segmentation or walking/toss rejection. User will verify results.
+
+Private final output `.../whatsapp-rallies-01/final-v2/`: results.json,
+compressed26MB overlay.mp4, review.html, clip_manifest.json, seven explicitly
+labelled review-window MP4s and25MB rallies.zip. The one-off export helpers live
+in ignored data, with clip-duration and closed-ZIP CRC checks. Old final/ is a
+superseded debugging output. Main app/upload UI is unchanged.
+
+Ready http://127.0.0.1:8005/review.html; server session33096. Restart:
+python analysis/serve_review.py data/feasibility/whatsapp-rallies-01/final-v2/review.html --video data/feasibility/whatsapp-rallies-01/final-v2/overlay.mp4 --archive data/feasibility/whatsapp-rallies-01/final-v2/rallies.zip --port 8005
+Optional ZIP is explicitly whitelisted; no broad directory exposure.
+node analysis/test_full_tracked_review.cjs http://127.0.0.1:8005/review.html data/feasibility/whatsapp-rallies-01/final-v2/results.json
+Chrome passed320.5s decode metadata, start/middle/end seeks, bounded replay,
+joint measurements,2 maps, MP4/ZIP byte ranges, unrelated-file404, no page
+errors. Screenshots artifacts/full-tracked-review.png and
+artifacts/full-tracked-heatmaps.png visually inspected. Stream4/BST8/player3,
+serve/tracked/old shuttle/feasibility checks and Python compilation passed.
+No ground truth or accuracy assessment; do not call seven windows seven rallies.
+
 ## Latest continuation: strict near-side serve start (2026-10-08)
 
 User clarified post-point walking/pickup/tossing is not play; start only when

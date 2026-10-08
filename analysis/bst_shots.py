@@ -65,6 +65,7 @@ def prepare_window(samples, shuttle_samples, start, end, width, height, pose_tol
     joints, positions, shuttle = [], [], []
     valid_frames = 0
     visibility = []
+    track_ids = {'far': set(), 'near': set()}
     for raw in shuttle_samples:
         t = raw['time_s']
         if not start <= t < end:
@@ -76,7 +77,10 @@ def prepare_window(samples, shuttle_samples, start, end, width, height, pose_tol
         neighbors = [j for j in (i - 1, i) if 0 <= j < len(samples)]
         closest = min(neighbors, key=lambda j: abs(pose_times[j] - t)) if neighbors else None
         if closest is not None and abs(pose_times[closest] - t) <= pose_tolerance:
-            players = {p['side']: p for p in samples[closest]['players'] if p.get('pose_detected', True)}
+            tracked = samples[closest]['players']
+            for player in tracked:
+                track_ids[player['side']].add(player['track_id'])
+            players = {p['side']: p for p in tracked if p.get('pose_detected', True)}
             if 'far' in players and 'near' in players:
                 values = [normalize_player(players[side]) for side in ('far', 'near')]
                 jp = np.stack([v[0] for v in values])
@@ -101,7 +105,9 @@ def prepare_window(samples, shuttle_samples, start, end, width, height, pose_tol
                       for a, b in BONES], axis=-2)
     features = np.concatenate((joint_arr, bones), axis=-2).reshape(100, 2, 72)
     quality = {'two_player_fraction': valid_frames / len(joints),
-               'body_visibility': float(np.mean(visibility)) if visibility else 0}
+               'body_visibility': float(np.mean(visibility)) if visibility else 0,
+               'identity_switch': any(len(ids) > 1 for ids in track_ids.values()),
+               'track_ids': {side: sorted(ids) for side, ids in track_ids.items()}}
     return features, pos_arr, shuttle_arr, length, quality
 
 
@@ -157,7 +163,9 @@ def classify_hits(poses_report, shuttle_report, hits, *, model_dir=Path('data/bs
         if inputs is not None:
             features, positions, shuttle, length, quality = inputs
             result['input_quality'] = quality
-            if length >= 6 and quality['two_player_fraction'] >= .7 and quality['body_visibility'] >= .5:
+            if quality['identity_switch']:
+                result['shot_status'] = 'identity_switch'
+            elif length >= 6 and quality['two_player_fraction'] >= .7 and quality['body_visibility'] >= .5:
                 with torch.inference_mode():
                     tensors = [torch.as_tensor(a, device=device, dtype=torch.float32).unsqueeze(0)
                                for a in (features, shuttle)]

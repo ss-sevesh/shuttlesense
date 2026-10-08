@@ -13,10 +13,72 @@ they are retained for inspection and do not create activity-window rallies.
 A completed quiet/stationary ending closes an interval even without a next
 serve. Later pickup/toss/walking candidates are excluded until another accepted
 near-side serve. A physical ground contact is not measured by 2D TrackNet;
-undetected endings remain uncertain. The user has a new post-point clip, but
-has not supplied it yet.
+undetected endings remain uncertain. Casual tracked footage now permits
+opposing court halves including baseline positions (0.1 court margin), rather
+than requiring formal diagonal service boxes. Both visible bodies, low floor
+motion and the near player's observed readiness/launch remain required. The
+shared older serve runner retains diagonal positions by default.
 
-Current strict demo is `data/feasibility/tracked-rallies-near-serve-01/`, served
+The user supplied `WhatsApp Video 2026-10-08 at 7.09.26 PM.mp4` locally. Its
+variable frame timing was normalized to a complete 320.5s, 30fps analysis copy
+(9615 frames, 832x464). Original footage is untouched; analysis audio is omitted.
+Private artifacts and original/CFR hashes are under
+`data/feasibility/whatsapp-rallies-01/`. Manual corner coordinates approximate
+the floor lines; slight handheld motion remains a limitation.
+
+The entire TrackNet pass uses `analysis/shuttle_stream.py`, official eight-frame
+checkpoint and continuous stride-one overlap averaging. Heatmaps are finalized
+only after every contributing window, including the tail. Frame decoding and
+CFR timestamps are checked; no chunks, omitted rows or inpainting are used.
+Background sampling uses 41 resized frames to bound memory, which differs from
+the original short-clip preprocessing. Actual run: 9615 frames, 2403 visible
+proposals, 667.76s wall time; 25% proposal availability is not accuracy. Visual
+spot checks include real yellow shuttle detections, but misses remain frequent.
+
+Full-video player command (weights/environment already prepared):
+
+```powershell
+data/player-pose-env/Scripts/python.exe analysis/player_pose.py data/feasibility/whatsapp-rallies-01/input.mp4 --end 320.5 --imgsz 640 --far-roi 220 35 430 240 --allow-reacquisition --tracker analysis/bytetrack-phone.yaml --corners 327 178 530 178 798 388 61 388 --output data/feasibility/whatsapp-rallies-01/players.json
+data/tracknet-env/Scripts/python.exe analysis/shuttle_stream.py data/feasibility/whatsapp-rallies-01/input.mp4 --assume-unedited --output data/feasibility/whatsapp-rallies-01/shuttle.json
+```
+
+Provisional reacquisitions are explicit. Missing/changed IDs reset rally cues;
+BST windows spanning a side's ID change abstain, including changes where pose
+landmarks are missing. A following serve from another identity epoch cannot
+supply the previous interval's ending.
+
+Full phone result: 4808 pose samples, near boxes4808/4808 and poses4807;
+far boxes4394/4808 (91.4%) and poses4254. Runtime936.391s. Sixteen provisional
+far-ID recoveries are explicitly recorded. These figures measure availability.
+There are111 candidate contacts. Actual BST inference ran85 windows in2.02s:
+23 experimental labels and88 unknowns (10 ID-switch abstentions,16 insufficient
+tracking,62 classifier results requiring review).
+
+Seven near-side starts remain after enforcing completion of the0.4s posture
+hold before launch:34.433,62.867,165.167,207.933,279.667,290.667,312.800s. None has
+a qualifying ending. Therefore there are zero complete rally cuts. The97
+contacts inside unknown-ending windows are `end_uncertain_review` and excluded
+from playing-hit counts;14 contacts remain outside play. These windows can
+still contain walking or tossing. The prototype cannot yet reliably split this
+recording into complete rallies.
+
+Review http://127.0.0.1:8005/review.html, private final folder
+`data/feasibility/whatsapp-rallies-01/final-v2/`. Its ZIP contains seven explicitly
+labelled review windows, a clip manifest with original/CFR provenance and the
+actual report. MP4 durations and archive CRCs were checked. The page shows the
+entire overlay, boxes/skeletons/shuttle proposals, angles, occupancy maps and
+bounded event replay. HTTP serves only the supplied page, video and optional ZIP.
+
+```powershell
+python analysis/serve_review.py data/feasibility/whatsapp-rallies-01/final-v2/review.html --video data/feasibility/whatsapp-rallies-01/final-v2/overlay.mp4 --archive data/feasibility/whatsapp-rallies-01/final-v2/rallies.zip --port 8005
+node analysis/test_full_tracked_review.cjs http://127.0.0.1:8005/review.html data/feasibility/whatsapp-rallies-01/final-v2/results.json
+```
+
+Chrome verified320.5s duration, seeks near start/middle/end, bounded event pause,
+pose measurements, both maps, MP4/ZIP byte ranges, unrelated-file denial and no
+page errors. Both replay and map screenshots were visually inspected.
+
+Previous strict demo is `data/feasibility/tracked-rallies-near-serve-01/`, served
 at http://127.0.0.1:8004/review.html. On this older clip it reports zero starts
 and all 15 motion candidates outside play, since near-player wrists are
 obscured during preparation. The results below describe the earlier fallback
@@ -79,7 +141,7 @@ python analysis/tracked_rallies.py videoplayback.mp4 --poses data/feasibility/pl
 python analysis/serve_review.py data/feasibility/new-tracked-final/review.html --video data/feasibility/new-tracked-final/overlay.mp4 --port 8004
 ```
 
-The ready strict test page is currently http://127.0.0.1:8004/review.html. Restart its
+The older strict test page is http://127.0.0.1:8004/review.html. Restart its
 server with the tracked-rallies-near-serve-01 paths if it has stopped. Stop that specific
 server before reusing the port. The existing upload UI is not connected to
 this new experiment yet.

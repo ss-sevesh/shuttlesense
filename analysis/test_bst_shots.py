@@ -7,7 +7,8 @@ from bst_shots import COCO_FROM_MEDIAPIPE, fixed_length, normalize_player, prepa
 
 
 def person(side='near', offset=0):
-    return {'side': side, 'keypoints_xy': [[20 + i + offset, 40 + i] for i in range(33)],
+    return {'side': side, 'track_id': 1 if side == 'near' else 2,
+            'keypoints_xy': [[20 + i + offset, 40 + i] for i in range(33)],
             'keypoint_scores': [1.] * 33, 'box_xywh': [10 + offset, 20, 60, 80],
             'court_xy': [.5, .8 if side == 'near' else .2]}
 
@@ -69,6 +70,20 @@ class AdapterTests(unittest.TestCase):
         self.assertFalse(features.any())
         self.assertFalse(shuttle.any())
         self.assertEqual(quality['two_player_fraction'], 0)
+
+    def test_window_flags_identity_switch_on_either_court_side(self):
+        for side in ('near', 'far'):
+            before = [person(), person('far')]
+            after = [person(), person('far')]
+            next(p for p in after if p['side'] == side)['track_id'] = 99
+            samples = [{'time_s': 0., 'players': before}, {'time_s': .1, 'players': after}]
+            raw = [{'time_s': 0., 'xy_px': [640, 360]}, {'time_s': .1, 'xy_px': [650, 370]}]
+            *_, quality = prepare_window(samples, raw, 0, .15, 1280, 720)
+            self.assertTrue(quality['identity_switch'])
+            self.assertEqual(len(quality['track_ids'][side]), 2)
+            next(p for p in after if p['side'] == side)['pose_detected'] = False
+            *_, quality = prepare_window(samples, raw, 0, .15, 1280, 720)
+            self.assertTrue(quality['identity_switch'])
 
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
-"""Loopback-only private review server; exposes exactly a review page and video."""
+"""Loopback-only private review server; exposes only explicitly supplied files."""
 import argparse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -19,13 +19,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('review',type=Path)
     parser.add_argument('--video',type=Path,required=True)
+    parser.add_argument('--archive',type=Path,help='Optional private review clip/report ZIP')
     parser.add_argument('--port',type=int,default=8002)
     args = parser.parse_args()
     files = {'/':(args.review.resolve(),'text/html; charset=utf-8'),
              '/review.html':(args.review.resolve(),'text/html; charset=utf-8'),
              '/source.mp4':(args.video.resolve(),'video/mp4')}
+    if args.archive: files['/rallies.zip']=(args.archive.resolve(),'application/zip')
     if not all(path.is_file() and path.stat().st_size>0 for path,_ in files.values()):
-        parser.error('Review and video must be non-empty files')
+        parser.error('Every supplied review/video/archive must be a non-empty file')
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
             target = files.get(urlsplit(self.path).path)
