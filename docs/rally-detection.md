@@ -55,3 +55,34 @@ Next: try a longer excerpt containing a visible between-point pause and compare
 manual start/end marks. Add TrackNet shuttle evidence if player motion merges
 separate rallies or misses quiet play. Keep manual cuts until automatic cuts are
 tested; do not call cut-driven separation automatic rally-end detection.
+
+## Longer test: motion-only baseline fails on this edited clip
+
+The unchanged rule was run on [0,100), still at 5 Hz and with only the previously
+known 12.466667s manual cut. 500 samples / 3,000 decoded frames; detector wall
+time 38.463s, of which 28.796s was preprocessing/inference/postprocessing.
+It returned [0.8,12.4] and [13.4,100]. The latter merges multiple visible points
+and close-up shots. No low-motion ending was emitted. This is a failed baseline,
+not successful automatic rally separation.
+
+Assistant inspected source frames every two seconds over [40,180), then every
+0.5s over [48,62). The latter shows white lunging at 52s, walking/bending by
+53–53.5s, both players in a ready position at 54–55s, and play resuming by 56s.
+These are approximate source observations, not independent timed ground truth.
+The position jump between the 53.6s and 53.8s detection samples produced
+6.13 body heights/s, resetting the quiet timer. At 54–55.2s motion was below
+0.5, but it exceeded the threshold again at 55.4s, before two quiet seconds.
+Other close-ups/edits also make one continuous court calibration invalid.
+
+```powershell
+python analysis/detect.py videoplayback.mp4 --model data/models/yolox_tiny.onnx --output data/feasibility/rally-motion-100s --end 100 --sample-hz 5
+python analysis/rallies.py videoplayback.mp4 --detections data/feasibility/rally-motion-100s/detections.json --corners 413 241 873 239 987 687 276 692 --cuts 12.466667 --output data/feasibility/rally-suggestions-100s
+```
+
+Private `rally-suggestions-100s/review.html` replays the failed suggestions.
+Local Chrome decoding, seeking, end pause and full replay checks pass; the
+synthetic rule checks still pass. Those verify implementation, not rally accuracy.
+No thresholds were changed to hide this failure. Next experiment should handle
+same-angle edits and exclude close-ups before testing a shorter between-point
+quiet rule on this broadcast clip. Shuttle evidence is an option if that still
+merges points; no TrackNet install or app integration was done in this test.

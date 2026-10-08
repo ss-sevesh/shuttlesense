@@ -1,5 +1,30 @@
 # ShuttleSense session handoff
 
+## Latest continuation: longer rally test (2026-10-08)
+
+User approved testing a longer passage containing pauses. Ran the unchanged
+motion rule on [0,100) at 5 Hz: 500 samples, 3,000 decoded frames, detector
+38.463s wall time. Output [0.8,12.4] and [13.4,100]; the second interval merges
+multiple points and close-ups. This FAILED actual rally separation; no low-motion
+ending was emitted. Do not present the two candidates as complete rallies.
+
+Assistant inspected 2s source samples across [40,180), and 0.5s samples across
+[48,62). The brief slowdown around 53–55s is interrupted by a same-angle edit:
+53.8s motion spikes to 6.13 box heights/s, then there is less than two seconds
+below threshold before activity resumes. Pauses are often shortened by edits.
+See `docs/rally-detection.md` for evidence, timing and rerun commands.
+
+Private `data/feasibility/rally-suggestions-100s/review.html` replays the failed
+baseline; source sheets and outputs stay ignored. Native Chrome decode,
+seek/play, end pause and full replay checks pass, as do rule regression checks.
+No detector code, thresholds, dependencies or main app changes in this test.
+Generated next-env.d.ts diff preserved. Sandbox worked; no repair needed.
+
+Next: handle same-angle edits and exclude close-ups, then test a shorter quiet
+rule for the edited broadcast clip. Motion-only baseline is insufficient here;
+do not generalize the failure to continuous phone recordings. TrackNet remains
+uninstalled; add shuttle evidence if the next small baseline still merges points.
+
 ## Latest continuation: simple rally prototype (2026-10-08)
 
 User requested simple rally separation for the prototype clip. Implemented
