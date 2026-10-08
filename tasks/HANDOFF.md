@@ -1,5 +1,28 @@
 # ShuttleSense session handoff
 
+## Latest continuation: local upload boxes and heatmap demo (2026-10-08)
+
+User requested an upload-to-boxes-and-heatmap demo now. UploadDialog now retains
+the selected File and embeds UploadAnalysis. Mark four first-frame singles-court
+corners clockwise from far-left, then Show boxes & heatmap. Existing YOLOX-Tiny
+CPU detector samples the first 30 seconds at 5 Hz. Bounding-box bottom centres
+project through a manual homography onto the reused CourtMap grid. Near/far
+selector rotates the selected side to the bottom; no verified player identities.
+
+Local-only same-origin POST /api/analyze-demo validates bounded multipart upload,
+runs analysis/upload_demo.py (90s timeout), and deletes temporary copies under
+ignored data/demo-uploads. Analysis limit 100 MB/4K; preview limit remains 500 MB.
+Results stay in the dialog, no persistence or hosted worker. No TrackNet/GPU
+needed for person boxes. Fixed camera, no edits/side changes; existing dashboard
+sample statistics stay illustrative. See docs/upload-demo.md. Preserve the
+pre-existing next-env.d.ts change. Rally/production accuracy tasks remain open.
+
+Validation: upload mapping self-check, all eight Playwright tests (including real
+private clip upload, both themes, temporary cleanup and no browser errors), and
+production build passed. Actual clip processing took about 8 seconds for 150
+samples. Screenshot inspected at ignored artifacts/upload-analysis.png. This
+proves the local flow, not detector accuracy across other videos.
+
 ## Latest continuation: TrackNet on GPU (2026-10-08)
 
 User authorized pretrained shuttle tracking and requested GPU if useful; RTX 4060

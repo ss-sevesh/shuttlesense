@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle, FileVideo, UploadSimple, X } from "@phosphor-icons/react";
+import { UploadAnalysis } from "@/components/upload-analysis";
 
 export function UploadDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const input = useRef<HTMLInputElement>(null);
-  const [preview, setPreview] = useState<{ url: string; name: string } | null>(null);
+  const [preview, setPreview] = useState<{ url: string; name: string; file: File } | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -18,7 +19,7 @@ export function UploadDialog({ open, onClose }: { open: boolean; onClose: () => 
     if (!/\.(mp4|mov|webm)$/i.test(file.name) || (file.type && !["video/mp4", "video/quicktime", "video/webm"].includes(file.type))) { setError("Choose an MP4, MOV, or WebM video."); return; }
     if (file.size > 500 * 1024 * 1024 || file.size === 0) { setError("Choose a non-empty video smaller than 500 MB."); return; }
     setLoading(true);
-    setPreview({ url: URL.createObjectURL(file), name: file.name });
+    setPreview({ url: URL.createObjectURL(file), name: file.name, file });
   }
   return <dialog className="modal upload-modal" ref={dialog} onClose={onClose} aria-labelledby="upload-heading">
     <div className="modal-header"><span className="modal-mark"><UploadSimple size={24}/></span><button className="icon-button" aria-label="Close upload" onClick={() => dialog.current?.close()}><X size={22}/></button></div>
@@ -31,8 +32,8 @@ export function UploadDialog({ open, onClose }: { open: boolean; onClose: () => 
     {preview && <section className="local-preview" aria-label="Local video preview" aria-busy={loading}>
       <div className="preview-file"><FileVideo size={19}/><strong>{preview.name}</strong><span>{loading ? "Loading…" : "Local preview"}</span></div>
       {loading && <div className="video-skeleton" role="status">Loading your preview…</div>}
-      <video key={preview.url} src={preview.url} controls playsInline preload="metadata" onLoadedMetadata={() => setLoading(false)} onError={() => {setLoading(false); setError("Your browser could not play this file. Try a WebM or H.264 MP4 recording.");}}/>
+      <UploadAnalysis key={preview.url} file={preview.file} url={preview.url} onReady={() => setLoading(false)} onError={() => {setLoading(false); setError("Your browser could not play this file. Try a WebM or H.264 MP4 recording.");}}/>
     </section>}
-    <div className="privacy-note"><CheckCircle size={19}/><p>Your video stays on this device. This frontend previews playback; AI analysis is not connected yet.</p></div>
+    <div className="privacy-note"><CheckCircle size={19}/><p>Your video stays on this device. The tracking demo processes a temporary copy on your local server and deletes it afterward. Analysis supports videos under 100 MB.</p></div>
   </dialog>;
 }

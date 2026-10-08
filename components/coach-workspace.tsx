@@ -74,7 +74,7 @@ export function CoachWorkspace() {
           <section className="insights-section" aria-labelledby="insights-heading"><div className="insights-heading"><div><h2 id="insights-heading">What changed the point?</h2><p>Patterns worth taking into your next practice.</p></div><span><Info size={15}/>Sample coaching insights</span></div><div className="insight-list">{issues.map((issue,index) => <article className="insight" key={issue.id}><span className="insight-number">{(index+1).toString().padStart(2,"0")}</span><div className="insight-copy"><div><h3>{issue.title}</h3><span>{issue.count} lost rallies</span></div><p>{issue.description}</p><span className="insight-action"><Target size={15}/>{issue.action}</span></div><button className="text-button" onClick={() => evidence(issue.id)}>See the Rallies <ArrowUpRight size={17}/></button></article>)}</div></section>
         </>}
       </>}
-      <footer className="page-footer"><span><Feather size={15}/>A little insight goes a long way.</span><p>Demo data & illustrative imagery. No uploaded video has been analyzed.</p></footer><div className="sr-only" role="status">{status}</div>
+      <footer className="page-footer"><span><Feather size={15}/>A little insight goes a long way.</span><p>Dashboard statistics & imagery are illustrative. Uploaded-video results appear in the upload preview.</p></footer><div className="sr-only" role="status">{status}</div>
       </main>
     </div>
     <UploadDialog open={upload} onClose={() => setUpload(false)}/>
