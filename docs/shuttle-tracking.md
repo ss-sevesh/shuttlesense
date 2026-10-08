@@ -1,5 +1,12 @@
 # First pretrained TrackNet experiment
 
+Retest 2026-10-08: fresh ignored `tracknet-retest-20261008` reproduces all 152
+sample predictions exactly (119 proposals, 33 misses) on the RTX 4060 GPU.
+Inference 9.501s; decode/background/inference 12.416s. Shuttle and rally checks
+passed; 12 overlay frames inspected. Local byte-range replay server at
+http://127.0.0.1:8001/review.html passed Chrome decode/seek/playback checks.
+No independently measured accuracy or upload-UI integration is claimed.
+
 2026-10-08. Raw shuttle tracking on source [48.6,53.666667), 152 frames / 30 fps.
 This is one court-view segment bounded by the previous automatic edit checks.
 Private latest artifacts: `data/feasibility/tracknet-clip-03/`; combined rally

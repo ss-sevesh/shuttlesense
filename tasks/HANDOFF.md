@@ -1,5 +1,21 @@
 # ShuttleSense session handoff
 
+## Latest continuation: TrackNet retest (2026-10-08)
+
+User requested TrackNet test. Reran source [48.6,53.666667) on CUDA RTX 4060:
+152 frames, 119 raw proposals, 33 misses; inference 9.501s, decode/background/
+inference 12.416s. Exact sample predictions match tracknet-clip-03. Shuttle and
+rally self-checks passed. Inspected 12 overlay snapshots; no accuracy labels.
+Fresh ignored artifacts: data/feasibility/tracknet-retest-20261008/.
+
+Local replay http://127.0.0.1:8001/review.html is served by ignored
+data/serve-tracknet-review.py (loopback, only that output directory, byte-range
+support). Basic Python http.server reset Chrome seek to zero; range support fixed
+it. Chrome verified 1280x720 decode, 5.066633s duration, seek to 1s and advancement
+to 1.35s without page/video errors. Restart helper with `python
+data/serve-tracknet-review.py` if needed. This remains a separate experiment;
+uploaded-video UI still uses YOLOX for people, not TrackNet for shuttle.
+
 ## Latest continuation: local upload boxes and heatmap demo (2026-10-08)
 
 Follow-up 422 fix: actual dev-server log showed the user's four valid court
