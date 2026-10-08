@@ -3,6 +3,25 @@ import AxeBuilder from "@axe-core/playwright";
 import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 
+test("show boxes starts court marking instead of leaving a disabled button", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Upload Match", exact: true }).click();
+  await page.getByLabel("Match video", { exact: true }).setInputFiles("tests/fixtures/preview.webm");
+  await expect(page.locator(".local-preview")).toHaveAttribute("aria-busy", "false");
+  const show = page.getByRole("button", { name: "Show boxes & heatmap", exact: true });
+  await expect(show).toBeEnabled();
+  await show.click();
+  await expect(page.locator(".corner-picker")).toBeFocused();
+  for (const [x,y] of [[.2,.2],[.8,.2],[.8,.8],[.2,.8]]) {
+    const picker = page.locator(".corner-picker");
+    const box = (await picker.boundingBox())!;
+    await picker.click({ position: { x:x*box.width, y:y*box.height } });
+  }
+  await expect(page.locator(".corner-picker")).toHaveCount(0);
+  await expect(show).toBeEnabled();
+  await expect(page.getByRole("status").filter({ hasText: "Court marked" })).toBeVisible();
+});
+
 test("local analysis rejects foreign origins and invalid input", async ({ request }) => {
   const url = "/api/analyze-demo";
   expect((await request.post(url, { headers: { origin: "https://example.com" } })).status()).toBe(403);

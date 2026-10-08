@@ -2,6 +2,10 @@
 
 ## Latest continuation: local upload boxes and heatmap demo (2026-10-08)
 
+Follow-up: Show boxes & heatmap now remains clickable before calibration and
+starts the corner picker, with keyboard focus and progress on the button.
+Previously it silently stayed disabled until four corners were marked.
+
 User requested an upload-to-boxes-and-heatmap demo now. UploadDialog now retains
 the selected File and embeds UploadAnalysis. Mark four first-frame singles-court
 corners clockwise from far-left, then Show boxes & heatmap. Existing YOLOX-Tiny
