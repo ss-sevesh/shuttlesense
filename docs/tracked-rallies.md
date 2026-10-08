@@ -6,13 +6,29 @@ observations, and an actual pretrained BST-0 classifier. The discarded Hugging
 Face analyzer's pipeline is not used. See [player setup](player-pose.md) and
 [checkpoint/input details](bst-shots.md).
 
+Latest user rule: start only when the near-side player's serve posture is
+observed and followed by shuttle launch. Opponent readiness and obscured wrists
+cannot substitute. Motion/BST predictions without that start stay outside play;
+they are retained for inspection and do not create activity-window rallies.
+A completed quiet/stationary ending closes an interval even without a next
+serve. Later pickup/toss/walking candidates are excluded until another accepted
+near-side serve. A physical ground contact is not measured by 2D TrackNet;
+undetected endings remain uncertain. The user has a new post-point clip, but
+has not supplied it yet.
+
+Current strict demo is `data/feasibility/tracked-rallies-near-serve-01/`, served
+at http://127.0.0.1:8004/review.html. On this older clip it reports zero starts
+and all 15 motion candidates outside play, since near-player wrists are
+obscured during preparation. The results below describe the earlier fallback
+experiment and are retained as a comparison, not the current rule.
+
 `analysis/tracked_rallies.py` derives body-height-normalized motion, visibility-
 gated elbow/knee angles, candidate wrist-motion peaks close to observed shuttles,
 and serve-first intervals. Temporal suppression keeps only the strongest hit
 candidate within 0.25s. These events are hypotheses, not verified contacts.
 The suppression threshold can miss exceptionally fast successive exchanges.
 
-Serve preparation needs diagonal positions, low floor motion and visible
+The earlier fallback experiment's serve preparation needed diagonal positions, low floor motion and visible
 torsos/legs for both players. If one player's wrists are obscured, a proposed
 launch may be supported by opponent readiness plus shuttle movement from that
 player's box. This opt-in fallback is recorded as `wrist_occluded_launch_proxy`;
@@ -63,8 +79,8 @@ python analysis/tracked_rallies.py videoplayback.mp4 --poses data/feasibility/pl
 python analysis/serve_review.py data/feasibility/new-tracked-final/review.html --video data/feasibility/new-tracked-final/overlay.mp4 --port 8004
 ```
 
-The ready test page is currently http://127.0.0.1:8004/review.html. Restart its
-server with the final-05 paths above if it has stopped. Stop that specific
+The ready strict test page is currently http://127.0.0.1:8004/review.html. Restart its
+server with the tracked-rallies-near-serve-01 paths if it has stopped. Stop that specific
 server before reusing the port. The existing upload UI is not connected to
 this new experiment yet.
 

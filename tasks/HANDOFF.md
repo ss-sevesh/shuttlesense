@@ -1,5 +1,27 @@
 # ShuttleSense session handoff
 
+## Latest continuation: strict near-side serve start (2026-10-08)
+
+User clarified post-point walking/pickup/tossing is not play; start only when
+our/near-side player gives the serve posture. Tracked runner now requires
+observed near posture held0.4s plus launch; no opponent/hidden-wrist fallback.
+Shared boundaries gains optional server_side preserving old default behavior.
+Motion alone no longer creates activity-window rallies. Completed observed
+2squiet/stationary intervals can close the final rally without a following
+serve; subsequent motion candidates are outside_play and excluded from its
+hit count. No physical shuttle landing detector is claimed: unknown endings
+stay unknown. User mentioned a new clip but has not attached it.
+
+Cached older15sclip rerun: zero strict near serves/rallies, all15motion candidates
+outside_play because nearwrists are obscured. Six experimentalBSTlabels remain
+inspectable but cannot start play. New artifact tracked-rallies-near-serve-01/.
+Server session71403 http://127.0.0.1:8004/review.html, restart with:
+python analysis/serve_review.py data/feasibility/tracked-rallies-near-serve-01/review.html --video data/feasibility/tracked-rallies-near-serve-01/overlay.mp4 --port 8004
+Near-only/far-only/occluded/toss-without-nearposture, completed finalend and
+postendhitexclusion regressions passed; Chrome replay/pose/maps/range checks
+updated and passed. Main upload UI remains separate. Need user's actual new
+post-point clip to verify the rule on real walking/tossing footage.
+
 ## Latest continuation: ByteTrack + MediaPipe + pretrained BST (2026-10-08)
 
 User dropped the HF pipeline, authorized implementation, and explicitly asked

@@ -36,11 +36,15 @@ try: tracked_signals([samples[0],samples[0]],raw,30)
 except ValueError: pass
 else: raise AssertionError('Duplicate timestamps accepted')
 activity=rally_intervals({'serves':[]},hits,0,1)
-assert activity[0]['start_s'] is None and activity[0]['end_s'] is None
+assert activity==[]  # Motion without an accepted near-side serve is outside play.
 cues={'serves':[{'launch_s':.1,'setup_start_s':0,'previous_end_s':None},
                 {'launch_s':3,'setup_start_s':2.8,'previous_end_s':2.0}]}
 rallies=rally_intervals(cues,[{'time_s':1.2},{'time_s':3.1}],0,5)
 assert abs(rallies[0]['end_s']-1.4)<1e-6 and rallies[1]['end_s'] is None
+closed={'serves':[{'launch_s':.1,'setup_start_s':0,'previous_end_s':None,'epoch':0}],
+        'quiet_candidates':[{'start_s':2,'observed_until_s':4,'epoch':0}]}
+interval=rally_intervals(closed,[{'time_s':1.2},{'time_s':4.5}],0,6)[0]
+assert abs(interval['end_s']-1.4)<1e-6 and interval['hit_candidates']==1
 assert len(COCO)==17 and len(set(COCO))==17
 points=np.zeros((33,2));scores=np.ones(33)
 points[[11,12]]=[50,20];points[[23,24]]=[50,50];points[[27,28]]=[50,90];points[[15,16]]=[50,45]

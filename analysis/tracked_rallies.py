@@ -170,18 +170,17 @@ def rally_intervals(cues, hits, start, stop):
     serves = cues['serves']
     for i,serve in enumerate(serves):
         following = serves[i+1] if i+1<len(serves) else None
-        quiet = following['previous_end_s'] if following else None
         review_stop = following['setup_start_s'] if following else stop
-        members = [h for h in hits if serve['launch_s']-.15 <= h['time_s'] < review_stop]
+        quiets=[q['start_s'] for q in cues.get('quiet_candidates',[]) if q['epoch']==serve['epoch'] and
+                serve['launch_s']<q['start_s'] and q['observed_until_s']<=review_stop]
+        quiet = min(quiets) if quiets else following['previous_end_s'] if following else None
+        members = [h for h in hits if serve['launch_s'] <= h['time_s'] < review_stop]
         before_end = [h for h in members if quiet is not None and h['time_s'] <= quiet]
         ending = min(quiet,before_end[-1]['time_s']+.2) if before_end else None
         rallies.append({'start_s':serve['launch_s'],'end_s':ending,'review_stop_s':review_stop,
-                        'start_status':'serve_setup_and_launch_candidate','end_status':'quiet_then_next_serve' if ending else 'uncertain',
-                        'hit_candidates':len(members),'outcome':'unknown','review_status':'provisional'})
-    if not rallies and hits:
-        rallies.append({'start_s':None,'end_s':None,'review_start_s':start,'review_stop_s':stop,
-                        'start_status':'serve_not_observed','end_status':'uncertain',
-                        'hit_candidates':len(hits),'outcome':'unknown','review_status':'activity_window_only'})
+                        'start_status':'near_serve_pose_and_launch_candidate','end_status':'observed_stationary_and_quiet' if ending else 'uncertain',
+                        'hit_candidates':sum(h['time_s']<=ending for h in members) if ending else len(members),
+                        'outcome':'unknown','review_status':'provisional'})
     return rallies
 
 
@@ -207,7 +206,7 @@ def main():
     if len(samples)<3: raise ValueError('At least three overlapping pose samples required')
     raw, fps = shuttle['samples'], shuttle['settings']['fps']
     hits = hit_candidates(samples,raw,fps)
-    cues = boundaries(tracked_signals(samples,raw,fps),raw,fps,allow_occluded_server=True)
+    cues = boundaries(tracked_signals(samples,raw,fps),raw,fps,server_side='near')
     shot_model = None
     if args.shots:
         shots = read(args.shots)
@@ -221,12 +220,15 @@ def main():
         for hit in hits:
             match = next((s for s in shots['shots'] if s['track_id']==hit['track_id'] and abs(s['time_s']-hit['time_s'])<1e-6),None)
             if match: hit.update({k:match[k] for k in ('shot_type','shot_status','confidence','raw_shot_type','predicted_side') if k in match})
+    rallies = rally_intervals(cues,hits,start,stop)
+    for hit in hits:
+        hit['play_status']='possible_play' if any(r['start_s']<=hit['time_s']<= (r['end_s'] if r['end_s'] is not None else r['review_stop_s']) for r in rallies) else 'outside_play'
     result = {'kind':'tracked_pose_rally_candidates','video_sha256':source_hash,
-        'settings':{'start_s':start,'end_s':stop,'fps':fps,'hit_suppression_s':.25},
+        'settings':{'start_s':start,'end_s':stop,'fps':fps,'hit_suppression_s':.25,'required_server_side':'near','require_observed_serve_posture':True},
         'pose_report_sha256':digest(args.poses),'shuttle_report_sha256':digest(args.shuttle),
         'shot_report_sha256':digest(args.shots) if args.shots else None,
         'shot_model':shot_model,
-        'hits':hits, **cues,'rallies':rally_intervals(cues,hits,start,stop),'pose_measurements':pose_measurements(samples),'accuracy':None,
+        'hits':hits, **cues,'rallies':rallies,'pose_measurements':pose_measurements(samples),'accuracy':None,
         'limitations':['Hit events and boundaries need human review','Missing evidence keeps boundaries unknown',
                        'Pose landmarks are not racket tracking or service-fault detection']}
     args.output.mkdir(parents=True,exist_ok=False)
@@ -265,7 +267,8 @@ def render_review(video, output, samples, raw, result):
             point = raw[raw_index]['xy_px'] if abs(raw[raw_index]['time_s']-t)<=1.5/fps else None
             if point is not None: cv2.circle(frame,tuple(map(int,point)),6,(100,255,100),2)
             hit = next((h for h in reversed(result['hits']) if 0 <= t-h['time_s'] < .5),None)
-            label = f"{t:.2f}s | "+(f"{hit['side']} hit candidate: {hit['shot_type'] or 'unclassified'}" if hit else 'Tracking + pose + observed shuttle')
+            active=any(r['start_s']<=t<=(r['end_s'] if r['end_s'] is not None else r['review_stop_s']) for r in result['rallies'])
+            label = f"{t:.2f}s | "+(f"{hit['side']} {hit['play_status']}: {hit['shot_type'] or 'unclassified'}" if hit else 'Possible rally in progress' if active else 'Waiting for near-side serve / tracking')
             cv2.putText(frame,label,(20,35),cv2.FONT_HERSHEY_SIMPLEX,.6,(255,255,255),2)
             writer.write(frame)
     finally:
@@ -277,7 +280,7 @@ def render_review(video, output, samples, raw, result):
         label = f"Possible rally {i}: {a:.2f}s; "+(f"end {b:.2f}s" if r['end_s'] else 'end unknown')
         buttons.append(f'<button data-start="{a-start}" data-end="{b-start}">{label}</button>')
     for h in result['hits']:
-        buttons.append(f'<button data-start="{max(0,h["time_s"]-start-.6)}" data-end="{min(stop-start,h["time_s"]-start+.8)}">{h["time_s"]:.2f}s {h["side"]}: {html.escape(h["shot_type"] or "hit candidate / shot unknown")}</button>')
+        buttons.append(f'<button data-start="{max(0,h["time_s"]-start-.6)}" data-end="{min(stop-start,h["time_s"]-start+.8)}">{h["time_s"]:.2f}s {h["side"]}: {html.escape(h["shot_type"] or "unknown")} ({h["play_status"]})</button>')
     maps=[]
     for side in ('far','near'):
         grid=np.zeros((12,8),dtype=np.float32)
@@ -295,8 +298,8 @@ def render_review(video, output, samples, raw, result):
     page=fr'''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tracked pose rally review</title>
 <style>body{{font:17px system-ui;max-width:1050px;margin:24px auto;padding:16px;background:#121a21;color:#eee}}video{{width:100%}}button{{padding:12px;margin:5px;background:#c5e891;color:#172016;border:0;cursor:pointer}}figure{{display:inline-block}}pre{{white-space:pre-wrap;overflow-wrap:anywhere}}summary{{cursor:pointer}}</style>
 <h1>ByteTrack + MediaPipe rally review</h1><p>Source {start:.2f}–{stop:.2f}s. Video controls use clip-relative times; event buttons show source times.</p>
-<p>{len(result['serves'])} serve candidates · {len(result['hits'])} hit candidates · {labeled} experimental BST labels · {len(result['rallies'])} review intervals. Counts are unverified.</p>
-<p>Serve posture can be obscured from behind; a proposed start may rely on opponent readiness and shuttle launch. The current rally ending remains unknown.</p>
+<p>{len(result['serves'])} near-side serve candidates · {sum(h['play_status']=='possible_play' for h in result['hits'])} possible playing hits · {len(result['rallies'])} rally intervals. Counts are unverified.</p>
+<p>New play requires the near player's observed serve posture followed by shuttle launch. Walking, pickup and tossing outside an accepted interval remain outside play. {labeled} experimental BST labels are retained for review; labels alone never start play.</p>
 <video src="/source.mp4" controls playsinline preload="metadata"></video><p id="status">Blue: far player. Yellow: near player. Green: raw TrackNet shuttle proposal.</p>
 <button id="full">Play full clip</button><h2>Current pose measurements</h2><pre id="pose">Play or seek to inspect joint angles. Wrist speed is measured in body heights/second.</pre><div>{''.join(buttons)}</div><h2>Movement occupancy</h2>{''.join(maps)}
 <details><summary>Actual analysis report</summary><pre>{html.escape(json.dumps(result,indent=2))}</pre></details>

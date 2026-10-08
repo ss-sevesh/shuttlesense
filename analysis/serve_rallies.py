@@ -63,7 +63,8 @@ def launch(raw, start, stop, server, receiver):
     return None
 
 
-def boundaries(signals, raw, fps, quiet_s=2., stationary_px=12., setup_hold=.4, allow_occluded_server=False):
+def boundaries(signals, raw, fps, quiet_s=2., stationary_px=12., setup_hold=.4, allow_occluded_server=False, server_side=None):
+    if server_side not in (None,'near','far'): raise ValueError('Invalid required server side')
     if not all(math.isfinite(v) and v > 0 for v in (fps, quiet_s, stationary_px, setup_hold)):
         raise ValueError('Expected positive finite thresholds')
     events, quiet, setups = [], [], []
@@ -108,6 +109,8 @@ def boundaries(signals, raw, fps, quiet_s=2., stationary_px=12., setup_hold=.4, 
         floor_speed = signal.get('floor_motion_heights_per_s',speed)
         prepared = (known and floor_speed is not None and floor_speed < .3 and diagonal(signal['players_court_xy']) and
                     len(poses)==2 and all(p['body_visible'] for p in poses) and any(p['serve_ready'] for p in poses))
+        if prepared and server_side is not None:
+            prepared = poses[['far','near'].index(server_side)]['serve_ready']
         if not prepared:
             prep_start = prep_last = None
             continue
@@ -126,7 +129,8 @@ def boundaries(signals, raw, fps, quiet_s=2., stationary_px=12., setup_hold=.4, 
         stop = min([t+1.5, raw[-1]['time_s'], *stops])-1e-6
         boxes = signal['players_box_xywh']
         options = [(launch(raw,prep_start,stop,boxes[i],boxes[1-i]),i) for i in range(2)
-                   if poses[i]['serve_ready'] or (allow_occluded_server and not poses[i].get('wrists_observed',True))]
+                   if (server_side is None or ['far','near'][i]==server_side) and
+                   (poses[i]['serve_ready'] or (allow_occluded_server and not poses[i].get('wrists_observed',True)))]
         options = [(time,i) for time,i in options if time is not None]
         if not options: continue
         launched, server = min(options)

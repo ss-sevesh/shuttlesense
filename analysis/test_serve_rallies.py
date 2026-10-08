@@ -50,6 +50,14 @@ for s in hidden:
         s['pose'][1] = {'body_visible':True,'serve_ready':False,'wrists_observed':False}
 assert boundaries(hidden,raw,30)['serves']==[]
 assert boundaries(hidden,raw,30,allow_occluded_server=True)['serves'][0]['server_pose_status']=='wrist_occluded_launch_proxy'
+assert boundaries(hidden,raw,30,allow_occluded_server=True,server_side='near')['serves']==[]
+assert boundaries(signals,raw,30,server_side='near')['serves'][0]['server_side']=='near'
+assert boundaries(signals,raw,30,server_side='far')['serves']==[]
+# Walking/tossing can move the shuttle but cannot arm a new point without the near player's posture.
+casual=deepcopy(signals)
+for s in casual:
+    if s['pose']: s['pose'][1]['serve_ready']=False
+assert boundaries(casual,raw,30,server_side='near')['serves']==[]
 # A detection miss breaks stationary evidence; it cannot count toward the two seconds.
 missing = deepcopy(raw); missing[90]['xy_px']=None
 assert boundaries(signals,missing,30)['serves'][0]['previous_end_s'] is None
