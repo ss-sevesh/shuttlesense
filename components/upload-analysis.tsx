@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CourtMap } from "@/components/court-map";
+import { StartShotAnalysis } from "@/components/analysis-job";
+import { AnalysisReview } from "@/components/analysis-review";
+import type { ReviewData } from "@/lib/analysis-review";
 
 type Point = [number, number];
 type Person = { box: [number, number, number, number]; court: Point; side: "near" | "far" };
@@ -19,6 +22,8 @@ export function UploadAnalysis({ file, url, onReady, onError }: { file: File; ur
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [side, setSide] = useState("near");
+  const [full, setFull] = useState<{ data: ReviewData; id: string } | null>(null);
+  const fullReady = useCallback((data: ReviewData, id: string) => setFull({ data, id }), []);
   useEffect(() => () => request.current?.abort(), []);
   useEffect(() => { if (picking) picker.current?.focus(); }, [picking]);
   useEffect(() => {
@@ -69,6 +74,7 @@ export function UploadAnalysis({ file, url, onReady, onError }: { file: File; ur
     } finally { if (!controller.signal.aborted) setBusy(false); }
   }
   const boxes = result && sample >= 0 ? result.samples[sample].people : [];
+  if (full) return <div className="upload-analysis"><div className="review-upload-actions"><button className="text-button" onClick={() => setFull(null)}>Back to Court Setup</button><a className="secondary-button" href={`/review/${full.id}`} target="_blank" rel="noopener">Open Full Review</a></div><AnalysisReview key={full.data.analysisSha256} data={full.data} videoUrl={`/api/analysis/${full.id}/video`}/></div>;
   return <div className="upload-analysis">
     <div className="analysis-layout">
       <div>
@@ -96,7 +102,7 @@ export function UploadAnalysis({ file, url, onReady, onError }: { file: File; ur
         </div>
         <div className="analysis-actions">
           <button className="text-button" disabled={busy} onClick={markCourt}> {corners.length ? "Reset court corners" : "Mark court corners"}</button>
-          <button className="primary-button" disabled={busy} onClick={() => { if (picking) picker.current?.focus(); else if (corners.length !== 4) markCourt(); else void analyze(); }}>{busy ? "Analyzing…" : picking ? `Mark corner ${corners.length+1}/4 on the video` : "Show boxes & heatmap"}</button>
+          <button className="secondary-button" disabled={busy} onClick={() => { if (picking) picker.current?.focus(); else if (corners.length !== 4) markCourt(); else void analyze(); }}>{busy ? "Analyzing…" : picking ? `Mark corner ${corners.length+1}/4 on the video` : "Show boxes & heatmap"}</button>
         </div>
         <p className="analysis-status" role="status">{busy ? "Detecting players in the first 30 seconds. This may take up to 90 seconds…" : picking ? `Click each singles-court corner once, in any order (${corners.length+1}/4). Or use arrow keys and Enter.` : result ? `Ready · ${result.analyzedSeconds.toFixed(1)} seconds analyzed. Play the video to see the boxes.` : corners.length === 4 ? "Court marked. Ready to analyze." : "Mark the four court corners on the first frame, in any order. Use an upright, fixed full-court view."}</p>
         <p className="inline-error" role="alert">{error}</p>
@@ -110,5 +116,6 @@ export function UploadAnalysis({ file, url, onReady, onError }: { file: File; ur
       </section>}
     </div>
     {result && <p className="analysis-status">Demo: boxes sampled at {result.sampleHz.toFixed(0)} Hz; only the first 30 seconds are analyzed. Use a fixed camera and avoid edits or side changes.</p>}
+    <StartShotAnalysis file={file} corners={corners} onMarkCourt={() => { if (picking) picker.current?.focus(); else markCourt(); }} onComplete={fullReady}/>
   </div>;
 }

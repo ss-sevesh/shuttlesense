@@ -1,5 +1,56 @@
 # ShuttleSense session handoff
 
+## Latest continuation: real upload review UI (2026-10-08)
+
+User asked to upload and verify actual camera, shot and rally values, applying
+both `taste_skill.md` and `web_deisgn_guidelines.md`. Preserved green workspace;
+added replay-first real analysis, rather than replacing the fictional demo stats.
+Upload Match -> recording under100MB -> mark four court corners -> Analyze Shots
+& Rallies. Old Show boxes & heatmap still runs its separate short CPU preview.
+
+New components analysis-job/review/camera and lib analysis-review display actual
+boxes, MediaPipe bones, raw shuttle proposals, IDs, joint angles, relative wrist
+speed, player heatmaps, model shot labels/scores/rejection reasons and rally
+candidates. Missing values stay unavailable; null ends are explicitly Unknown.
+Contact/window replay is bounded. Human labels and observed intervals save in
+browser localStorage keyed by analysis fingerprint (source+corners+model reports),
+and Download reviewed JSON preserves model evidence separately from corrections.
+Rally input defaults round to0.001s to match native step validation.
+
+POST /api/analysis persists ignored data/analysis-jobs/<uuid>, launches
+analysis/review_job.py, exposes atomic stage progress and final result via GET,
+and serves only source.mp4 with HTTP ranges. Same-origin writes and loopback
+Host/URL guards handle Next's canonical localhost request.url with127.0.0.1 Host.
+An on-disk process lock prevents parallel full-model jobs across hot reloads.
+Full new clips normalize30FPS, sequentially run ByteTrack/MediaPipe (GPU detector,
+CPU pose), continuous CUDA TrackNet and real CUDA BST. 4K/120FPS limits; no edited
+or rotated/doubles footage support. Local copies remain; no retention cleanup.
+Exact prior original phone hash plus corners within2px reuse real complete
+inference. Stable fingerprint prevents saved labels crossing changed evidence.
+
+Ready full-phone page: http://127.0.0.1:3000/review/b5af3dc2-a4a0-42d0-838a-c84c6a6adae6
+Existing cached job refreshed with accurate unknown reasons/fingerprint. Browser
+upload of the actual full original succeeded;111 contacts/23 labels/7 starts,
+no asserted endings. A fresh uncached6s upload ran all models and returned90 pose
+samples,180 shuttle rows,zero contacts/starts (early non-play); no fake outputs.
+It is data/analysis-jobs/9f08a0e4-988b-4ab4-8cbd-c6cb5f21fbaa (another repeated
+fresh fixture job also succeeded). No new whole320s GPU rerun was needed.
+
+Checks: review_job assertions, Node API guard/range assertions and UI helper
+assertions; actual browser uploads, native video/overlay toggles, manual review
+save/reopen/export, bounded replay, invalid rally bounds, light/dark axe and
+320/768/1440 widths. Existing frontend/CPU upload regressions retained. See
+tests/shot-review.spec.ts and docs/tracked-rallies.md. Screenshots ignored under
+artifacts. All12 distinct UI tests passed (fresh GPU test separately), with two
+full-upload/security tests repeated successfully against production. Typecheck
+and optimized build passed; local spawn tracing explicitly opts out to keep
+Python environments out of the Next bundle. Production app is running on
+127.0.0.1:3000, terminal session53319. Required movement screenshot also saved.
+
+Prototype risks remain: inaccurate hit times, missed shuttle/poses, player ID
+switches, domain-shifted BST, handheld calibration and unobserved rally endings.
+User review is intentionally required. Server/job artifacts stay private.
+
 ## Latest continuation: entire WhatsApp phone video (2026-10-08)
 
 User supplied root `WhatsApp Video 2026-10-08 at 7.09.26 PM.mp4`; processed

@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import { byteRange, jobPath, localRequest } from '../lib/analysis-jobs.ts';
+
+assert.deepEqual(byteRange(null,100),[0,99]);
+assert.deepEqual(byteRange('bytes=10-19',100),[10,19]);
+assert.deepEqual(byteRange('bytes=-10',100),[90,99]);
+assert.deepEqual(byteRange('bytes=99-',100),[99,99]);
+for (const range of ['bytes=100-','bytes=5-2','bytes=-0','bytes=0-1,5-9','invalid']) assert.equal(byteRange(range,100),null);
+for (const id of ['../private','abcd','b5af3dc2-a4a0-42d0-838a-c84c6a6adae6/../../']) assert.throws(()=>jobPath(id));
+assert.ok(jobPath('b5af3dc2-a4a0-42d0-838a-c84c6a6adae6').endsWith('b5af3dc2-a4a0-42d0-838a-c84c6a6adae6'));
+const request=(origin,host='127.0.0.1:3000')=>new Request('http://127.0.0.1:3000/api/analysis',{headers:{host,...(origin?{origin}:{})}});
+assert.equal(localRequest(request('http://127.0.0.1:3000'),true),true);
+assert.equal(localRequest(request('https://example.com'),true),false);
+assert.equal(localRequest(request(null),true),false);
+assert.equal(localRequest(request(null)),true);
+assert.equal(localRequest(request('http://127.0.0.1:3000','evil.example'),true),false);
+const nextRequest=(origin,host='127.0.0.1:3000')=>new Request('http://localhost:3000/api/analysis',{headers:{host,...(origin?{origin}:{})}});
+assert.equal(localRequest(nextRequest('http://127.0.0.1:3000'),true),true);
+assert.equal(localRequest(nextRequest(null)),true);
+assert.equal(localRequest(nextRequest(null),true),false);
+assert.equal(localRequest(nextRequest('http://localhost:3000'),true),false);
+assert.equal(localRequest(nextRequest('https://127.0.0.1:3000'),true),false);
+assert.equal(localRequest(nextRequest('http://127.0.0.1:3001'),true),false);
+assert.equal(localRequest(nextRequest(null,'evil.example:3000')),false);
+assert.equal(localRequest(nextRequest(null,'evil.example@localhost:3000')),false);
+assert.equal(localRequest(nextRequest('http://evil.example:3000','evil.example:3000'),true),false);
+assert.equal(localRequest(nextRequest('http://127.0.0.1:3000.evil.example'),true),false);
+console.log('Job path, local origin and video byte-range checks passed.');

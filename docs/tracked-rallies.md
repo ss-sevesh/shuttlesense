@@ -1,5 +1,39 @@
 # Tracked pose and shot prototype
 
+## Upload and review in the app
+
+Open `http://127.0.0.1:3000`, choose **Upload Match**, select a recording under
+100 MB, mark four court corners and select **Analyze Shots & Rallies**. The
+separate **Show boxes & heatmap** button retains the short CPU preview.
+
+Full analysis runs locally in a persisted job, normalizes the entire recording
+to 30 FPS, then runs ByteTrack/MediaPipe, continuous TrackNet and pretrained BST
+sequentially. The review shows synchronized boxes, landmarks and shuttle
+proposals; player IDs, joint angles and wrist speed; heatmaps; candidate shot
+types, scores and rejection reasons; and possible rally windows. Missing values
+remain unavailable. Scores are not accuracy, and unknown endings stay unknown.
+
+Each contact has bounded replay and a manual label, including **Not a playing
+shot / shuttle toss**. Rally windows accept manually observed start/end times.
+**Save** keeps corrections in this browser without overwriting model evidence;
+**Download reviewed JSON** exports both. Reviews are scoped to the analysis
+fingerprint, including the original recording, calibration and model reports.
+Jobs reopen at `/review/<id>`; uploaded and normalized copies remain in ignored
+`data/analysis-jobs/`. This local prototype has no automatic retention cleanup.
+
+`POST /api/analysis` accepts multipart `video` and `corners` (eight normalized
+numbers), returning a job ID. `GET /api/analysis/<id>` returns progress and the
+completed report; `/video` serves only that job's normalized recording with byte
+ranges. Loopback and same-origin guards restrict access; one full analysis runs
+at a time. Use upright, unedited singles footage. Maximum input is 4K/120 FPS;
+analysis still takes minutes for a full match. Matching the existing full phone
+recording and calibration within two pixels reuses its real saved inference.
+
+Fresh six-second browser upload exercised all pipeline stages on CUDA and
+produced 90 player samples and 180 shuttle rows. It contained no accepted hit
+or rally starts; the UI displays zeros rather than fabricated labels. The full
+320.5-second recording review uses the prior complete inference described below.
+
 This local, fixed-camera singles experiment combines a person detector and
 ByteTrack identities, per-player MediaPipe landmarks, existing raw TrackNet
 observations, and an actual pretrained BST-0 classifier. The discarded Hugging
