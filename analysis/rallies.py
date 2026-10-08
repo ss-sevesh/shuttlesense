@@ -82,15 +82,21 @@ def motion(samples, corners, cuts, max_gap):
             if -.1 <= point[0] <= 1.1 and -.1 <= point[1] <= 1.1:
                 players[int(point[1] >= .5)].append((detection['score'], box))
         boxes = [max(side, key=lambda p: p[0])[1] if side else None for side in players]
-        speed = None
+        speed = floor_speed = None
         if not reset and previous is not None and all(b is not None for b in boxes + previous):
             # ponytail: one highest-score person per court half; replace with identities if crossing/officials matter.
             speed = max(float(np.linalg.norm((b[:2] + b[2:] / 2) - (p[:2] + p[2:] / 2))) /
                         ((b[3] + p[3]) / 2) / (time - last_time) for b, p in zip(boxes, previous))
+            floor_speed = max(float(np.linalg.norm((b[:2]+[b[2]/2,b[3]])-(p[:2]+[p[2]/2,p[3]]))) /
+                              ((b[3]+p[3])/2)/(time-last_time) for b,p in zip(boxes,previous))
         result.append({'time_s': time, 'motion_heights_per_s': speed, 'reset': reset,
+                       'floor_motion_heights_per_s': floor_speed,
                        'reset_at_s': min(edits) if edits else last_time,
                        'court_view': sample.get('court_view', True),
-                       'both_players_visible': all(b is not None for b in boxes)})
+                       'both_players_visible': all(b is not None for b in boxes),
+                       'players_box_xywh': [b.tolist() if b is not None else None for b in boxes],
+                       'players_court_xy': [project(matrix, [b[0]+b[2]/2, b[1]+b[3]], 'near').tolist()
+                                            if b is not None else None for b in boxes]})
         previous, last_time = boxes, time
     return result
 

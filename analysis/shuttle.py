@@ -31,7 +31,9 @@ def location(heatmap, width, height):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('video', type=Path)
-    parser.add_argument('--edits', type=Path, required=True, help='Existing edit-aware rally report')
+    view = parser.add_mutually_exclusive_group(required=True)
+    view.add_argument('--edits', type=Path, help='Existing edit-aware rally report')
+    view.add_argument('--assume-unedited', action='store_true', help='Prototype contract: fixed full-court view without cuts')
     parser.add_argument('--start', type=float, required=True)
     parser.add_argument('--end', type=float, required=True)
     parser.add_argument('--model-dir', type=Path, default=Path('data/models/tracknetv3'))
@@ -39,15 +41,16 @@ def main():
     args = parser.parse_args()
     if not all(math.isfinite(v) for v in (args.start, args.end)) or not 0 <= args.start < args.end or args.end - args.start > 15:
         parser.error('Choose one finite court segment lasting at most 15 seconds')
-    edits = json.loads(args.edits.read_text(encoding='utf-8'))
     video_hash = digest(args.video)
-    if edits['video_sha256'] != video_hash:
-        parser.error('Edit report belongs to a different source')
-    if any(args.start + 1e-6 < e['time_s'] < args.end - 1e-6 for e in edits['video_edits']):
-        parser.error('Clip crosses an edit; choose a single court segment')
-    sampled = [s for s in edits['samples'] if args.start <= s['time_s'] < args.end]
-    if not sampled or not all(s.get('court_view') for s in sampled):
-        parser.error('Clip must lie in a checked court-view interval')
+    if args.edits:
+        edits = json.loads(args.edits.read_text(encoding='utf-8'))
+        if edits['video_sha256'] != video_hash:
+            parser.error('Edit report belongs to a different source')
+        if any(args.start + 1e-6 < e['time_s'] < args.end - 1e-6 for e in edits['video_edits']):
+            parser.error('Clip crosses an edit; choose a single court segment')
+        sampled = [s for s in edits['samples'] if args.start <= s['time_s'] < args.end]
+        if not sampled or not all(s.get('court_view') for s in sampled):
+            parser.error('Clip must lie in a checked court-view interval')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     torch.set_num_threads(4)
     checkpoint_path = args.model_dir / 'TrackNet_best.pt'
@@ -112,7 +115,8 @@ def main():
               'model_sha256': digest(checkpoint_path), 'model_source_sha256': digest(args.model_dir / 'model.py'),
               'official_provenance': json.loads((args.model_dir / 'provenance.json').read_text()),
               'settings': {'start_s': args.start, 'end_s': args.end, 'fps': fps, 'ensemble': 'average',
-                           'heatmap_threshold': .5, 'background': 'sampled segment median', 'inpainting': False},
+                           'heatmap_threshold': .5, 'background': 'sampled segment median', 'inpainting': False,
+                           'input_contract':'fixed_camera_no_edits' if args.assume_unedited else 'edit_checked_clip'},
               'runtime': {'torch': torch.__version__, 'device': str(device),
                           'gpu': torch.cuda.get_device_name(0) if device.type == 'cuda' else None},
               'measurements': {'frames': len(samples), 'visible_proposals': sum(s['xy_px'] is not None for s in samples),

@@ -1,5 +1,39 @@
 # ShuttleSense session handoff
 
+## Latest continuation: serve-first rally prototype (2026-10-08)
+
+User authorized serve-first lookback and will verify results; then explicitly
+chose unedited prototype input and asked to ignore video edits. Added
+analysis/serve_rallies.py using existing YOLOX, TrackNet and RTMPose. No new
+MediaPipe or Random Forest dependency/training. Serve posture is a readiness
+proxy, not legal-service classification. Low floor motion + diagonal placement
++ body/wrist cue held 0.4s, then directional shuttle launch; backward endings need
+a completed 2s stationary-shuttle + low-player-motion window before next setup.
+Misses interrupt that window. Outputs provisional serves/rallies with null
+uncertain ends plus replay buttons for short setup cues and complete input clips.
+
+TrackNet supports --assume-unedited instead of requiring --edits. Serve runner
+defaults to unedited contract with --corners; optional legacy --edits retained.
+Adjacent explicitly unedited reports can join; no stationarity or launch cue
+bridges the inference boundary, but completed historical quiet windows survive.
+No edit inspection on the new prototype path. Person detections must span clips.
+
+Private final data/feasibility/serve-first-unedited-review-01/ examines 56.5s of
+full-court excerpts. One near-side serve at 60.266667s, preparation 60.0–60.6s;
+brief setup cues at 0.2–0.4s and 12.8–13.0s, isolated cue at 61.4s. No 2s ending
+window found, so prior/final ends unknown. No accuracy claims or forced endings.
+TrackNet GPU inputs serve-tracknet-01/02/03 and serve-tracknet-unedited-01.
+Four pose snapshots inspected. No main app changes in this slice.
+
+Private replay server left at http://127.0.0.1:8002/review.html. Restart with:
+python analysis/serve_review.py data/feasibility/serve-first-unedited-review-01/review.html --video videoplayback.mp4 --port 8002
+Helper serves exactly review + source on loopback with byte ranges, preventing
+the earlier file-origin/seek issues. Chrome candidate seek/play/replay/end pause,
+range request and unrelated-file denial passed; no page errors. New sequencing,
+pose proxy, gap/miss/cut/chunk/range tests plus existing rally/shuttle/shared checks
+passed. A split-report integration check reproduced the same serve after joining.
+See docs/serve-first-rallies.md. Next: user's review and then upload integration.
+
 ## Latest continuation: TrackNet retest (2026-10-08)
 
 User requested TrackNet test. Reran source [48.6,53.666667) on CUDA RTX 4060:
