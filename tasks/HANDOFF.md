@@ -1,5 +1,38 @@
 # ShuttleSense session handoff
 
+## Latest continuation: Hugging Face pipeline result (2026-10-08)
+
+User requested an actual Bot-Derpy/racquet-sports-analyzer result before deciding
+whether to use it, then asked for PySceneDetect edit splitting. Downloaded pinned
+HF revision 7cfe0f49afae14fb5361e578fc1fe07f887bc45b into ignored
+data/hf-racquet-baseline; separate data/hf-racquet-env shares existing CUDA torch
+read-only via .pth. YOLO11n-pose + ByteTrack, upstream classical shuttle tracker
+and rally logic ran on source frames [374,1245), 12.466667–41.5s (871 frames).
+One compatibility fix reshapes OpenCV 5 Hough lines to (-1,1,4). Explicitly
+disabled lazy shot classification because upstream CLI flag does not disable it.
+No TrackNet substitution or rally logic tuning.
+
+Actual result: 37.4s CUDA processing; 1 rally at clip-relative 0.70–28.87s;
+359 reported hits, 261 ball reversal events, 756 ball proposals (86.8% proposal
+rate, NOT accuracy), 15 tracked-ID profiles/heatmaps. Visual review detects an
+official as P3 and fragmented far-player IDs; hit counts clearly overcount.
+Upstream winner, playstyle and coaching statements are heuristics, unverified.
+PySceneDetect 0.7.1 AdaptiveDetector scanned all 790.833s: 79 cuts / 80 scenes.
+Selected test clip lies in detected scene [0,41.5); detector missed the known
+12.466667s boundary, so scene detection is not complete replay/edit removal.
+
+Private results: data/feasibility/hf-racquet-test/{analysis_report.json,
+editing_scenes.json,test_provenance.json,analyzed_output.mp4,review-h264.mp4,
+review.html,heatmap_player_*.png}. Local helper scripts data/{prepare-hf-test,
+run-hf-test,detect-hf-edits,build-hf-review}.py retain setup. Review server left
+running at http://127.0.0.1:8003/review.html (session 47902). Restart with:
+python analysis/serve_review.py data/feasibility/hf-racquet-test/review.html
+--video data/feasibility/hf-racquet-test/review-h264.mp4 --port 8003
+Chrome test data/check-hf-review.cjs passed playback, seeking, 15 heatmaps,
+206 byte range, file exposure 404, and no page errors; screenshot inspected at
+artifacts/hf-racquet-review.png. Only short excerpt analyzed by HF; no measured
+accuracy, full-match rally count, production integration or shot classification.
+
 ## Latest continuation: serve-first rally prototype (2026-10-08)
 
 User authorized serve-first lookback and will verify results; then explicitly
