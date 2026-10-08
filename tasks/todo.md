@@ -8,9 +8,37 @@ Feasibility preparation: [evaluation protocol](../docs/evaluation.md), manual an
 
 Prototype shortcut (2026-10-08): coarse real-track movement preview is available at
 `/movement`; precise shoe-contact work is deferred at the user's request. Task 2
-and the later production checkpoints remain open. Next narrow experiment is a
-pretrained TrackNetV3 shuttle-trail replay, followed by upload/replay integration;
-do not spend another session labeling shoes to unblock this prototype.
+and the later production checkpoints remain open. Next is real-video rally review
+without a model, as scoped in `plan.md`. Standalone shuttle trails and further shoe
+labeling are deferred; prioritize useful saved replay over another detector demo.
+
+## Next prototype slice: real-video rally review
+
+This local slice implements Task 7 ahead of the automatic movement pipeline; it
+does not claim the upload/worker or production checkpoints are complete.
+
+### R1: Reopen a real local match
+- [ ] Choose and play a decoded video in a dedicated review page; preserve the existing demo.
+- [ ] Save video and review metadata in browser storage; reopening restores the match, and explicit deletion removes it.
+- [ ] Decode/quota/write errors remain visible without claiming success or discarding previous saved data.
+**Verify:** Choose a real clip, reload and play it again; verify deletion and a failed save. **Depends on:** None. **Scope:** M. **Likely files:** `components/upload-dialog.tsx`, `app/review/page.tsx`, `components/rally-review.tsx`, `lib/local-review.ts`.
+
+### R2: Mark exact rally intervals
+- [ ] Mark start/end from video time, edit/delete boundaries, and reject invalid or overlapping intervals.
+- [ ] Selecting/restarting a rally seeks to its start; replay pauses at its end.
+- [ ] Saved rallies stay ordered and survive reopening.
+**Verify:** Mark three intervals, reject reversed/out-of-range/overlapping values, and check replay boundaries. **Depends on:** R1. **Scope:** S. **Likely files:** `components/rally-review.tsx`, `lib/local-review.ts`.
+
+### R3: Keep real outcomes and observations
+- [ ] Save won/lost/unknown from the selected player's perspective and optional reviewer notes.
+- [ ] Derive counts from saved data; report unknowns separately and exclude them from win percentage, showing no percentage when all are unknown.
+- [ ] Outcome/note edits survive reload, and JSON metadata export matches the saved review.
+**Verify:** Correct an outcome, reload, compare totals/export, and test an all-unknown review. **Depends on:** R2. **Scope:** S. **Likely files:** `components/rally-review.tsx`, `lib/local-review.ts`.
+
+### Checkpoint: Real-video review
+- [ ] Real clip -> three marked rallies -> bounded replay -> outcome correction -> reload -> export works.
+- [ ] Interval checks and focused browser flow pass; existing UI tests, typecheck and production build pass.
+- [ ] No fictional rally data, automatic diagnoses or unverified drill prescriptions appear in the real review.
 
 ### Task 1: Define a representative evaluation set
 - [ ] Collect consented singles footage and annotate rally boundaries, outcomes, player identities, orientation changes, and uncertain events; separate tuning and held-out recordings.

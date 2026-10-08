@@ -34,6 +34,18 @@ used normal sandbox execution without escalation. No Codex restart was needed.
 
 ## Current state
 
+Latest planning update: the user challenged the value of a shuttle overlay and
+requested a plan for the next useful feature. Real-video rally review is now
+next: play/store a local clip, mark/edit start/end intervals, replay only that
+rally, save won/lost/unknown plus reviewer notes, derive real counts, and export
+metadata. No AI model is needed for this slice. Use native video and browser
+IndexedDB, with storage failure/deletion handling and no backend worker yet.
+`tasks/plan.md` contains the design/model rationale; R1-R3 in `tasks/todo.md`
+contain ordered acceptance checks. These are planned, not implemented.
+Standalone TrackNetV3 trails and further RTMPose contact work are deferred.
+Automatic boundary suggestions can later be evaluated against saved intervals;
+shuttle tracking alone is not rally segmentation or a coaching explanation.
+
 Latest terminal fixes (2026-10-08): Windows commands now explicitly use npm.cmd;
 Playwright's automatic server startup also selects npm.cmd on Windows. Screenshot
 saving uses `npm.cmd run screenshot` with the installed Playwright CLI, writing
@@ -293,4 +305,4 @@ After feasibility, build the smallest upload -> queued analysis -> persisted res
 
 ## Resume prompt
 
-> Continue ShuttleSense’s working prototype. Read AGENTS.md first: the sandbox repair shortcut is there, and the user should not have to explain it again. Read tasks/HANDOFF.md and tasks/todo.md. The approximate movement heatmap is complete at /movement using local saved boxes; further shoe-contact experiments are deferred. Preserve the desktop dashboard. Next, test pretrained TrackNetV3 on one short rally from the permission-confirmed local videoplayback.mp4 and inspect a shuttle-trail overlay before upload/replay integration. Do not claim racket detection, exact court landing positions, or coaching from shuttle coordinates alone. Keep footage, weights and analysis results private. Production accuracy gates remain open. Explain results simply, update the handoff, and commit/push completed work.
+> Continue ShuttleSense’s working prototype. Read AGENTS.md first for Windows commands and sandbox repair; do not ask the user to explain them again. Read tasks/HANDOFF.md, tasks/plan.md and R1-R3 in tasks/todo.md. Next feature is real-video rally review: local match storage, marked start/end intervals, bounded replay, saved won/lost/unknown outcomes and reviewer notes, real counts and metadata export. No model is needed initially. TrackNet overlays and precise shoe contacts are deferred. Preserve the existing desktop demo and separate its fictional data from actual review. Production accuracy gates remain open. Keep footage/results private, explain simply, update the handoff and commit/push completed work.

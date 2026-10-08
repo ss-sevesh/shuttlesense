@@ -6,15 +6,78 @@ Turn one phone-recorded badminton match into a short review: a recurring weaknes
 
 Status: the desktop frontend prototype is implemented with fictional sample data and local video preview. The analysis pipeline and full product tasks remain pending. See [README.md](../README.md) for running the prototype; detailed analysis tasks and acceptance criteria live in [todo.md](todo.md).
 
-## Working assumptions
+## Current prototype priority
 
 Prototype scope update (2026-10-08): prioritize a working prototype over precise
 shoe-contact research. `/movement` now shows coarse box-bottom occupancy from the
 saved tracked clip, explicitly approximate and separate from sample coaching.
 Further foot-contact experiments are deferred. This closes the initial heatmap
 preview, not the production accuracy gates or upload-to-analysis integration.
-Next, test pretrained TrackNetV3 on a short rally for a shuttle-trail replay;
-shuttle coordinates alone do not provide player coverage or coaching conclusions.
+Next, deliver real-video rally review as planned below. Standalone shuttle-trail
+replay is deferred: drawing a path alone does not help explain a lost point.
+
+## Next feature: real-video rally review
+
+User-facing outcome: choose a real match, save interesting rallies, replay each
+exact interval, and keep confirmed outcomes and observations after reopening.
+This is the next prototype slice of Task 7. It can ship before automatic tracking
+and processing because user-marked intervals do not depend on models or court
+calibration. The broader production tasks and accuracy gates remain open.
+
+Current code: `UploadDialog` only previews a chosen video inside its modal;
+`MatchReplay` animates an illustrative still, and `lib/demo.ts` supplies fictional
+rallies. Reuse native video playback and existing visual styles. Keep the demo
+separate from actual review data; do not replace real counts with sample values.
+
+### Build order
+
+1. **Real match playback and local save.** Add a dedicated review page with the
+   native player. Store the video once and annotations separately in browser
+   IndexedDB, keyed by a match ID; no upload API or processing worker is needed
+   for this local prototype. Regenerate object URLs when reopening saved video,
+   revoke old URLs, and expose decoding/storage errors. Browser quota or write
+   failure must not be reported as a successful save. Include explicit deletion
+   of the saved local match. Likely files: `components/upload-dialog.tsx`,
+   `app/review/page.tsx`, `components/rally-review.tsx`, `lib/local-review.ts`.
+2. **Mark and replay rallies.** “Mark start” and “Mark end” take timestamps from
+   the actual video. Allow boundary edits and deletion. Require finite
+   `0 <= start < end <= duration`, reject overlapping rally intervals, and keep
+   the timeline ordered. Selecting a rally seeks to its start; playback pauses
+   at its end and restart returns to that start. It does not create another
+   video file. Likely files: `components/rally-review.tsx`, `lib/local-review.ts`.
+3. **Save outcomes and observations.** Outcome is won/lost/unknown from the
+   selected player's perspective. Add an optional user-written observation;
+   label it as a reviewer note. Counts and win percentage use saved outcomes,
+   show unknowns separately and exclude unknowns from the confirmed win-rate
+   denominator. All-unknown reviews have no win percentage. Corrections survive
+   reload. Export interval/outcome/note metadata as JSON; do not silently export
+   the footage. Likely files: `components/rally-review.tsx`, `lib/local-review.ts`.
+
+### Model decision
+
+**No AI model for this feature.** The browser supplies video time and playback;
+the reviewer supplies rally boundaries, outcomes and observations. This gets the
+prototype working on actual footage without waiting for another model experiment.
+YOLOX/MIL remain only the existing approximate movement experiment. RTMPose
+contact work and TrackNet shuttle overlays remain deferred.
+
+Later, if manual marking is the bottleneck, evaluate automatic boundary
+suggestions against saved intervals. TrackNetV3 could supply shuttle-motion cues,
+but it does not itself output rally boundaries, winners, reasons for losing or
+drill prescriptions. No model is selected for those tasks until its actual
+input/output and performance fit the requirement. User corrections must remain.
+
+### Completion check
+
+Choose a real local clip, save three non-overlapping rallies (won/lost/unknown),
+replay only each selected interval, edit a boundary/outcome, reload and confirm
+the original video and annotations return. Verify totals, unknown handling,
+JSON export, deletion and clear storage/decoding errors. One focused browser
+flow plus interval validation checks, typecheck and build is sufficient; keep
+the existing six dashboard checks passing. No new claims about why a point was
+lost or which drill is appropriate are introduced by this feature.
+
+## Working assumptions
 
 - First audience: college and club singles players who already record matches.
 - First success criterion: a player can review the report in five minutes and choose one useful drill supported by replay evidence.
