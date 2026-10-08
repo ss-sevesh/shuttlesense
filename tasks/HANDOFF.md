@@ -1,5 +1,40 @@
 # ShuttleSense session handoff
 
+## Latest continuation: TrackNet on GPU (2026-10-08)
+
+User authorized pretrained shuttle tracking and requested GPU if useful; RTX 4060
+Laptop GPU 8 GB is present. CUDA PyTorch 2.11.0+cu128 installed only into ignored
+`data/tracknet-env`; CUDA tensor operation verified. Official TrackNetV3 source,
+MIT license, provenance and weights downloaded to ignored data/models/tracknetv3.
+GitHub API + Google file-content endpoint worked after raw-host requests timed out.
+Context7 was used for PyTorch checkpoint/inference API verification.
+
+`analysis/download_tracknet.py` prepares official assets;
+`analysis/shuttle.py` runs the raw TrackNet prediction module with uniform
+overlap ensemble on a <=15s edit-bounded court clip, exports proposals + H.264
+overlay/review HTML. InpaintNet intentionally unused so misses remain explicit.
+`analysis/rallies.py --shuttle` optionally adds observed-shuttle motion to starts
+and requires two seconds of missing detections plus low player activity to end.
+Source hashes, timestamps and edit checks retained; invalid/inpainted/inference-gap
+reports cannot establish missing-shuttle evidence.
+
+Final private run `data/feasibility/tracknet-clip-03/`: [48.6,53.666667), 152 frames,
+119 raw proposals, 33 missing; inference 8.900s, decode/background/inference 11.293s.
+Twelve overlay frames inspected. Flight tracking and stationary post-point shuttle
+look plausible but no independent labels/accuracy. Longest miss ~0.533s DURING play.
+Native overlay uses Windows Media Foundation (avoids unavailable OpenH264 DLL).
+Combined result `data/feasibility/rally-tracknet-clip-03/`: [49.2,53.666667], unfinished
+at clip end. Same numeric bounds as motion baseline; no improvement claimed.
+The shuttle stays visible/stationary after the point, so disappearance-only endings
+do not fire. See `docs/shuttle-tracking.md` for setup, rerun commands and provenance.
+
+Shuttle/rally/shared checks pass, including decode rounding, combined cue logic,
+inference gap rejection and no missing-only endings. Chrome checked overlay decode,
+duration/playback and original-source candidate seek/end pause with no page errors.
+No main app changes; private artifacts stay ignored. Generated next-env.d.ts preserved.
+Next: stationary-shuttle + low-player-activity ending cue, tested against manually
+observed point endings and retrieval/quiet-play false starts. Then real review UI.
+
 ## Latest continuation: automatic video-edit handling (2026-10-08)
 
 Implemented `analysis/video_edits.py` and connected it to `analysis/rallies.py`.

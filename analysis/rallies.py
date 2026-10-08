@@ -1,4 +1,4 @@
-"""Provisional rally intervals from court-player motion; no shuttle or winner inference."""
+"""Provisional rallies from court-player motion and optional raw shuttle evidence."""
 import argparse
 import html
 import json
@@ -11,6 +11,51 @@ import numpy as np
 from court import calibrate, project
 from detect import digest
 from video_edits import inspect_video
+
+
+def shuttle_evidence(signals, report):
+    """Attach recent observed shuttle motion; never fill missed detections."""
+    settings = report['settings']
+    if (not all(math.isfinite(settings[k]) for k in ('start_s', 'end_s', 'fps'))
+            or not 0 <= settings['start_s'] < settings['end_s'] or settings['fps'] <= 0
+            or not report['samples']):
+        raise ValueError('Expected a nonempty raw shuttle clip with valid timing')
+    raw, index, last_visible, previous, recent = report['samples'], 0, None, None, []
+    last_time = -1.
+    for sample in raw:
+        time, point = sample['time_s'], sample['xy_px']
+        if sample.get('inpainted', False):
+            raise ValueError('Use raw detections for missing-shuttle evidence, not inpainted positions')
+        if not math.isfinite(time) or time <= last_time or not settings['start_s'] - 1e-6 <= time < settings['end_s']:
+            raise ValueError('Invalid shuttle sample timing')
+        if last_time >= 0 and time - last_time > 1.5 / settings['fps']:
+            raise ValueError('Shuttle inference gaps cannot count as missing detections')
+        if point is not None and (len(point) != 2 or not np.isfinite(point).all()):
+            raise ValueError('Invalid shuttle point')
+        last_time = time
+    if (raw[0]['time_s'] - settings['start_s'] > 1.5 / settings['fps'] or
+            settings['end_s'] - raw[-1]['time_s'] > 1.5 / settings['fps']):
+        raise ValueError('Shuttle samples must cover the declared clip')
+    result = []
+    for signal in signals:
+        time = signal['time_s']
+        if not settings['start_s'] - 1e-6 <= time < settings['end_s']:
+            continue
+        while index < len(raw) and raw[index]['time_s'] <= time + 1e-6:
+            sample = raw[index]
+            point, timestamp = sample['xy_px'], sample['time_s']
+            if point is not None:
+                if previous is not None and timestamp - previous[0] <= 1.5 / settings['fps']:
+                    speed = float(np.linalg.norm(np.array(point) - previous[1])) / (timestamp - previous[0])
+                    if speed >= 50:
+                        recent.append(timestamp)
+                last_visible = timestamp
+            previous = (timestamp, np.array(point)) if point is not None else None
+            index += 1
+        recent = [t for t in recent if t >= time - .2 - 1e-6]
+        result.append({**signal, 'shuttle_moving': bool(recent),
+                       'shuttle_missing_s': time - last_visible if last_visible is not None else time - settings['start_s']})
+    return result
 
 
 def motion(samples, corners, cuts, max_gap):
@@ -73,14 +118,14 @@ def separate(samples, end, threshold=.5, quiet_s=2., min_s=2.):
             # Unknown visibility cannot establish a quiet rally ending.
             quiet_start = None
         elif speed >= threshold:
-            if start is None:
+            if start is None and sample.get('shuttle_moving', True):
                 start = time
             last_active, quiet_start = time, None
         elif start is not None:
             if quiet_start is None:
                 quiet_start = time
-            if time - quiet_start >= quiet_s - 1e-6:
-                finish(last_active, 'low_player_motion')
+            if time - quiet_start >= quiet_s - 1e-6 and sample.get('shuttle_missing_s', math.inf) >= 2 - 1e-6:
+                finish(last_active, 'low_player_motion_and_missing_shuttle' if 'shuttle_missing_s' in sample else 'low_player_motion')
                 start = last_active = quiet_start = None
         previous = time
     finish(end, 'clip_end_unfinished')
@@ -90,6 +135,7 @@ def separate(samples, end, threshold=.5, quiet_s=2., min_s=2.):
 def review_page(video, output, rallies):
     source = html.escape(Path(os.path.relpath(video.resolve(), output.resolve())).as_posix(), quote=True)
     endings = {'camera_cut_or_sample_gap': 'video edit or recording gap',
+               'low_player_motion_and_missing_shuttle': 'players slowed down and shuttle was missing',
                'low_player_motion': 'players slowed down', 'clip_end_unfinished': 'unfinished at clip end'}
     buttons = ''.join(f'<button data-start="{r["start_s"]}" data-end="{r["end_s"]}">'
                       f'Possible rally {i}: {r["start_s"]:.1f}–{r["end_s"]:.1f}s '
@@ -119,6 +165,7 @@ def main():
     parser.add_argument('--detections', type=Path, required=True)
     parser.add_argument('--corners', type=float, nargs=8, required=True)
     parser.add_argument('--cuts', type=float, nargs='*', default=[])
+    parser.add_argument('--shuttle', type=Path, help='Raw TrackNet report; limits suggestions to its clip')
     parser.add_argument('--view-reference', type=float, help='Time showing the fixed full court')
     parser.add_argument('--landmarks', type=int, nargs=12, help='Six visible floor-line intersections, x y')
     parser.add_argument('--cut-change', type=float, default=.055, help='Changed court pixel fraction for an edit')
@@ -147,6 +194,16 @@ def main():
                                            np.array(args.landmarks).reshape(6, 2), args.cut_change)
         signals = motion(samples, corners, args.cuts + [e['time_s'] for e in edits],
                          1.5 / settings['sample_hz'])
+        shuttle = None
+        if args.shuttle:
+            shuttle = json.loads(args.shuttle.read_text(encoding='utf-8'))
+            if shuttle['video_sha256'] != detections['video_sha256']:
+                raise ValueError('Shuttle report belongs to a different source')
+            span = shuttle['settings']
+            if not settings['start_s'] <= span['start_s'] < span['end_s'] <= settings['end_s']:
+                raise ValueError('Shuttle clip must lie inside the person-detection interval')
+            signals = shuttle_evidence(signals, shuttle)
+            settings = {**settings, 'start_s': span['start_s'], 'end_s': span['end_s']}
         rallies = separate(signals, settings['end_s'], args.motion, args.quiet, args.minimum)
         report = {'version': 1, 'kind': 'provisional_motion_rallies',
                   'video_sha256': detections['video_sha256'], 'detections_sha256': digest(args.detections),
@@ -156,7 +213,9 @@ def main():
                                'cut_changed_fraction': args.cut_change},
                   'accuracy': None, 'limitations': ['Player motion is not proof of a rally',
                   'Walking and detector jitter can trigger starts; quiet rallies can split',
-                  'Fixed court view only; edit heuristic needs review; no shuttle evidence or winner inference'],
+                  'Fixed court view only; edit heuristic needs review; no winner inference'],
+                  'shuttle_sha256': digest(args.shuttle) if args.shuttle else None,
+                  'shuttle_rule': {'moving_px_per_s': 50, 'recent_motion_s': .2, 'missing_end_s': 2} if shuttle else None,
                   'video_edits': edits, 'rallies': rallies, 'samples': signals}
         args.output.mkdir(parents=True, exist_ok=False)
         (args.output / 'results.json').write_text(json.dumps(report, indent=2, allow_nan=False), encoding='utf-8')
