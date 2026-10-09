@@ -1,5 +1,40 @@
 # ShuttleSense session handoff
 
+## Latest continuation: near-player contact evidence and local coaching (2026-10-09)
+
+Implemented the complete near-player flow. Independent contact and angle passes
+run over 30 Hz pose/TrackNet observations and join by video, frame, side and ID.
+Contact is an estimated wrist-shuttle distance minimum, not detected racket impact.
+Unresolved candidates have no contact angles and BST abstains. Five exact decoded
+frames feed pinned local Qwen3-VL-2B-Instruct, revision
+89644892e4d85e24eaac8bacfd4f463576704203. No API key or cloud inference is used.
+New review data/overlays, contact evidence and coaching contain only the near
+player; the far selector/stats are hidden. Raw both-player observations remain
+internal BST/rally context. Legacy saved reviews remain readable.
+
+Full supplied 40-second WhatsApp clip tested at 30 FPS, 1202 frames. Private job:
+dd88779c-8a2f-406e-a2a3-ebdf90038b47. Open:
+http://127.0.0.1:3000/review/dd88779c-8a2f-406e-a2a3-ebdf90038b47
+14 near candidates; four estimated frames (160,759,872,1024), ten unresolved.
+All four complete windows have experimental local coaching responses; suggested
+shot labels remain unknown. Approximate assistant-selected court corners are
+saved in ignored artifacts/contact-test-job.json; calibration is not validated.
+Models, footage, job results and screenshots remain ignored/private.
+
+Typecheck/build, eight contact tests, coaching failure/cache/retry test, existing
+BST/pose/shuttle/tracked/review checks and Node review validation passed. Fourteen
+distinct browser tests passed across batches, including a fresh six-second upload,
+near-only review, exact five images, protected frame route, export, responsive
+layouts and accessibility. Final focused three browser tests passed; movement and
+near-contact screenshots refreshed. Production server started on port3000 in
+session34714. See docs/contact-frames.md for technical details and model setup.
+Timing accuracy and coaching quality were not assessed; 2D pose/wrist proxy values
+are estimates, and racket-face angle remains unavailable.
+
+Windows sandbox still fails on locked VCRUNTIME140_1.dll. Saved repair rejected
+this unfamiliar failure; approved external execution was used. Do not claim a
+repair or kill unrelated processes. No global permission/settings changes.
+
 ## Latest continuation: joint-angle shortcut (2026-10-09)
 
 Saved recording rows now say "View joint angles" and open /review/<id>#camera-values.

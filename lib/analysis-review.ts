@@ -1,7 +1,9 @@
 export type Side = "near" | "far";
 export type Measurements = { leftElbow: number | null; rightElbow: number | null; leftKnee: number | null; rightKnee: number | null; wristSpeed: number | null };
 export type ReviewPerson = { trackId: number; side: Side; box: [number, number, number, number]; court: [number, number]; landmarks: [number, number][]; scores: number[]; poseDetected: boolean; measurements?: Measurements };
-export type ReviewShot = { id: number; time: number; side: Side; trackId: number; predictedType: string | null; rawType: string | null; score: number | null; status: string; playStatus: string; reason: string };
+export type ContactEvidence = { method: "wrist_distance"; status: string; frame: number | null; seedFrame: number; wrist: "left" | "right"; distancePx: number | null; distanceHeights: number | null; windowFrames: [number, number]; frames: (number | null)[]; measurements: { elbow: number | null; armExtension: number | null; bodyLean: number | null; armElevation: number | null; racketFace: null } };
+export type ShotCoaching = { status: "experimental" | "unavailable"; model?: string; revision?: string; evidenceSha256?: string; reason?: string; answer?: { shotType: string; visibleEvidence: string; uncertainty: string; coaching: string } };
+export type ReviewShot = { id: number; time: number; side: Side; trackId: number; predictedType: string | null; rawType: string | null; score: number | null; status: string; playStatus: string; reason: string; contact?: ContactEvidence; coaching?: ShotCoaching | null };
 export type ReviewRally = { id: number; start: number; end: number | null; reviewStop: number; hitCandidates: number; startStatus: string; endStatus: string };
 export type ReviewData = {
   videoSha256: string; analysisSha256: string; fileName: string; duration: number; width: number; height: number; fps: number; cached: boolean; poseSampleHz: number;
@@ -10,6 +12,8 @@ export type ReviewData = {
   shots: ReviewShot[]; rallies: ReviewRally[];
   metrics: { sampleCount: number; nearTracked: number; farTracked: number; nearPoses: number; farPoses: number; shuttleFrames: number; shuttleDetected: number };
   limitations: string[];
+  pipelineVersion?: string;
+  focusSide?: Side | null;
 };
 export const shotTypes = ["smash", "clear", "drop", "lift", "drive", "net shot", "defensive net shot", "push", "net kill", "crosscourt net shot", "short serve", "long serve"] as const;
 export const canonicalShot = (value: string) => value.replace(/_/g," ").replace(/netshot/g,"net shot").replace(/netkill/g,"net kill");
@@ -28,7 +32,27 @@ export function isReviewData(value: unknown): value is ReviewData {
   const data = value as Partial<ReviewData>;
   return typeof data.videoSha256 === "string" && /^[a-f0-9]{64}$/i.test(data.videoSha256) && typeof data.analysisSha256 === "string" && /^[a-f0-9]{64}$/i.test(data.analysisSha256) && typeof data.fileName === "string" &&
     [data.duration,data.width,data.height,data.fps,data.poseSampleHz].every(value => typeof value === "number" && Number.isFinite(value) && value > 0) &&
-    Array.isArray(data.samples) && Array.isArray(data.shuttle) && Array.isArray(data.shots) && Array.isArray(data.rallies) && Array.isArray(data.limitations) && !!data.metrics && typeof data.metrics === "object";
+    Array.isArray(data.samples) && Array.isArray(data.shuttle) && Array.isArray(data.shots) && data.shots.every(shot => shot && typeof shot === "object" && validContact(shot.contact, data.duration!, data.fps!) && validCoaching(shot.coaching)) && Array.isArray(data.rallies) && Array.isArray(data.limitations) && !!data.metrics && typeof data.metrics === "object";
+}
+function validCoaching(coaching: ShotCoaching | null | undefined) {
+  if (coaching == null) return true;
+  if (typeof coaching !== "object") return false;
+  if (coaching.status === "unavailable") return typeof coaching.reason === "string";
+  const answer = coaching.answer;
+  return coaching.status === "experimental" && !!answer && typeof answer === "object" &&
+    [...shotTypes, "unknown"].includes(answer.shotType) && [answer.visibleEvidence, answer.uncertainty, answer.coaching].every(value => typeof value === "string" && value.length > 0 && value.length <= 2000);
+}
+function validContact(contact: ContactEvidence | undefined, duration: number, fps: number) {
+  if (contact === undefined) return true;
+  if (!contact || typeof contact !== "object") return false;
+  const frame = (value: unknown) => Number.isSafeInteger(value) && (value as number) >= 0 && (value as number) < Math.round(duration * fps);
+  const angle = (value: unknown) => value === null || (typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 180);
+  return contact.method === "wrist_distance" && typeof contact.status === "string" && ["left", "right"].includes(contact.wrist) &&
+    (contact.status === "estimated" ? frame(contact.frame) : contact.frame === null) && frame(contact.seedFrame) &&
+    [contact.distancePx, contact.distanceHeights].every(value => value === null || (typeof value === "number" && Number.isFinite(value) && value >= 0)) &&
+    Array.isArray(contact.windowFrames) && contact.windowFrames.length === 2 && contact.windowFrames.every(Number.isSafeInteger) &&
+    Array.isArray(contact.frames) && (contact.frame === null ? contact.frames.length === 0 : contact.frames.length === 5 && contact.frames.every((value, index) => value === null ? !frame(contact.frame! + index - 2) : frame(value) && value === contact.frame! + index - 2)) &&
+    !!contact.measurements && [contact.measurements.elbow, contact.measurements.armExtension, contact.measurements.bodyLean, contact.measurements.armElevation].every(angle) && contact.measurements.racketFace === null;
 }
 export function nearestIndex(rows: { time: number }[], time: number, tolerance: number) {
   let low = 0, high = rows.length;

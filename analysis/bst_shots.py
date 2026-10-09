@@ -160,6 +160,10 @@ def classify_hits(poses_report, shuttle_report, hits, *, model_dir=Path('data/bs
         result = {**hit, 'window_start_s': start, 'window_end_s': end,
                   'shot_type': 'unknown', 'shot_status': 'insufficient_tracking',
                   'confidence': None}
+        if hit.get('contact', {}).get('status', 'estimated') != 'estimated':
+            result['shot_status'] = 'unresolved_contact'
+            shots.append(result)
+            continue
         if inputs is not None:
             features, positions, shuttle, length, quality = inputs
             result['input_quality'] = quality

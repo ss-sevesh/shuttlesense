@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { nearestIndex, validInterval, parseReviews, reviewStorageKey, reviewReason, canonicalShot } from '../lib/analysis-review.ts';
+import { nearestIndex, validInterval, parseReviews, reviewStorageKey, reviewReason, canonicalShot, isReviewData } from '../lib/analysis-review.ts';
 
 assert.equal(nearestIndex([], 0, .1), -1);
 assert.equal(nearestIndex([{time:0},{time:1}], .95, .1), 1);
@@ -17,3 +17,12 @@ assert.match(reviewReason('Model score was below acceptance threshold.'),/score.
 assert.match(reviewReason('Model predicted an unknown shot class.'),/unknown shot class/);
 assert.match(reviewReason('The predicted player side did not match the contact.'),/player side/);
 console.log('Review synchronization, interval validation, reasons and stored corrections passed.');
+const contact = {method:'wrist_distance',status:'estimated',frame:5,seedFrame:4,wrist:'left',distancePx:3,distanceHeights:.03,windowFrames:[0,10],frames:[3,4,5,6,7],measurements:{elbow:150,armExtension:150,bodyLean:30,armElevation:90,racketFace:null}};
+const report = {videoSha256:'a'.repeat(64),analysisSha256:'b'.repeat(64),fileName:'test.mp4',duration:1,width:32,height:32,fps:30,poseSampleHz:30,samples:[],shuttle:[],shots:[{contact}],rallies:[],limitations:[],metrics:{}};
+assert.equal(isReviewData(report),true);
+assert.equal(isReviewData({...report,shots:[{}]}),true); // Saved legacy reports remain readable.
+for (const invalid of [{...contact,frame:NaN},{...contact,frames:[3,4,9,6,7]},{...contact,measurements:{...contact.measurements,elbow:Infinity}},{...contact,status:'identity_switch'}]) {
+  assert.equal(isReviewData({...report,shots:[{contact:invalid}]}),false);
+}
+assert.equal(isReviewData({...report,shots:[null]}),false);
+assert.equal(isReviewData({...report,shots:[{contact,coaching:{status:'experimental',answer:{shotType:'smash',visibleEvidence:{},uncertainty:'unknown',coaching:'Practice'}}}]}),false);

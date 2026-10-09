@@ -54,3 +54,21 @@ if (CACHE/'players.json').exists():
     assert 'measurements' in data['samples'][0]['people'][0]
     json.dumps(data,allow_nan=False)
 print('Review job ROI, atomic JSON and available real-report adaptation passed.')
+
+manifest = Path('artifacts/contact-test-job.json')
+if manifest.exists():
+    directory = Path('data/analysis-jobs') / json.loads(manifest.read_text())['id']
+    if (directory/'result.json').exists():
+        data = json.loads((directory/'result.json').read_text(encoding='utf-8'))
+        assert data['focusSide']=='near' and data['poseSampleHz']==data['fps']==30
+        assert all(p['side']=='near' for sample in data['samples'] for p in sample['people'])
+        assert all(shot['side']=='near' for shot in data['shots'])
+        for shot in data['shots']:
+            contact = shot['contact']
+            if contact['status']!='estimated':
+                assert shot['status']=='unresolved_contact' and contact['measurements']['elbow'] is None
+            else:
+                assert shot['time']==contact['frame']/data['fps']
+                assert contact['frames']==list(range(contact['frame']-2,contact['frame']+3))
+                assert all((directory/'frames'/f'{frame}.jpg').is_file() for frame in contact['frames'])
+        print('Available real near-only contact adaptation and image references passed.')

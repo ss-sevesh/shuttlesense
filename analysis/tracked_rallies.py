@@ -4,6 +4,7 @@ import base64
 import html
 import json
 import math
+from bisect import bisect_left, bisect_right
 from pathlib import Path
 
 import cv2
@@ -132,12 +133,14 @@ def tracked_signals(samples, raw, fps):
 def hit_candidates(samples, raw, fps):
     """A local wrist-motion peak near an observed shuttle, with temporal suppression."""
     candidates = []
+    times = [s['time_s'] for s in raw]
     for i in range(1,len(samples)-1):
         before, now, after = samples[i-1:i+2]
         dt1, dt2 = now['time_s']-before['time_s'], after['time_s']-now['time_s']
         if not 0 < dt1 <= .15 or not 0 < dt2 <= .15: continue
-        nearby = [s for s in raw if abs(s['time_s']-now['time_s']) <= 1.5/fps and s['xy_px'] is not None]
-        if not nearby or any(s.get('chunk_start') for s in raw if abs(s['time_s']-now['time_s']) <= .15): continue
+        t = now['time_s']
+        nearby = [s for s in raw[bisect_left(times,t-1.5/fps):bisect_right(times,t+1.5/fps)] if s['xy_px'] is not None]
+        if not nearby or any(s.get('chunk_start') for s in raw[bisect_left(times,t-.15):bisect_right(times,t+.15)]): continue
         prior = {p['track_id']:p for p in before['players']}
         later = {p['track_id']:p for p in after['players']}
         for p in now['players']:
@@ -213,7 +216,11 @@ def main():
     samples = [s for s in poses['samples'] if start-1e-6 <= s['time_s'] < stop]
     if len(samples)<3: raise ValueError('At least three overlapping pose samples required')
     raw, fps = shuttle['samples'], shuttle['settings']['fps']
-    hits = hit_candidates(samples,raw,fps)
+    if poses['settings']['sample_hz'] == fps:
+        from contact_frames import contact_report, angle_report, join_angles
+        hits = join_angles(contact_report(poses,shuttle), angle_report(poses))['hits']
+    else:
+        hits = hit_candidates(samples,raw,fps)
     cues = boundaries(tracked_signals(samples,raw,fps),raw,fps,server_side='near',require_diagonal=False)
     shot_model = None
     if args.shots:
@@ -232,7 +239,7 @@ def main():
     for hit in hits:
         hit['play_status']=play_status(hit['time_s'],rallies)
     result = {'kind':'tracked_pose_rally_candidates','video_sha256':source_hash,
-        'settings':{'start_s':start,'end_s':stop,'fps':fps,'hit_suppression_s':.25,'required_server_side':'near','require_observed_serve_posture':True,'require_diagonal_service_positions':False},
+        'settings':{'start_s':start,'end_s':stop,'fps':fps,'hit_suppression_s':.25,'contact_method':'wrist_distance' if poses['settings']['sample_hz']==fps else 'legacy_wrist_peaks','required_server_side':'near','require_observed_serve_posture':True,'require_diagonal_service_positions':False},
         'pose_report_sha256':digest(args.poses),'shuttle_report_sha256':digest(args.shuttle),
         'shot_report_sha256':digest(args.shots) if args.shots else None,
         'shot_model':shot_model,

@@ -23,6 +23,57 @@ test('saved recording is discoverable from the workspace without uploading again
   await expect(page.locator('.review-camera video')).toHaveAttribute('src', `/api/analysis/${id}/video`);
 });
 
+test('near-player contact evidence loads exact frames and exports separate coaching', async ({ page, request }) => {
+  test.skip(!existsSync('artifacts/contact-test-job.json'), 'Requires a completed private contact test');
+  const { id } = JSON.parse(readFileSync('artifacts/contact-test-job.json', 'utf8'));
+  const job = await (await request.get(`/api/analysis/${id}`)).json();
+  test.skip(job.status !== 'complete', 'Full contact test is still running');
+  expect(job.result.focusSide).toBe('near');
+  expect(job.result.pipelineVersion).toBe('wrist-distance-v1');
+  expect(job.result.poseSampleHz).toBe(30);
+  expect(job.result.shots.every((shot: { side: string }) => shot.side === 'near')).toBe(true);
+  const shot = job.result.shots.find((shot: { contact: { status: string } }) => shot.contact.status === 'estimated');
+  expect(shot, 'The real test needs at least one estimated near contact').toBeTruthy();
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto(`/review/${id}`);
+  await expect(page.locator('.analysis-review')).toBeVisible();
+  await expect(page.locator('#review-side')).toHaveCount(0);
+  await expect(page.locator('.review-quality')).not.toContainText('Far tracking');
+  expect(job.result.samples.every((sample: { people: { side: string }[] }) => sample.people.every(person => person.side === 'near'))).toBe(true);
+  while (!(await page.getByRole('button', { name: new RegExp(`^Review contact ${shot.id} at`) }).count())) {
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+  }
+  await page.getByRole('button', { name: new RegExp(`^Review contact ${shot.id} at`) }).click();
+  const evidence = page.getByRole('region', { name: 'Contact frame evidence' });
+  await expect(evidence).toContainText(`Frame ${shot.contact.frame}`);
+  await expect(evidence).toContainText('Local vision coaching');
+  await expect(evidence.locator('img')).toHaveCount(5);
+  for (const image of await evidence.locator('img').all()) await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(832);
+  const frame = shot.contact.frame;
+  expect((await request.get(`/api/analysis/${id}/frames/${frame}`)).headers()['content-type']).toBe('image/jpeg');
+  expect((await request.get(`/api/analysis/${id}/frames/99999999`)).status()).toBe(404);
+  expect((await request.get(`/api/analysis/${id}/frames/01`)).status()).toBe(400);
+  expect((await request.get(`/api/analysis/${id}/frames/${frame}`, { headers: { origin: 'https://example.com' } })).status()).toBe(403);
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download reviewed JSON' }).click();
+  const exported = JSON.parse(readFileSync((await (await download).path())!, 'utf8'));
+  expect(exported.modelShots.find((item: { id: number }) => item.id === shot.id).contact.frame).toBe(frame);
+  expect(exported.modelShots.find((item: { id: number }) => item.id === shot.id).coaching).toEqual(shot.coaching);
+  for (const width of [320, 768, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme });
+    expect((await new AxeBuilder({ page }).include('.analysis-review').analyze()).violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => ({ target: n.target, reason: n.failureSummary })) }))).toEqual([]);
+  }
+  await page.screenshot({ path: 'artifacts/near-contact-evidence.png', fullPage: true });
+  expect(errors).toEqual([]);
+});
+
 async function upload(page: Page, file: string) {
   await page.goto('/');
   await page.getByRole('button', { name: 'Upload Match', exact: true }).click();
@@ -48,7 +99,9 @@ test('actual full recording supports replay, visible values and saved human revi
   const errors: string[] = [];
   await page.emulateMedia({ reducedMotion:'reduce' });
   page.on('pageerror', error => errors.push(error.message));
-  const id = await upload(page, 'WhatsApp Video 2026-10-08 at 7.09.26 PM.mp4');
+  const id = 'b5af3dc2-a4a0-42d0-838a-c84c6a6adae6';
+  test.skip(!existsSync(`data/analysis-jobs/${id}/result.json`), 'Requires the saved full recording');
+  await page.goto(`/review/${id}`);
   await expect(page.locator('.analysis-review')).toBeVisible({ timeout: 60_000 });
   const job = await (await request.get(`/api/analysis/${id}`)).json();
   expect(job.result.cached).toBe(true);
@@ -75,7 +128,7 @@ test('actual full recording supports replay, visible values and saved human revi
   await page.getByRole('button', { name:'Replay this contact', exact:true }).click();
   await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThan(12.7);
   await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
-  expect((await new AxeBuilder({ page }).include('.upload-modal').analyze()).violations.map(v => v.id)).toEqual([]);
+  expect((await new AxeBuilder({ page }).include('.analysis-review').analyze()).violations.map(v => v.id)).toEqual([]);
   const original = job.result.shots[0];
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name:'Download reviewed JSON' }).click();
@@ -120,7 +173,7 @@ test('fresh six-second upload runs the actual GPU pipeline', async ({ page, requ
   expect(job.result.cached).toBe(false);
   expect(job.result.duration).toBeCloseTo(6,1);
   expect(job.result.metrics.shuttleFrames).toBe(180);
-  expect(job.result.metrics.sampleCount).toBe(90);
+  expect(job.result.metrics.sampleCount).toBe(180);
   await expect(page.locator('.review-summary > div').last().locator('dd')).toHaveText('00 rally windows reviewed');
   await page.screenshot({path:'artifacts/fresh-upload-review.png',fullPage:true});
 });

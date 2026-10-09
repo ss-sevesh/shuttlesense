@@ -15,6 +15,7 @@ from upload_demo import ordered_corners
 
 ROOT = Path(__file__).resolve().parents[1]
 CACHE = ROOT / 'data/feasibility/whatsapp-rallies-01'
+PIPELINE_VERSION = 'wrist-distance-v1'
 
 
 def write_json(path, value):
@@ -54,6 +55,7 @@ def far_roi(corners, width, height):
 
 
 def shot_reason(hit):
+    if hit['shot_status']=='unresolved_contact': return 'Wrist-distance contact timing could not be resolved.'
     if hit['shot_status']=='experimental_prediction': return 'Experimental prediction; review the clip.'
     if hit['shot_status']=='identity_switch': return 'Player identity changed around this contact.'
     if hit['shot_status']=='insufficient_tracking': return 'Tracking or body landmarks were missing.'
@@ -74,6 +76,7 @@ def review_data(poses, shuttle, fused, file_name, cached, original_hash, marked_
     for sample, measured in zip(poses['samples'], measures):
         people = []
         for p in sample['players']:
+            if fused.get('focus_side') == 'near' and p['side'] != 'near': continue
             m = next((m for m in measured['players'] if m['track_id']==p['track_id']), {})
             people.append({'trackId': p['track_id'], 'side': p['side'],
                 'box': (np.asarray(p['box_xywh'])/[width,height,width,height]).tolist(),
@@ -94,12 +97,16 @@ def review_data(poses, shuttle, fused, file_name, cached, original_hash, marked_
         'shots': [{'id': i+1, 'time': h['time_s'], 'side':h['side'], 'trackId':h['track_id'],
             'predictedType':h.get('shot_type') if h.get('shot_type') not in (None,'unknown') else None,
             'rawType':h.get('raw_shot_type'), 'score':h.get('confidence'), 'status':h['shot_status'],
-            'playStatus':h['play_status'], 'reason':shot_reason(h)} for i,h in enumerate(fused['hits'])],
+            'playStatus':h['play_status'], 'reason':shot_reason(h),
+            **({'contact':h['contact'], 'coaching':h.get('coaching')} if 'contact' in h else {})} for i,h in enumerate(fused['hits'])],
+        'pipelineVersion':fused.get('pipeline_version', 'legacy-wrist-peaks'),
+        'focusSide':fused.get('focus_side'),
         'rallies': [{'id':i+1,'start':r['start_s'],'end':r['end_s'],'reviewStop':r['review_stop_s'],
             'hitCandidates':r['hit_candidates'],'startStatus':r['start_status'],'endStatus':r['end_status']} for i,r in enumerate(fused['rallies'])],
         'metrics': metrics, 'limitations': ['Predictions and contact candidates need human verification.',
             'Missing shuttle detections and changing player identities leave unknown results.',
-            'A model score is not measured accuracy. Pose angles are image measurements.',
+            'A model score is not measured accuracy. Pose angles are image measurements. Wrist distance estimates contact, not racket impact.',
+            'Racket-face angle is unavailable. Local vision coaching is experimental and may be incorrect.',
             'Unknown rally endings may include walking, pickup or tossing. Near-side observed serve posture and launch are required.',
             'Fixed, upright singles-court footage without edits is assumed; court calibration and handheld motion are unverified.']}
 
@@ -137,7 +144,7 @@ def main():
         metadata = inspect(original, request['corners'])
         with original.open('rb') as source: original_hash=hashlib.file_digest(source,'sha256').hexdigest()
         provenance=json.loads((CACHE/'input_provenance.json').read_text(encoding='utf-8')) if (CACHE/'input_provenance.json').exists() else {}
-        cached=bool(original_hash==provenance.get('original_sha256') and np.max(np.abs(np.asarray(metadata['corners'])-np.asarray(provenance['court_corners_px'])))<=2)
+        cached=bool(provenance.get('pipeline_version') == PIPELINE_VERSION and original_hash==provenance.get('original_sha256') and np.max(np.abs(np.asarray(metadata['corners'])-np.asarray(provenance['court_corners_px'])))<=2)
         if cached:
             stage('Loading matching full-video model results', 85)
             shutil.copyfile(CACHE/'input.mp4',directory/'source.mp4')
@@ -148,20 +155,42 @@ def main():
             run(['ffmpeg','-hide_banner','-loglevel','error','-i',str(original),'-vf','fps=30','-c:v','libx264','-preset','veryfast','-crf','21','-an','-movflags','+faststart',str(directory/'source.mp4')], 'Normalizing complete video', 4, 10)
             info=inspect(directory/'source.mp4', request['corners'])
             roi=far_roi(info['corners'],info['width'],info['height'])
-            run([str(ROOT/'data/player-pose-env/Scripts/python.exe'),'analysis/player_pose.py',str(directory/'source.mp4'),'--end',str(info['duration']),'--sample-hz','15','--imgsz','640','--tracker','analysis/bytetrack-phone.yaml','--allow-reacquisition','--far-roi',*map(str,roi),'--corners',*map(str,np.asarray(info['corners']).flatten()),'--output',str(directory/'players.json')], 'Tracking players and MediaPipe poses', 10, 52)
+            run([str(ROOT/'data/player-pose-env/Scripts/python.exe'),'analysis/player_pose.py',str(directory/'source.mp4'),'--end',str(info['duration']),'--sample-hz','30','--imgsz','640','--tracker','analysis/bytetrack-phone.yaml','--allow-reacquisition','--far-roi',*map(str,roi),'--corners',*map(str,np.asarray(info['corners']).flatten()),'--output',str(directory/'players.json')], 'Tracking players and MediaPipe poses', 10, 52)
             run([str(ROOT/'data/tracknet-env/Scripts/python.exe'),'analysis/shuttle_stream.py',str(directory/'source.mp4'),'--assume-unedited','--output',str(directory/'shuttle.json')], 'Detecting shuttle with TrackNet on GPU', 52, 93)
-            from tracked_rallies import validate_observations, hit_candidates, tracked_signals, rally_intervals, play_status
+            from tracked_rallies import validate_observations, tracked_signals, rally_intervals, play_status
+            from contact_frames import contact_report, angle_report, join_angles
             from serve_rallies import boundaries
             poses=json.loads((directory/'players.json').read_text(encoding='utf-8')); shuttle=json.loads((directory/'shuttle.json').read_text(encoding='utf-8'))
             validate_observations(poses,shuttle)
-            hits=hit_candidates(poses['samples'],shuttle['samples'],30)
+            stage('Selecting contact frames and calculating independent angle report', 93)
+            contacts=contact_report(poses,shuttle)
+            angles=angle_report(poses)
+            write_json(directory/'contacts.json',contacts)
+            write_json(directory/'angles.json',angles)
+            hits=join_angles(contacts,angles)['hits']
             write_json(directory/'hits.json',{'video_sha256':poses['video_sha256'],'hits':hits})
             run([str(ROOT/'data/hf-racquet-env/Scripts/python.exe'),'analysis/bst_shots.py','--poses',str(directory/'players.json'),'--shuttle',str(directory/'shuttle.json'),'--hits',str(directory/'hits.json'),'--output',str(directory/'shots.json')], 'Classifying candidate shots with BST', 93, 97)
             classified=json.loads((directory/'shots.json').read_text(encoding='utf-8'))['shots']
             cues=boundaries(tracked_signals(poses['samples'],shuttle['samples'],30),shuttle['samples'],30,server_side='near',require_diagonal=False)
             rallies=rally_intervals(cues,classified,0,info['duration'])
             for hit in classified: hit['play_status']=play_status(hit['time_s'],rallies)
-            fused={'video_sha256':poses['video_sha256'],'hits':classified,'rallies':rallies}
+            fused={'video_sha256':poses['video_sha256'],'pipeline_version':PIPELINE_VERSION,'focus_side':'near','fps':poses['fps'],'hits':classified,'rallies':rallies}
+            write_json(directory/'fused.json',fused)
+        from shot_coach import extract_frames
+        stage('Extracting five-frame contact evidence', 97)
+        extract_frames(directory/'source.mp4',fused['hits'],directory/'frames')
+        write_json(directory/'fused.json',fused)
+        stage('Generating local Hugging Face shot coaching', 97)
+        with (directory/'worker.log').open('a',encoding='utf-8') as log:
+            try:
+                subprocess.run([str(ROOT/'data/hf-racquet-env/Scripts/python.exe'),'analysis/shot_coach.py',str(directory)],
+                    cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=120+180*len(fused['hits']),
+                    creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+            except (subprocess.SubprocessError, OSError) as error:
+                log.write(f'Local coaching unavailable: {type(error).__name__}\n')
+            fused=json.loads((directory/'fused.json').read_text(encoding='utf-8'))
+            for hit in fused['hits']:
+                hit.setdefault('coaching',{'status':'unavailable','reason':'Local vision worker did not complete. See worker.log.'})
             write_json(directory/'fused.json',fused)
         stage('Preparing values for review', 98)
         with (directory/'source.mp4').open('rb') as source:
@@ -169,7 +198,7 @@ def main():
                 raise ValueError('The normalized video does not match its model reports. Rerun analysis.')
         result=review_data(poses,shuttle,fused,request['fileName'],cached,original_hash,metadata['corners'])
         write_json(directory/'result.json',result)
-        write_json(directory/'provenance.json',{'originalSha256':original_hash,'normalizedSha256':result['videoSha256'],'cached':cached,'cornersPx':metadata['corners'],'cachedCornerTolerancePx':2 if cached else None})
+        write_json(directory/'provenance.json',{'originalSha256':original_hash,'normalizedSha256':result['videoSha256'],'pipelineVersion':PIPELINE_VERSION,'cached':cached,'cornersPx':metadata['corners'],'cachedCornerTolerancePx':2 if cached else None})
         write_json(directory/'status.json',{'id':directory.name,'status':'complete','stage':'Ready for your verification','progress':100})
     except Exception as error:
         write_json(directory/'status.json',{'id':directory.name,'status':'failed','stage':'Analysis failed','progress':0,'error':str(error)})
