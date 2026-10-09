@@ -29,7 +29,8 @@ export async function readStatus(id: string) {
   if (status.status === 'complete') status.result = JSON.parse(await readFile(join(directory, 'result.json'), 'utf8'));
   return status;
 }
-export async function startJob(file: File, corners: number[]) {
+export async function acquireAnalysisLock() {
+  // shortcut: stale recovery assumes sequential local requests; use atomic recovery before concurrent/public serving.
   await mkdir(jobsRoot, { recursive: true });
   try {
     const active = JSON.parse(await readFile(lockPath, 'utf8'));
@@ -42,6 +43,10 @@ export async function startJob(file: File, corners: number[]) {
     if (!(error instanceof Error) || !('code' in error) || error.code !== 'ENOENT') throw error;
   }
   const lock = await open(lockPath, 'wx');
+  return lock;
+}
+export async function startJob(file: File, corners: number[]) {
+  const lock = await acquireAnalysisLock();
   await lock.writeFile(JSON.stringify({ pid: process.pid }));
   await lock.close();
   let id: string | undefined;

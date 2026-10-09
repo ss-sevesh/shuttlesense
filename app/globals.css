@@ -404,3 +404,5 @@ strong { font-weight:600; }
 .contact-frames figure { margin: 0; min-width: 0; }
 .contact-frames img { display: block; width: 100%; height: auto; }
 .contact-frames figcaption { font-size: .75rem; padding-block: .35rem; }
+.landing-coaching form { display: grid; gap: .7rem; margin-block: 1rem; }
+.landing-coaching input { width: 100%; min-width: 0; }

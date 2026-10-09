@@ -1,5 +1,42 @@
 # ShuttleSense session handoff
 
+## Before-landing LLM evidence feature (2026-10-09)
+
+User explicitly requested frames BEFORE shuttle-ground landing sent to LLM for
+near-player pose/position and alternative-action coaching. Clarified this is a
+change in LLM evidence, not automatic contact detection. Added saved-review panel
+with landing time / replay time / send to AI,5exact prior frames spread across1s,
+pose measurements/court coordinates, answer and separate JSON download. Anchor
+is user-selected, not confirmed ground impact. Same pinned local Qwen model,
+landing-specific prompt/hash cache, unknown shotType and cautious advice. Existing
+contact reports stay intact; outputs ignored under job/landing/<frame>.
+
+New loopback-only landing POST/GET endpoint validates bounded request, UUID and
+integer frame, source/analysis identity and image whitelist. Reused stale-worker
+lock recovery via acquireAnalysisLock; initial test found dead PID3308 lock from
+job3a010dac-0c4f-4097-90fb-e76e2ad8a1ef; no unrelated process killed or job deleted.
+Original job status is not rewritten. Shared lock retains inherited narrow
+simultaneous stale-recovery race; local single-user prototype only.
+
+Three landing unit tests, expanded coaching test,8contact tests,review adaptation
+and typecheck passed. Real GPU request at10s test anchor (not ground truth):
+frames270,278,285,292,299; Qwen34.6s,HTTP44s,cachedrepeat8.5s. Independent audit
+artifacts/audit_landing_frames.py matched all5JPEGs to exact source decodes.
+Focused browser test passed57s:privacy/invalid inputs,images,export,mobile,a11y,
+cache and original result unchanged. Independent review approved after cache
+identity and future-pose fixes; mutation check caught including landing frame.
+Full suite15existing tests passed; new test caught theme-transition contrast,
+then passed after using existing reduced-motion setting (23s). All16distinct
+browser tests pass across batches. Production build passed with landing route;
+no automatic landing or coaching accuracy claim. Other user's70s upload
+dc65a8df-12fd-4b2c-b08d-d1bf1478281e was allowed to finish (complete); did not
+kill/interfere with its worker. Before-landing busy UI correctly asks to wait.
+Production app restarted at127.0.0.1:3000 after checks. Screenshot
+artifacts/before-landing-coaching.png visually reviewed. See
+docs/before-landing-coaching.md; private test anchor10s is not labeled ground truth.
+Final before-landing browser test passed against production in17.6s, with clean
+manual browser console after reload. Production terminal session48614.
+
 ## Post-wrap live web verification (2026-10-09)
 
 User requested all web functionality verified and a working link. Reran complete

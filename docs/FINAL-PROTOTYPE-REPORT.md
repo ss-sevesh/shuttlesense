@@ -6,6 +6,13 @@
 
 **Conclusion:** The prototype demonstrates video upload, analysis, playback and evidence-based review. Reliable automatic racket–shuttle contact detection and coaching accuracy have not been established.
 
+**Post-wrap addition:** The user subsequently requested pre-landing frames be
+sent to the LLM. A saved-video control now accepts an observed landing time and
+sends five earlier frames to local Qwen for experimental pose/position and
+alternative-action coaching. This addition uses a user-selected time and does
+not establish automatic landing detection. See
+[before-landing-coaching.md](before-landing-coaching.md).
+
 ## 1. Objective
 
 Develop a video-based badminton analysis prototype that helps a player inspect

@@ -11,6 +11,7 @@ MODEL = 'Qwen/Qwen3-VL-2B-Instruct'
 REVISION = '89644892e4d85e24eaac8bacfd4f463576704203'
 MODEL_DIR = Path('data/models/shot-coach-qwen3-vl2b')
 PROMPT_VERSION = 'five-frames-v1'
+LANDING_PROMPT_VERSION = 'before-landing-v1'
 SHOT_TYPES = ['unknown', 'smash', 'clear', 'drop', 'lift', 'drive', 'net shot', 'defensive net shot',
               'push', 'net kill', 'crosscourt net shot', 'short serve', 'long serve']
 
@@ -28,6 +29,16 @@ def extract_frames(video, hits, output):
             frame = contact['frame']
             contact['frames'] = [f if 0 <= f < count else None for f in range(frame - 2, frame + 3)] if frame is not None else []
             needed.update(f for f in contact['frames'] if f is not None)
+    finally:
+        capture.release()
+    decode_frames(video, needed, output)
+
+
+def decode_frames(video, needed, output):
+    output.mkdir(parents=True, exist_ok=True)
+    capture = cv2.VideoCapture(str(video))
+    try:
+        if not capture.isOpened(): raise ValueError('Cannot decode evidence video')
         # Decode contiguous runs after seeking to their first exact decoded frame.
         previous = -2
         for frame in sorted(needed):
@@ -45,6 +56,9 @@ def extract_frames(video, hits, output):
 
 
 def prompt(hit, fps):
+    if 'landing' in hit:
+        from landing_coach import landing_prompt
+        return landing_prompt(hit['landing'])
     evidence = {'side': hit['side'], 'trackId': hit['track_id'], 'contact': hit['contact'],
                 'fps': fps, 'playStatus': hit['play_status'], 'bstType': hit.get('shot_type'), 'bstScore': hit.get('confidence')}
     return ('Describe only the near/bottom badminton player in these five chronological frames (133 ms). '
@@ -75,27 +89,29 @@ def parse_answer(text):
 
 
 def evidence_hash(hit, fps, frames):
-    value = hashlib.sha256((MODEL + REVISION + PROMPT_VERSION + prompt(hit, fps)).encode())
-    for frame in hit['contact']['frames']:
+    version = LANDING_PROMPT_VERSION if 'landing' in hit else PROMPT_VERSION
+    value = hashlib.sha256((MODEL + REVISION + version + prompt(hit, fps)).encode())
+    for frame in hit.get('landing', hit.get('contact'))['frames']:
         value.update((frames / f'{frame}.jpg').read_bytes())
     return value.hexdigest()
 
 
-def coach(directory):
+def coach(directory, landing=False):
     import torch
     from PIL import Image
     from transformers import AutoProcessor, AutoModelForImageTextToText
     from review_job import write_json
-    fused = json.loads((directory / 'fused.json').read_text())
+    report_file = directory / ('landing.json' if landing else 'fused.json')
+    fused = json.loads(report_file.read_text())
     fps = fused['fps']
     frames = directory / 'frames'
     cache = directory / 'coaching'
     cache.mkdir(exist_ok=True)
     processor = model = None
     for i, hit in enumerate(fused['hits']):
-        contact = hit['contact']
-        metadata = {'model': MODEL, 'revision': REVISION, 'promptVersion': PROMPT_VERSION}
-        if hit['side'] != 'near' or contact['status'] != 'estimated' or len(contact['frames']) != 5 or None in contact['frames']:
+        contact = hit['landing' if landing else 'contact']
+        metadata = {'model': MODEL, 'revision': REVISION, 'promptVersion': LANDING_PROMPT_VERSION if landing else PROMPT_VERSION}
+        if hit['side'] != 'near' or contact['status'] != ('user_selected' if landing else 'estimated') or len(contact['frames']) != 5 or None in contact['frames']:
             hit['coaching'] = {**metadata, 'status': 'unavailable', 'reason': 'Complete contact evidence unavailable.'}
             continue
         key = evidence_hash(hit, fps, frames)
@@ -152,9 +168,9 @@ def coach(directory):
                                'reason': f'Local vision coaching failed ({type(error).__name__}).', 'rawResponse': raw}
             print(f'Coaching error: {error}', flush=True)
         write_json(saved, hit['coaching'])
-        write_json(directory / 'fused.json', fused)
+        write_json(report_file, fused)
         print(f'Coaching {i+1}/{len(fused["hits"])}: {hit["coaching"]["status"]}', flush=True)
-    write_json(directory / 'fused.json', fused)
+    write_json(report_file, fused)
 
 
 if __name__ == '__main__':

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import { AnalysisCamera, type ReplayWindow } from "@/components/analysis-camera";
 import { CourtMap } from "@/components/court-map";
 import { ContactEvidence } from "@/components/contact-evidence";
+import { LandingCoaching } from "@/components/landing-coaching";
 import { canonicalShot, nearestIndex, parseReviews, readable, reviewReason, reviewStorageKey, shotTypes, validInterval, type HumanReviews, type ReviewData, type Side } from "@/lib/analysis-review";
 
 const number = new Intl.NumberFormat("en", { maximumFractionDigits: 1 });
@@ -96,6 +97,7 @@ export function AnalysisReview({ data, videoUrl }: { data: ReviewData; videoUrl:
     </dl>
     <div className="review-workspace">
       <div className="review-main"><AnalysisCamera data={data} videoUrl={videoUrl} replay={replay} onTime={onTime}/>
+        <LandingCoaching videoUrl={videoUrl} fps={data.fps} duration={data.duration} time={time} analysisSha256={data.analysisSha256}/>
         <div className="review-tab-controls" role="group" aria-label="Review category"><button type="button" aria-pressed={tab === "shots"} onClick={() => setTab("shots")}>Shot types</button><button type="button" aria-pressed={tab === "rallies"} onClick={() => setTab("rallies")}>Rally windows</button></div>
         {tab === "shots" ? <section className="review-events" aria-label="Shot contacts">
           <div className="review-event-heading"><h3>Check the contact</h3><label>Show <select value={filter} onChange={event => { setFilter(event.target.value); setPage(0); }}><option value="all">All contacts</option><option value="labels">Model labels</option><option value="needs">Needs your review</option><option value="reviewed">Reviewed by you</option></select></label></div>

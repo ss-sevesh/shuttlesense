@@ -58,6 +58,26 @@ class CoachTests(unittest.TestCase):
                 self.assertEqual(saved['coaching']['status'], 'unavailable')
                 self.assertEqual(saved['contact'], hit['contact'])
                 self.assertFalse((root / 'fused.tmp').exists())
+                # Before-landing coaching uses a separate report and invalidates old prompt caches.
+                landing = {'side': 'near', 'play_status': 'landing_unverified',
+                           'landing': {'status': 'user_selected', 'landingFrame': 30, 'fps': 30, 'frames': list(range(5)), 'pose': []}}
+                (root / 'landing.json').write_text(json.dumps({'fps': 30, 'hits': [landing]}))
+                model.generate.side_effect = None
+                processor.batch_decode.side_effect = None
+                processor.batch_decode.return_value = [json.dumps(answer)]
+                prior_calls = model.generate.call_count
+                coach(root, landing=True)
+                coached = json.loads((root / 'landing.json').read_text())['hits'][0]
+                self.assertEqual(coached['coaching']['status'], 'experimental')
+                self.assertEqual(coached['coaching']['answer']['shotType'], 'unknown')
+                self.assertEqual(coached['coaching']['promptVersion'], 'before-landing-v1')
+                self.assertEqual(coached['landing'], landing['landing'])
+                coach(root, landing=True)
+                self.assertEqual(model.generate.call_count, prior_calls + 1)
+                with patch('shot_coach.LANDING_PROMPT_VERSION', 'before-landing-v2'):
+                    coach(root, landing=True)
+                self.assertEqual(model.generate.call_count, prior_calls + 2)
+                self.assertEqual(json.loads((root / 'fused.json').read_text())['hits'][0], saved)
 
 
 if __name__ == '__main__': unittest.main()
