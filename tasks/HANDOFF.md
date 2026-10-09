@@ -1,5 +1,19 @@
 # ShuttleSense session handoff
 
+## Post-wrap live web verification (2026-10-09)
+
+User requested all web functionality verified and a working link. Reran complete
+Playwright UI suite:15/15passed in2minutes, no skips, including fresh6sGPU upload
+through local coaching, real CPU footage upload/boxes/heatmaps, saved replay,
+contact images, export, review persistence, invalid inputs, responsive layouts
+and accessibility. Typecheck passed. Manual DevTools homepage and saved40s review
+consoles clean; saved video readyState4,duration40.066s,no media error or overflow.
+Movement screenshot refreshed and visually inspected. No web code fixes needed.
+Fresh private GPU verification job6ba8d6ea-5879-4959-bd2a-98d616ed3471 completed.
+App remains running at http://127.0.0.1:3000 (local computer only); original saved
+review /review/dd88779c-8a2f-406e-a2a3-ebdf90038b47. No public deployment or new
+accuracy assessment. Prototype limitations in final report remain applicable.
+
 ## Final prototype wrap (2026-10-09)
 
 User requested quick project wrap with a final report, superseding immediate
