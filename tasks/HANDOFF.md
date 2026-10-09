@@ -1,5 +1,32 @@
 # ShuttleSense session handoff
 
+## Session wrap and authorized next phase (2026-10-09)
+
+User requested proceeding with the next phase without routine permission questions,
+then interrupted startup to wrap this session and begin a new one. Next task:
+implement a contact-reviewer in the existing app using saved source footage and
+observations: frame stepping, manually marking closest visible contact or unresolved,
+adding missed swings, and persisting review labels separately from model estimates.
+Use those labels for evaluation and later badminton-specific training. No reviewer
+code was implemented yet; no new inference or training was started. Latest completed
+implementation is pushed commit fbe85e0 (offline racket trial); previous homepage
+error fix is 29b2dd2. Saved video and trial outputs remain private under data/.
+
+Clarified window basis to user: near-player wrist confidence>=.5 across3frames,
+incoming normalized wrist speed>=.8heights/s and >=outgoing speed, shuttle proposal
+within+-1.5frames and .6player heights, strongest candidates suppressed within.25s;
+each seed gets+- .2s (13frames at30FPS). These heuristics produced14windows and
+are not validated swing boundaries. RTMDet processed ALL1202frames; windows only
+limited minimum selection. Prior suggestion to use windows for faster uploads is
+a future optimization and must be benchmarked for missed swings.
+
+Startup sandbox attempt failed. Saved CheckOnly identified2matching node_repl.exe
+helpers; saved repair stopped those only. Immediate sandbox Get-Location still
+failed setup refresh. A follow-up diagnostic/read command was interrupted, so
+inspect latest diagnostic before any further repair; do not claim sandbox fixed
+or kill unrelated processes. No settings/permissions were changed. User requests
+session wrap only now; resume reviewer implementation in the next session.
+
 ## Latest continuation: offline RTMDet racket trial (2026-10-09)
 
 Implemented user-approved isolated official RTMDet-Ins-s COCO segmentation trial.
