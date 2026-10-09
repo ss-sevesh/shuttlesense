@@ -18,7 +18,7 @@ export default async function Page() {
         if (typeof request.fileName !== "string" || !request.fileName.trim()) continue;
         savedAnalyses.push({ id: entry.name, name: request.fileName });
       } catch (error) {
-        console.error("Saved analysis could not be listed", entry.name, error);
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") console.error("Saved analysis could not be listed", entry.name, error);
       }
     }
   } catch (error) {

@@ -1,5 +1,27 @@
 # ShuttleSense session handoff
 
+## Latest continuation: homepage error badge fix (2026-10-09)
+
+Read AGENTS.md, handoff and global Codex config at user's request. Reproduced
+five server console errors on the homepage: unfinished analysis job folders
+have no status.json. The saved list now skips ENOENT metadata while retaining
+logging for malformed JSON, permission failures and other errors. No job data
+was deleted. New browser regression creates an empty UUID folder and checks
+console/page errors; it failed before the fix and passed afterward.
+
+Typecheck and production build passed. All15 browser tests passed across two
+batches, including fresh actual6s GPU analysis and CPU upload/heatmap processing.
+Three focused homepage/saved recording/contact tests passed against production;
+manual DevTools homepage and contact review consoles were clean. Required
+movement screenshot refreshed and visually inspected. Production app running
+on127.0.0.1:3000, terminal session29099. Model accuracy was not assessed.
+
+Sandbox repair initially identified/stopped two matching locked node_repl helpers.
+Immediate Get-Location still failed; latest diagnostic correctly rejected the
+different VCRUNTIME140_1.dll lock. Log inspected; no unrelated processes stopped
+or permission/config changes made. Approved external execution used for checks.
+Build regenerated next-env.d.ts back to tracked contents; no remaining diff.
+
 ## Latest continuation: independent saved-clip audit (2026-10-09)
 
 User requested self-testing and technical explanation. Reran contact8, coaching1,

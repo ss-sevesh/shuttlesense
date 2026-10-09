@@ -1,6 +1,22 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, mkdirSync, rmdirSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
+
+test('workspace skips unfinished analysis folders without browser errors', async ({ page }) => {
+  const directory = `data/analysis-jobs/${randomUUID()}`;
+  mkdirSync(directory, { recursive: true });
+  const errors: string[] = [];
+  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+  page.on('pageerror', error => errors.push(error.message));
+  try {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'See the rally. Find the reason.' })).toBeVisible();
+    expect(errors).toEqual([]);
+  } finally {
+    rmdirSync(directory);
+  }
+});
 
 test('saved recording is discoverable from the workspace without uploading again', async ({ page }) => {
   const id = 'b5af3dc2-a4a0-42d0-838a-c84c6a6adae6';
