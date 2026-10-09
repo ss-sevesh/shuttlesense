@@ -1,7 +1,9 @@
 # ShuttleSense — Final Prototype Report
 
-**Date:** 9 October 2026  
-**Project status:** Functional local prototype with experimental badminton analysis  
+**Date:** 9 October 2026
+
+**Project status:** Functional local prototype with experimental badminton analysis
+
 **Conclusion:** The prototype demonstrates video upload, analysis, playback and evidence-based review. Reliable automatic racket–shuttle contact detection and coaching accuracy have not been established.
 
 ## 1. Objective
