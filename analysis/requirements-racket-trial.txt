@@ -1,0 +1,10 @@
+# Isolated Python 3.10 environment; do not install into existing analysis envs.
+--extra-index-url https://download.pytorch.org/whl/cu118
+torch==2.0.1+cu118
+torchvision==0.15.2+cu118
+numpy==1.26.4
+opencv-python==4.10.0.84
+mmengine==0.10.7
+mmdet==3.3.0
+mmcv @ https://download.openmmlab.com/mmcv/dist/cu118/torch2.0.0/mmcv-2.1.0-cp310-cp310-win_amd64.whl
+setuptools<81

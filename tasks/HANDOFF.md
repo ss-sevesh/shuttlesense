@@ -1,5 +1,41 @@
 # ShuttleSense session handoff
 
+## Latest continuation: offline RTMDet racket trial (2026-10-09)
+
+Implemented user-approved isolated official RTMDet-Ins-s COCO segmentation trial.
+Read agent/handoff/Codex instructions and applied debugging, incremental/TDD,
+context7 and independent code-review skills. Python3.10 CUDA11.8 environment
+under ignored data/rtmdet-env; pinned requirements and official checkpoint
+download/provenance script. Every source frame receives original-size racket
+masks/boxes/scores; conservative near-player association and unique bracketed
+per-window mask-distance minima abstain on unavailable/ambiguous evidence.
+No app pipeline, saved analysis, LLM invocation or five-racket-point model change.
+
+Ran full existing40s job dd88779c-8a2f-406e-a2a3-ebdf90038b47:1202frames;
+453near-racket frames (37.7%availability),86usable distance frames (7.2%),
+0/14resolved proximity windows (7missing,7unbracketed). GPU detector58.1s,
+setup/inference/output66.3s excluding rendering/transcoding. These are availability
+counts, NOT accuracy. Visually reviewed all14strips: missed visible/blurred rackets,
+false body regions, missing held/overhead shuttle and some non-swing seed windows.
+Pretrained COCO baseline is insufficient; do not integrate or relabel as impacts.
+Recommend badminton-specific racket/head fine-tuning and improved shuttle evidence,
+then evaluate against labeled contacts before any accuracy claim.
+
+Private output data/feasibility/racket-trial-01 includes results.json, masks,
+14JPEG strips, annotated overlay.mp4 and review.html. Loopback server8006 session9638:
+http://127.0.0.1:8006/review.html. Restart command and details in docs/racket-trial.md.
+Production app3000 session29099 retained. Four unit tests pass; independent audit
+artifacts/audit_racket_trial.py checks all masks,86independently recomputed distances,
+14window decisions/strips and fully decoded1202-frame source/overlay. Mutation
+check catches removing adjacent-frame evidence. Browser bounded playback,14loaded
+strips,mobile no-overflow and clean console verified. Independent agent approves.
+No full app regression rerun for this isolated offline experiment.
+
+Sandbox setup still fails; saved CheckOnly rejects unfamiliar VCRUNTIME140_1.dll
+lock. Log inspected, no unrelated processes killed/settings changed. Approved
+external commands used. Wheel certificate-chain issue resolved with isolated
+certifi/requests update and pip legacy-certs; TLS checks remain enabled.
+
 ## Latest continuation: homepage error badge fix (2026-10-09)
 
 Read AGENTS.md, handoff and global Codex config at user's request. Reproduced
