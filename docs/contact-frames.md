@@ -71,3 +71,20 @@ Run `python analysis/test_contact_frames.py`, the existing tracked/BST/review
 checks, `python analysis/test_shot_coach.py`, `node analysis/test_analysis_review.mjs`, typecheck/build, and the browser
 review tests. The real-clip test reads the ignored `artifacts/contact-test-job.json`
 manifest, then verifies saved evidence, protected image delivery and review/export.
+
+## Independent saved-clip audit (2026-10-09)
+
+Reran eight contact tests, the coaching retry/cache/failure test, report adaptation,
+Node validation, typecheck and three focused browser tests; all passed. Independently
+recomputed each of the four selected minima from saved raw landmarks/proposals and
+compared all twenty JPEGs with exact decoded source frames; all matched.
+
+Selected frames were 160, 759, 872 and 1024, with wrist distances 105.05, 25.42,
+38.62 and 33.35 pixels respectively. Visual inspection did not establish four
+actual racket impacts: the first uses the left wrist with the shuttle far away,
+and several windows show preparation/positioning. The algorithm chooses a wrist
+from the motion cue, without identifying the racket-holding hand. Two selected
+left-elbow measurements were approximately 5.7 and 2.3 degrees, so frame alignment
+and landmark visibility checks do not establish anatomical accuracy either.
+All four local model answers returned unknown shot types. These checks establish
+software correctness and evidence alignment, not reliable shot/contact accuracy.

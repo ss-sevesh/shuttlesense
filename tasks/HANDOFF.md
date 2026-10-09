@@ -1,5 +1,21 @@
 # ShuttleSense session handoff
 
+## Latest continuation: independent saved-clip audit (2026-10-09)
+
+User requested self-testing and technical explanation. Reran contact8, coaching1,
+review adaptation, Node validation, typecheck and three focused browser tests;
+all passed. Independent private artifacts/check_contact_evidence.py recomputed
+four minima from raw evidence and compared all20 JPEGs to decoded source frames;
+all matched. Visually inspected artifacts/contact-audit.png (green wrist/red
+shuttle proposal) and the refreshed browser screenshot. Important quality finding:
+frame160 uses left wrist with105px distance; several windows show preparation or
+positioning, not established impact. Motion cues do not identify racket-holding
+hand. Left-elbow5.7/2.3deg measurements also need pose accuracy validation. Do not
+describe four minima as confirmed contacts or declare this accurate shot analysis.
+All four Qwen suggested labels remain unknown. See docs/contact-frames.md audit.
+No model rerun was needed; verified saved real outputs directly. Server restarted
+after prior turn on port3000, session77003. Audit artifacts remain ignored/private.
+
 ## Latest continuation: near-player contact evidence and local coaching (2026-10-09)
 
 Implemented the complete near-player flow. Independent contact and angle passes
