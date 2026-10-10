@@ -28,7 +28,7 @@ def angle_report(poses):
     return {'video_sha256': poses['video_sha256'], 'version': VERSION, 'samples': rows}
 
 
-def contact_report(poses, shuttle):
+def contact_report(poses, shuttle, focus_side='near'):
     from tracked_rallies import validate_observations
     validate_observations(poses, shuttle)
     if poses['video_sha256'] != shuttle['video_sha256']:
@@ -38,8 +38,9 @@ def contact_report(poses, shuttle):
         raise ValueError('Contact refinement requires a pose sample for every video frame')
     samples = {s['source_frame']: s for s in poses['samples']}
     raw = {s['source_frame']: s for s in shuttle['samples']}
-    near_samples = [{**s, 'players': [p for p in s['players'] if p['side'] == 'near']} for s in poses['samples']]
-    seeds = [h for h in hit_candidates(near_samples, shuttle['samples'], fps) if h['side'] == 'near']
+    if focus_side not in ('near', 'far', None): raise ValueError('Invalid contact focus side')
+    selected_samples = [{**s, 'players': [p for p in s['players'] if focus_side is None or p['side'] == focus_side]} for s in poses['samples']]
+    seeds = [h for h in hit_candidates(selected_samples, shuttle['samples'], fps) if focus_side is None or h['side'] == focus_side]
     hits = []
     for seed in seeds:
         first, last = seed['source_frame'] - round(.2 * fps), seed['source_frame'] + round(.2 * fps)
@@ -90,7 +91,7 @@ def contact_report(poses, shuttle):
     for hit in sorted(hits, key=lambda h: (h['contact']['status'] == 'estimated', h['score']), reverse=True):
         if all(abs(hit['time_s'] - other['time_s']) >= .25 for other in kept):
             kept.append(hit)
-    return {'video_sha256': poses['video_sha256'], 'version': VERSION, 'focus_side': 'near', 'hits': sorted(kept, key=lambda h: h['time_s'])}
+    return {'video_sha256': poses['video_sha256'], 'version': VERSION, 'focus_side': focus_side, 'hits': sorted(kept, key=lambda h: h['time_s'])}
 
 
 def join_angles(contacts, angles):

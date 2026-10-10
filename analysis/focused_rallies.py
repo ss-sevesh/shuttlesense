@@ -5,13 +5,14 @@ import math
 import cv2
 import numpy as np
 
-DEFAULT_OPTIONS = dict(yolo=True, shuttle=True, ground=True, pose=True, shots=False, llm=False)
+DEFAULT_OPTIONS = dict(yolo=True, shuttle=True, ground=True, pose=True, shots=False, llm=False, ending=False)
 
 
 def validate_options(value):
+    if isinstance(value,dict): value = {'ending':False,**value}
     if not isinstance(value, dict) or set(value) != set(DEFAULT_OPTIONS) or any(type(v) is not bool for v in value.values()):
-        raise ValueError('Expected six boolean analysis switches')
-    for key, needs in {'ground': ['shuttle'], 'pose': ['yolo'], 'shots': ['pose', 'shuttle'], 'llm': ['shots']}.items():
+        raise ValueError('Expected boolean analysis switches')
+    for key, needs in {'ground': ['shuttle'], 'pose': ['yolo'], 'shots': ['pose', 'shuttle'], 'llm': ['shots'], 'ending':['ground','pose','shuttle']}.items():
         if value[key] and not all(value[n] for n in needs): raise ValueError(f'{key} dependencies are disabled')
     if not value['yolo'] and not value['shuttle']: raise ValueError('Enable player or shuttle tracking')
     return value
@@ -86,7 +87,7 @@ def rally_windows(raw, scenes, fps, ground):
 
 
 def run_focused(directory, request, metadata, original_hash, options, run, stage):
-    from review_job import ROOT, inspect, write_json, review_data
+    from review_job import ROOT, inspect, write_json, review_data, far_roi
     from detect import digest
     source = directory/'source.mp4'
     run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-i', str(directory/request['source']), '-vf', 'fps=30', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21', '-an', '-movflags', '+faststart', str(source)], 'Normalizing video', 4, 10)
@@ -103,7 +104,8 @@ def run_focused(directory, request, metadata, original_hash, options, run, stage
     if options['yolo']:
         command = [str(ROOT/'data/player-pose-env/Scripts/python.exe'), 'analysis/player_pose.py', str(source), '--end', str(info['duration']), '--sample-hz', '30', '--imgsz', '640', '--tracker', 'analysis/bytetrack-phone.yaml', '--allow-reacquisition', '--corners', *map(str, np.asarray(info['corners']).flatten()), '--output', str(directory/'players.json')]
         if not options['pose']: command.append('--skip-pose')
-        else: command.append('--near-pose')
+        elif not options['shots']: command.append('--near-pose')
+        if options['shots']: command.extend(['--far-roi',*map(str,far_roi(info['corners'],info['width'],info['height']))])
         run(command, 'YOLO player tracking' + (' and body pose' if options['pose'] else ' (body pose disabled)'), 12, 45)
         poses = json.loads((directory/'players.json').read_text())
         for row, scene in zip(poses['samples'], scenes):
@@ -136,7 +138,16 @@ def run_focused(directory, request, metadata, original_hash, options, run, stage
     for window in windows:
         stop = window['end_s'] if window['end_s'] is not None else window['review_stop_s']
         window['hit_candidates'] = sum(window['start_s'] <= event['time'] <= stop for event in events)
-    fused = {'video_sha256': source_hash, 'pipeline_version': 'near-lines-hit-pose-v2', 'focus_side': 'near', 'fps': 30, 'hits': [], 'rallies': windows, 'options': options, 'courtLines': lines, 'hitPoses': events}
+    classified = []
+    if options['shots']:
+        from shot_review import shot_hits
+        write_json(directory/'hits.json',shot_hits(poses,shuttle,scenes,windows))
+        run([str(ROOT/'data/hf-racquet-env/Scripts/python.exe'),'analysis/bst_shots.py','--poses',str(directory/'players.json'),'--shuttle',str(directory/'shuttle.json'),'--hits',str(directory/'hits.json'),'--output',str(directory/'shots.json')], 'Classifying bounded shot windows with pretrained BST',97,98)
+        classified = json.loads((directory/'shots.json').read_text(encoding='utf-8'))['shots']
+    fused = {'video_sha256': source_hash, 'pipeline_version': 'bounded-bst-ending-v1' if options['shots'] or options['ending'] else 'near-lines-hit-pose-v2', 'focus_side': 'near', 'fps': 30, 'hits': [h for h in classified if h['side']=='near'], 'rallies': windows, 'options': options, 'courtLines': lines, 'hitPoses': events}
+    if options['ending']:
+        from shot_review import ending_reviews
+        fused['endingReview'] = ending_reviews(poses,shuttle,scenes,windows,classified)
     write_json(directory/'fused.json', fused)
     result = review_data(poses, shuttle, fused, request['fileName'], False, original_hash, metadata['corners'], ground)
     result['options'] = options
@@ -144,6 +155,8 @@ def run_focused(directory, request, metadata, original_hash, options, run, stage
     if not options['yolo']: result['metrics']['sampleCount'] = 0
     result['limitations'] = ['Rally windows group observed shuttle motion; starts and endings require review.', 'Court-view patches exclude closeups. Camera movement, gradual transitions and identity switches remain unvalidated.', 'YOLO tracks players; TrackNet tracks the shuttle. Floor overlap is not proof of ground touch.', 'No LLM or contact-frame extraction ran.']
     result['limitations'].append('Court lines are fitted observations, not exact boundaries. Hit times use wrist/shuttle proximity; pose labels describe 2D arm position, not shot type or confirmed racket impact.')
+    if options['shots']: result['limitations'].append('BST uses adapted MediaPipe poses and uncalibrated scores. Windows exclude detected adjacent hits; missed contacts can leave mixed movements.')
+    if options['ending']: result['limitations'].append('Ending review describes the closest observed image-plane separation in the last two seconds before a possible ground stop, not intent or physical reach. Stops can follow rolling or pickup.')
     result['sceneSummary'] = {'courtSegments': [[a/30,b/30] for a,b in segments], 'excludedFrames': sum(not r['court'] for r in scenes)}
     write_json(directory/'result.json', result)
     write_json(directory/'provenance.json', {'originalSha256': original_hash, 'normalizedSha256': source_hash, 'pipelineVersion': fused['pipeline_version'], 'options': options})

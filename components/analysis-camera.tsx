@@ -39,6 +39,7 @@ export function AnalysisCamera({ data, videoUrl, replay, onTime }: { data: Revie
   const sample = nearestIndex(data.samples, time, 1.5 / data.poseSampleHz);
   const shuttleIndex = nearestIndex(data.shuttle, time, 1.5 / data.fps);
   const point = shuttleIndex >= 0 ? data.shuttle[shuttleIndex].point : null;
+  const ending = data.endingReview?.find(item => item.evidence && Math.abs(item.evidence.time-time)<.5/data.fps)?.evidence;
   return <section className="review-camera" aria-label="Video and tracking overlays">
     <div className="review-camera-frame" style={{ position: "relative", aspectRatio: `${data.width}/${data.height}` }}>
       <video ref={video} src={videoUrl} controls playsInline preload="metadata" aria-label={`Match recording: ${data.fileName}`} style={{ width: "100%", height: "100%", display: "block" }} onError={() => setError("Video could not load. Reload the analysis and try again.")} onSeeking={() => { if (video.current && bound.current !== null && video.current.currentTime > bound.current) bound.current = null; }} />
@@ -53,6 +54,7 @@ export function AnalysisCamera({ data, videoUrl, replay, onTime }: { data: Revie
           </g>;
         })}
         {shuttle && point && <circle cx={point[0]*data.width} cy={point[1]*data.height} r="5" fill="#b9f58d" stroke="#183522" strokeWidth="2"/>}
+        {ending && <g data-ending-distance="true" stroke="#ffbf69" fill="none" strokeWidth="2"><line x1={ending.wristPoint[0]*data.width} y1={ending.wristPoint[1]*data.height} x2={ending.shuttlePoint[0]*data.width} y2={ending.shuttlePoint[1]*data.height} strokeDasharray="5 4"/><circle cx={ending.wristPoint[0]*data.width} cy={ending.wristPoint[1]*data.height} r="5"/><circle cx={ending.shuttlePoint[0]*data.width} cy={ending.shuttlePoint[1]*data.height} r="5"/><title>{ending.distancePx.toFixed(1)} pixels of wrist-to-shuttle image separation</title></g>}
       </svg>
     </div>
     <div className="review-overlay-controls">

@@ -55,6 +55,7 @@ export function StartShotAnalysis({ file, corners, onMarkCourt, onComplete }: { 
   function toggle(key: keyof AnalysisOptions, checked: boolean) {
     const next = { ...options, [key]: checked };
     if (checked && key === 'llm') next.shots = true;
+    if (checked && key === 'ending') next.ground = next.pose = next.shuttle = true;
     if (checked && next.shots) next.pose = next.shuttle = true;
     if (checked && next.pose) next.yolo = true;
     if (checked && key === 'ground') next.shuttle = true;
@@ -62,6 +63,7 @@ export function StartShotAnalysis({ file, corners, onMarkCourt, onComplete }: { 
     if (!next.shuttle) next.ground = false;
     if (!next.pose || !next.shuttle) next.shots = false;
     if (!next.shots) next.llm = false;
+    if (!next.ground || !next.pose || !next.shuttle) next.ending = false;
     setOptions(next);
   }
   async function start() {
@@ -81,8 +83,8 @@ export function StartShotAnalysis({ file, corners, onMarkCourt, onComplete }: { 
   }
   return <section className="shot-upload-start" aria-label="Shot and rally analysis">
     {!id && <fieldset disabled={busy}><legend>Analysis options</legend><p>Choose what runs before generating results. Required features enable together.</p>
-      {([['yolo', 'YOLO player tracking'], ['shuttle', 'Shuttle tracking (TrackNet)'], ['ground', 'Ground segmentation and touch candidates'], ['pose', 'Body pose'], ['shots', 'Shot classification'], ['llm', 'LLM coaching and frame extraction']] as const).map(([key,label]) =>
-        <label key={key} style={{ display: 'block' }}><input type="checkbox" checked={options[key]} onChange={event => toggle(key,event.target.checked)}/>{label}</label>)}
+      {([['yolo', 'YOLO player tracking'], ['shuttle', 'Shuttle tracking (TrackNet)'], ['ground', 'Ground segmentation and touch candidates'], ['pose', 'Body pose'], ['shots', 'Shot classification'], ['ending','Near-player ending review'], ['llm', 'LLM coaching and frame extraction']] as const).map(([key,label]) =>
+        <label key={key} style={{ display: 'block' }}><input type="checkbox" checked={options[key] ?? false} onChange={event => toggle(key,event.target.checked)}/>{label}</label>)}
     </fieldset>}
     {!id && <><div><span className="intro-label">YOUR VIDEO · REAL ANALYSIS</span><h3>Review Your Shots & Rallies</h3><p>See player posture, shuttle detections and predicted shot types. Confirm or correct what you observe.</p></div>
       <button className="primary-button" disabled={busy} onClick={() => void start()}><UploadSimple size={17} aria-hidden="true"/>{busy ? "Uploading Video…" : failed ? "Retry Shots & Rallies" : "Analyze Shots & Rallies"}</button></>}

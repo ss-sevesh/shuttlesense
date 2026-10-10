@@ -11,10 +11,14 @@ test('analysis switches default to the focused rally test and enforce dependenci
   const options = page.getByRole('group', { name: 'Analysis options' });
   for (const label of ['YOLO player tracking', 'Shuttle tracking (TrackNet)', 'Ground segmentation and touch candidates', 'Body pose']) await expect(options.getByLabel(label, { exact: true })).toBeChecked();
   for (const label of ['Shot classification', 'LLM coaching and frame extraction']) await expect(options.getByLabel(label, { exact: true })).not.toBeChecked();
+  await expect(options.getByLabel('Near-player ending review')).not.toBeChecked();
+  await options.getByLabel('Near-player ending review').check();
+  for (const label of ['Body pose','Ground segmentation and touch candidates','Shuttle tracking (TrackNet)','YOLO player tracking']) await expect(options.getByLabel(label,{exact:true})).toBeChecked();
   await options.getByLabel('LLM coaching and frame extraction').check();
   for (const label of ['Body pose', 'Shot classification', 'YOLO player tracking']) await expect(options.getByLabel(label, { exact: true })).toBeChecked();
   await options.getByLabel('YOLO player tracking').uncheck();
   for (const label of ['Body pose', 'Shot classification', 'LLM coaching and frame extraction']) await expect(options.getByLabel(label, { exact: true })).not.toBeChecked();
+  await expect(options.getByLabel('Near-player ending review')).not.toBeChecked();
   await options.getByLabel('Shuttle tracking (TrackNet)', { exact: true }).uncheck();
   await expect(options.getByLabel('Ground segmentation and touch candidates')).not.toBeChecked();
   await options.getByLabel('Ground segmentation and touch candidates').check();
@@ -33,7 +37,7 @@ test('analysis switches default to the focused rally test and enforce dependenci
   });
   await page.getByRole('button', { name: 'Analyze Shots & Rallies', exact: true }).click();
   await expect(page.getByRole('alert').filter({ hasText: 'Options captured' })).toBeVisible();
-  expect(sent).toEqual({ yolo: true, shuttle: true, ground: true, pose: false, shots: false, llm: false });
+  expect(sent).toEqual({ yolo: true, shuttle: true, ground: true, pose: false, shots: false, llm: false, ending:false });
   const invalid = await request.post('/api/analysis', { headers: { origin: 'http://127.0.0.1:3000' }, multipart: { video: { name: file!, mimeType: 'video/mp4', buffer: readFileSync(file!) }, corners: '[0.3,0.2,0.7,0.2,0.9,0.9,0.1,0.9]', options: JSON.stringify({ yolo:true, shuttle:false,ground:true,pose:false,shots:false,llm:false }) } });
   expect(invalid.status()).toBe(422);
   await page.emulateMedia({ reducedMotion: 'reduce' });

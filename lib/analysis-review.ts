@@ -4,7 +4,8 @@ export type Measurements = { leftElbow: number | null; rightElbow: number | null
 export type ReviewPerson = { trackId: number; side: Side; box: [number, number, number, number]; court: [number, number]; landmarks: [number, number][]; scores: number[]; poseDetected: boolean; measurements?: Measurements };
 export type ContactEvidence = { method: "wrist_distance"; status: string; frame: number | null; seedFrame: number; wrist: "left" | "right"; distancePx: number | null; distanceHeights: number | null; windowFrames: [number, number]; frames: (number | null)[]; measurements: { elbow: number | null; armExtension: number | null; bodyLean: number | null; armElevation: number | null; racketFace: null } };
 export type ShotCoaching = { status: "experimental" | "unavailable"; model?: string; revision?: string; evidenceSha256?: string; reason?: string; answer?: { shotType: string; visibleEvidence: string; uncertainty: string; coaching: string } };
-export type ReviewShot = { id: number; time: number; side: Side; trackId: number; predictedType: string | null; rawType: string | null; score: number | null; status: string; playStatus: string; reason: string; contact?: ContactEvidence; coaching?: ShotCoaching | null };
+export type ReviewShot = { id: number; time: number; side: Side; trackId: number; predictedType: string | null; rawType: string | null; score: number | null; status: string; playStatus: string; reason: string; contact?: ContactEvidence; coaching?: ShotCoaching | null; classificationWindow?: [number,number] };
+export type EndingReview = {rallyId:number;endTime:number|null;windowStart:number;windowEnd:number;status:string;summary:string;lastShot:{time:number;type:string|null;status:string}|null;evidence:{frame:number;time:number;distancePx:number;distanceHeights:number;horizontalOffsetPx:number;wristPoint:[number,number];shuttlePoint:[number,number];pose:string}|null};
 export type ReviewRally = { id: number; start: number; end: number | null; reviewStop: number; hitCandidates: number; startStatus: string; endStatus: string };
 export type GroundLanding = { status: "experimental" | "unavailable"; model: string; revision: string; reason: string; candidates: { frame: number; time: number; point: [number, number]; status: "possible_landing"; holdFrames: number; floorScore: number }[] };
 export type ReviewData = {
@@ -21,9 +22,10 @@ export type ReviewData = {
   sceneSummary?: { courtSegments: [number, number][]; excludedFrames: number };
   courtLines?: { method: string; reason: string; segments: { start: number; end: number; lines: { name: string; points: [number, number][]; support: number }[] }[] };
   hitPoses?: { frame: number; time: number; trackId: number; status: string; pose: string; reason: string; measurements: { elbow: number | null; bodyLean: number | null } }[];
+  endingReview?: EndingReview[];
 };
 export const shotTypes = ["smash", "clear", "drop", "lift", "drive", "net shot", "defensive net shot", "push", "net kill", "crosscourt net shot", "short serve", "long serve"] as const;
-export const canonicalShot = (value: string) => value.replace(/_/g," ").replace(/netshot/g,"net shot").replace(/netkill/g,"net kill");
+export const canonicalShot = (value: string) => value.replace(/_/g," ").replace(/cross-court/g,"crosscourt").replace(/netshot/g,"net shot").replace(/netkill/g,"net kill");
 export const readable = (value: string | null | undefined) => value ? value.replace(/_/g, " ").replace(/\bnetshot\b/g, "net shot").replace(/\bnetkill\b/g, "net kill").replace(/\bcrosscourt\b/g, "cross-court").replace(/^./, c => c.toUpperCase()) : "Unknown";
 export function reviewReason(value: string) {
   if (/identity|track.*switch/i.test(value)) return "Player identity changed around this contact.";
@@ -39,9 +41,22 @@ export function isReviewData(value: unknown): value is ReviewData {
   const data = value as Partial<ReviewData>;
   try { analysisOptions(data.options); } catch { return false; }
   if (!validNearEvidence(data)) return false;
+  if (!validEndingReview(data)) return false;
   return typeof data.videoSha256 === "string" && /^[a-f0-9]{64}$/i.test(data.videoSha256) && typeof data.analysisSha256 === "string" && /^[a-f0-9]{64}$/i.test(data.analysisSha256) && typeof data.fileName === "string" &&
     [data.duration,data.width,data.height,data.fps,data.poseSampleHz].every(value => typeof value === "number" && Number.isFinite(value) && value > 0) &&
-    Array.isArray(data.samples) && Array.isArray(data.shuttle) && Array.isArray(data.shots) && data.shots.every(shot => shot && typeof shot === "object" && validContact(shot.contact, data.duration!, data.fps!) && validCoaching(shot.coaching)) && validGround(data.groundLanding, data.duration!, data.fps!, data.width!, data.height!) && Array.isArray(data.rallies) && Array.isArray(data.limitations) && !!data.metrics && typeof data.metrics === "object";
+    Array.isArray(data.samples) && Array.isArray(data.shuttle) && Array.isArray(data.shots) && data.shots.every(shot => shot && typeof shot === "object" && (shot.classificationWindow === undefined || (Array.isArray(shot.classificationWindow) && shot.classificationWindow.length === 2 && validInterval(shot.classificationWindow[0],shot.classificationWindow[1],data.duration!) && shot.classificationWindow[0] <= shot.time && shot.time < shot.classificationWindow[1])) && validContact(shot.contact, data.duration!, data.fps!) && validCoaching(shot.coaching)) && validGround(data.groundLanding, data.duration!, data.fps!, data.width!, data.height!) && Array.isArray(data.rallies) && Array.isArray(data.limitations) && !!data.metrics && typeof data.metrics === "object";
+}
+function validEndingReview(data: Partial<ReviewData>) {
+  if (data.endingReview === undefined) return true;
+  if (!Array.isArray(data.rallies)) return false;
+  const point = (p: number[]) => Array.isArray(p) && p.length===2 && p.every(v => Number.isFinite(v) && v>=0 && v<=1);
+  return Array.isArray(data.endingReview) && data.endingReview.every(item => {
+    if (!item || !Number.isSafeInteger(item.rallyId) || !data.rallies?.some(r => r.id===item.rallyId) || !validInterval(item.windowStart,item.windowEnd,data.duration!) || !['unknown','reach_or_swing_observed','moving_toward_shuttle','opposite_side_no_clear_attempt','no_clear_attempt'].includes(item.status) || typeof item.summary!=='string' || item.summary.length>2000 || (item.endTime!==null && (!Number.isFinite(item.endTime) || item.endTime!==item.windowEnd))) return false;
+    if (item.lastShot!==null && (!item.lastShot || !Number.isFinite(item.lastShot.time) || item.lastShot.time<0 || item.lastShot.time>=item.windowEnd || typeof item.lastShot.status!=='string' || (item.lastShot.type!==null && (typeof item.lastShot.type!=='string' || !shotTypes.includes(canonicalShot(item.lastShot.type) as typeof shotTypes[number]))))) return false;
+    const e=item.evidence;
+    if (item.status==='unknown') return e===null;
+    return item.endTime!==null && !!e && Number.isSafeInteger(e.frame) && e.frame>=0 && Number.isFinite(e.time) && Math.abs(e.frame/data.fps!-e.time)<.1/data.fps! && e.time>=item.windowStart && e.time<item.windowEnd && [e.distancePx,e.distanceHeights].every(v => Number.isFinite(v) && v>=0) && Number.isFinite(e.horizontalOffsetPx) && point(e.wristPoint) && point(e.shuttlePoint) && typeof e.pose==='string';
+  });
 }
 function validNearEvidence(data: Partial<ReviewData>) {
   const point = (p: number[]) => Array.isArray(p) && p.length === 2 && p.every(v => Number.isFinite(v) && v >= 0 && v <= 1);

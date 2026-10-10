@@ -98,10 +98,11 @@ def review_data(poses, shuttle, fused, file_name, cached, original_hash, marked_
             'predictedType':h.get('shot_type') if h.get('shot_type') not in (None,'unknown') else None,
             'rawType':h.get('raw_shot_type'), 'score':h.get('confidence'), 'status':h['shot_status'],
             'playStatus':h['play_status'], 'reason':shot_reason(h),
+            **({'classificationWindow':[h['window_start_s'],h['window_end_s']]} if 'window_start_s' in h and h['window_end_s'] > h['window_start_s'] else {}),
             **({'contact':h['contact'], 'coaching':h.get('coaching')} if 'contact' in h else {})} for i,h in enumerate(fused['hits'])],
         'pipelineVersion':fused.get('pipeline_version', 'legacy-wrist-peaks'),
         'focusSide':fused.get('focus_side'),
-        **({key:fused[key] for key in ('courtLines','hitPoses') if key in fused}),
+        **({key:fused[key] for key in ('courtLines','hitPoses','endingReview') if key in fused}),
         **({'groundLanding':ground} if ground is not None else {}),
         'rallies': [{'id':i+1,'start':r['start_s'],'end':r['end_s'],'reviewStop':r['review_stop_s'],
             'hitCandidates':r['hit_candidates'],'startStatus':r['start_status'],'endStatus':r['end_status']} for i,r in enumerate(fused['rallies'])],
@@ -147,7 +148,7 @@ def main():
         stage('Checking video and calibration', 2)
         metadata = inspect(original, request['corners'])
         with original.open('rb') as source: original_hash=hashlib.file_digest(source,'sha256').hexdigest()
-        if not options['shots']:
+        if not options['llm']:
             from focused_rallies import run_focused
             run_focused(directory, request, metadata, original_hash, options, run, stage)
             return
@@ -231,6 +232,9 @@ def main():
         near_poses = {**poses, 'samples': [{**s, 'players': [p for p in s['players'] if p['side'] == 'near'] if visible[s['source_frame']] else []} for s in poses['samples']]}
         fused['courtLines'] = court_lines(directory/'source.mp4', poses['settings']['corners_px'], court_segments(scenes), poses['fps'])
         fused['hitPoses'] = hit_poses(near_poses, shuttle, scenes)
+        if options['ending']:
+            from shot_review import ending_reviews
+            fused['endingReview'] = ending_reviews(poses,shuttle,scenes,fused['rallies'],fused['hits'])
         write_json(directory/'fused.json', fused)
         with (directory/'source.mp4').open('rb') as source:
             if hashlib.file_digest(source,'sha256').hexdigest()!=poses['video_sha256']:

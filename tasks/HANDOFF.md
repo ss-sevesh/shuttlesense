@@ -1,5 +1,46 @@
 # ShuttleSense session handoff
 
+## Pretrained BST and observable ending review (2026-10-10)
+
+User authorized implementation: pretrained shots, bounded frames after previous
+hit (clarified include current hit/preparation/follow-through), near-player action
+and distance before ending including opposite-side/no-attempt cases. NoLLM/training.
+Used incremental implementation + existing Ponytail/Context7 workflow; official
+BST pinned inference and current PyTorch load/eval docs checked. No subagents.
+
+BST windows now previous detected contact+oneframe through current hit, stopping
+before next detected contact, clip boundary or possible end. Pose matching cannot
+borrow adjacent outside frames. Added observed-shuttle coverage gate. Commit
+cf445ca contains9passingBST window/adapter checks. New shot_review.py uses both
+contact sides for classifier context/bounds, displays near-only predictions, and
+produces endingReview records. Ground/pose/shuttle required by new ending switch,
+defaultoff; old six-switch reports are accepted with endingfalse. Focused pipeline
+supports BST when LLMoff with two-player MediaPipe and farzoomROI; LLM remains
+explicit opt-in. UI replay follows model interval; optional end timestamps pause
+with wrist-to-shuttle image-distance overlay, auto-scroll and JSON export. Arm
+posture and visible reach/approach/no-clear-attempt are distinct from shot intent.
+
+New approved434job c278680c-fb33-4b1c-91d1-8daa17db95f6, manifest artifacts/
+paris434-shot-job.json. Preserves previous463e4a85job and near poses/35hitPoses,
+all5rallywindows/groundcandidates/courtlines. Actual318.1s two-player pose/context
+pass withzoomed farROI on same2520frames, mergedfar namespace+100000; nearposes
+unchanged. Original434hash verified. Reused sourcevideo/TrackNet/ground, no other
+footage. CUDAofficialBST0.97s:74candidates44scored;25near,12accepted13Unknown
+(5lift3net2smash1drive1defensivenet). Not accuracy; pickup/false contacts persist.
+Both known possible endings have reach/swing evidence; closest in final2s:
+39.466667s48.1px and80.533333s130.6px. Three unknown endings abstain. Opposite-
+side/no-clear-attempt regression synthetic only. Image distances are not metres;
+stops can follow rolling/pickup. See docs/bounded-shots-ending-review.md.
+
+Build/typecheck passed.6focusedPlaywrightchecks passed (new/old434reviews,
+controls/dependencies, actualBSTlabels, trust-boundary fields, pause/overlay/
+replay/autoscroll, heatmaprewind/export, savedmatchlisting,noLLM,a11y,cleanJSerrors).
+Python9BST+4ending+8contact checks, focusedscene/rally checks, line/pose tests,
+Nodeoptions checks pass. Movement screenshot refreshed. Prod127.0.0.1:3000
+session5835. New review link /review/c278680c-fb33-4b1c-91d1-8daa17db95f6 also
+automatically listed MyMatches. Full expensive TrackNet/ground paths, old-footage
+suites, LLM and independently labelled intent/shot accuracy were not tested.
+
 ## Court-line alignment v2 and arm-label explanation (2026-10-10)
 
 User reopened sideline alignment concern and asked what pose names mean. Inspected

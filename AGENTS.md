@@ -16,6 +16,13 @@ remain off. Far-side tracking may support rally starts, but player analysis and
 hit-pose evidence must remain near-side. Pose/contact and line-fit estimates must
 not be described as perfect models, confirmed impacts, or exact in/out calls.
 
+Latest request enables pretrained BST shot classification and near-player ending
+review. Far-player poses may run as internal BST context; display only near-side
+shots/player evidence. Classifier windows start after the previous detected hit,
+include the current hit and follow-through, and exclude the next detected hit and
+camera cuts. LLM remains off. Describe visible attempts and image separation;
+never claim inferred intent, physical reach, metres or confirmed first ground touch.
+
 Read `tasks/HANDOFF.md` before starting work. Do not make the user explain the
 sandbox repair again or search previous conversations for it.
 

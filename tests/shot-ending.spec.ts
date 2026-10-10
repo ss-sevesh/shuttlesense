@@ -1,0 +1,50 @@
+import {test,expect} from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+import {readFileSync} from 'node:fs';
+import {isReviewData} from '../lib/analysis-review';
+
+test('ending and shot-window fields validate without breaking legacy saved reviews', () => {
+  const manifest=JSON.parse(readFileSync('artifacts/paris434-shot-job.json','utf8'));
+  const data=JSON.parse(readFileSync(`data/analysis-jobs/${manifest.id}/result.json`,'utf8'));
+  expect(isReviewData(data)).toBe(true);
+  const evidence=data.endingReview.find((e: {evidence:unknown})=>e.evidence).evidence;
+  const time=evidence.time; evidence.time=data.duration+1; expect(isReviewData(data)).toBe(false); evidence.time=time;
+  const distance=evidence.distancePx; evidence.distancePx=-1; expect(isReviewData(data)).toBe(false); evidence.distancePx=distance;
+  const shot=data.shots.find((s: {classificationWindow:unknown})=>s.classificationWindow);
+  const start=shot.classificationWindow[0];shot.classificationWindow[0]=shot.time+.1;expect(isReviewData(data)).toBe(false);shot.classificationWindow[0]=start;
+  const type=data.endingReview.find((e: {lastShot:unknown})=>e.lastShot).lastShot;
+  const previous=type.type;type.type=42;expect(isReviewData(data)).toBe(false);type.type=previous;
+  delete data.endingReview;for(const item of data.shots) delete item.classificationWindow;
+  delete data.options.ending;expect(isReviewData(data)).toBe(true);
+});
+
+test('Paris434 pretrained shots and final movement evidence are usable without LLM',async ({page,request})=>{
+  const manifest=JSON.parse(readFileSync('artifacts/paris434-shot-job.json','utf8'));
+  const data=(await (await request.get(`/api/analysis/${manifest.id}`)).json()).result;
+  expect(data.fileName).toMatch(/350_434\.mp4$/);expect(data.options).toMatchObject({shots:true,ending:true,llm:false});
+  expect(data.shots.every((s: {side:string})=>s.side==='near')).toBe(true);
+  expect(data.shots.filter((s: {predictedType:unknown})=>s.predictedType).length).toBeGreaterThan(0);
+  expect(data.endingReview.filter((e:{status:string})=>e.status==='unknown')).toHaveLength(3);
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.emulateMedia({reducedMotion:'reduce'});await page.goto(`/review/${manifest.id}`);
+  await expect(page.getByText('Pretrained BST-0 uses body movement',{exact:false})).toBeVisible();
+  const region=page.getByRole('region',{name:'Near-player ending review'});
+  await expect(region).toContainText('not metres or physical reach');
+  const event=data.endingReview.find((e:{evidence:unknown})=>e.evidence);
+  await region.getByRole('button',{name:`Show ending evidence at ${event.evidence.time.toFixed(3)} s`,exact:true}).click();
+  const video=page.locator('.review-camera video');
+  await expect.poll(async()=>video.evaluate((v:HTMLVideoElement)=>v.currentTime)).toBeCloseTo(event.evidence.time,2);
+  expect(await video.evaluate((v:HTMLVideoElement)=>v.paused)).toBe(true);
+  await expect(page.locator('[data-ending-distance]')).toHaveCount(1);
+  await expect.poll(async()=>video.evaluate(v=>Math.abs(v.getBoundingClientRect().top))).toBeLessThan(2);
+  await page.screenshot({path:'artifacts/paris434-shot-ending-review.png',fullPage:true});
+  await region.getByRole('button',{name:`Replay ending of window ${event.rallyId}`,exact:true}).click();
+  await expect.poll(async()=>video.evaluate((v:HTMLVideoElement,end:number)=>v.paused&&v.currentTime>=end,event.windowEnd)).toBe(true);
+  const download=page.waitForEvent('download');await page.getByRole('button',{name:'Download reviewed JSON'}).click();
+  const exported=JSON.parse(readFileSync((await (await download).path())!,'utf8'));
+  expect(exported.endingReview).toEqual(data.endingReview);expect(exported.modelShots).toEqual(data.shots);
+  await expect(page.getByRole('region',{name:'Before-landing coaching'})).toHaveCount(0);
+  await page.goto('/?view=matches');await expect(page.locator(`a[href="/review/${manifest.id}#camera-values"]`)).toBeVisible();
+  expect((await new AxeBuilder({page}).include('main').analyze()).violations).toEqual([]);
+  expect(errors).toEqual([]);
+});
