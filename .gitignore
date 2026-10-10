@@ -18,6 +18,8 @@ __pycache__/
 *.avi
 *.webm
 !tests/fixtures/preview.webm
+!public/demo/court.mp4
+!docs/media/shuttlesense-walkthrough.mp4
 *.pt
 *.onnx
 artifacts/*

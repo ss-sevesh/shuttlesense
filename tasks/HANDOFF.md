@@ -1,5 +1,56 @@
 # ShuttleSense session handoff
 
+## Rally heatmaps, body angles, match reports and public demo (2026-10-10)
+
+Current extension uses only approved Paris350_434 saved analysis c278680c.
+Review: http://127.0.0.1:3000/review/c278680c-fb33-4b1c-91d1-8daa17db95f6
+Main workspace: /; My Matches: /?view=matches; generated feature preview: /demo.
+
+Heat now intersects elapsed sample durations with selected completed/user-verified
+rally windows. Live/Rally total and Combine rallies support empty selections,
+partial frames, overlaps without double counting and rewind. No between-point
+occupancy or dot; fixed0–5s/cell intensity retained. Loss selection and rally selector
+share state. Correct unresolved windows in collapsed technical details.
+
+Shot controls/table removed, legacy saved JSON retained. Exact frame+near identity
+joins provide confidence-gated pixel-correct shoulders/elbows/wrists/hips/knees/
+ankles, contact elbow/body lean/arm elevation; missing is Unknown, wrist uses finger
+proxy. Hit candidates and accepted legacy classifiers never guaranteed equal counts.
+
+Report API is loopback/origin gated, bounded16KB, validates corrected windows and
+reads server outcomes. Full source SHA256 keys local cache. Pinned local Qwen
+report-v5 sees every eligible pose with explicitly named angles, one-second motion/
+shuttle bins and ending evidence in bounded portions. Unknown-ending windows and
+outside poses stay appendix-only; cached AI loss interpretations never enter fresh
+prompts. Training uses preceding generated observations; system/section prompts
+are exported. Reports retain uncertainty, estimated contact and recording-only scope.
+Text-only worker moves unused vision weights to CPU; loss-photo model stays intact.
+Short plain-text sections retain complete sentences without splitting decimal
+timestamps. Angle-number sentences are omitted; an angle-only paragraph receives
+one local qualitative rewrite with numeric angle values removed from its draft.
+Actual rewrite prompts persist with portion caches. Malformed/context failures
+never create fabricated reports. Full rally pose table uses the same corrected
+interval as the report, rather than stopping at attempt-photo time plus .5s.
+
+README, setup/user guides, CONTRIBUTING and GitHub About/topics document current
+local Windows/CUDA prototype. /demo needs only Node and generated public assets.
+45-second docs/media walkthrough and screenshot contain synthetic data only;
+private footage/results/artifacts/models remain ignored. No search-rank guarantee.
+Fresh-machine full installer is untested; -CheckOnly passed existing environments.
+
+Final verification: production build/typecheck, 12 focused Playwright cases and
+four Python checks passed on approved434/synthetic inputs. Actual local report
+generation completed (final synthesis/rewrite run2.8min using valid portion
+caches); cache reopen, Markdown/JSON downloads and all22 eligible pose frames/
+named angles verified. Report has two rally reviews and38 actual prompts including
+two qualitative rewrites. Angle numbers remain appendix-only. Browser layouts
+320/768/1024/1440, axe, replay/frame seeks, marking, paging, empty/error/stale states
+passed. Model-lock conflict during overlapping tests was rerun successfully after
+generation. No tracking/ground/pose pipeline rerun or accuracy evaluation.
+Private exports: artifacts/paris434-match-report.md and
+artifacts/paris434-report-evidence.json.
+Production server127.0.0.1:3000 session47816; walkthrough media inspected.
+
 ## Fixed live heat intensity (2026-10-10)
 
 User reported the initial point was immediately dark and requested GitHub commit.

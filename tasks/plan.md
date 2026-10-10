@@ -188,3 +188,29 @@ Use existing video/evidence and cream-green UI. Move selected loss details besid
 
 ## Smaller photo and always-visible live map
 Keep existing loss-review design and evidence selection. Place live heatmap beside video inside sticky main column; make exact attempt photograph a small inset beside explanation, explain the closest normalized wrist-gap selection in its caption. Preserve overlays, marking coordinates, paging and cached AI; no model rerun. Verify desktop visibility, smaller photo, mobile overflow, selection and replay.
+
+## Rally-scoped movement and full match report — 2026-10-10
+
+Extend the existing review implementation; preserve unfinished research tasks.
+1. Scope elapsed heat by selected completed/verified rally windows, merge overlapping
+   intervals without duplicate time; offer Live/Rally total and Combine rallies.
+   Verify partial samples, gaps, rewind, overlap and saved boundary corrections.
+2. Remove shot types from review UI (retain legacy reports/exports and optional model).
+   Derive confidence-gated pixel-correct 2D elbows, shoulders, wrists (finger proxy),
+   hips, knees and ankles from exact matching near-player landmarks, plus available
+   contact body lean/arm elevation. Never borrow another frame/identity. Page five.
+3. Local Qwen report: all rallies/outcomes/boundary corrections, each in-rally pose
+   timestamp and available angles, movement occupancy and temporal summaries,
+   shuttle/ending evidence. Cached loss descriptions remain appendix-only. Download exact evidence   appendix and professional report; cache by full evidence digest. Distinguish
+   observed posture, possible intent, unknown first touch and unverified causes.
+   Long match evidence uses bounded per-rally batches, no silent dropping of events.
+   UI exposes model errors/retry and stale report after edits. No cloud/training.
+4. Review existing cream/green desktop design: primary rally/movement controls above
+   video, heatmap next to video, report separate from loss reason, deeper details
+   collapsed, accessible controls and meaningful empty/error states; check widths
+   320/768/1024/1440, keyboard, axe and console.
+5. Professional README/quickstart/model prerequisites/troubleshooting/privacy;
+   generated, labelled synthetic walkthrough recording (no private match footage)
+   and feature guide; descriptive GitHub topics/About metadata, no search-rank claims.
+6. Build/typecheck, focused approved434/synthetic/browser/Python checks, actual local
+   report generation, review diff/private-file gate, update handoff, commit/push.

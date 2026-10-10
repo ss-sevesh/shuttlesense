@@ -177,3 +177,11 @@ does not claim the upload/worker or production checkpoints are complete.
 - [x] Place compact live map beside video and small attempt photo beside description.
 - [x] Explain existing final-two-second normalized wrist-gap photo condition.
 - [x] Verify layout and existing evidence/replay controls; update handoff and commit/push.
+
+## Current extension: rally movement, pose angles, match report and GitHub guide
+- [x] Rally-scoped live/total/combined heatmap and regressions.
+- [x] All reliable near-side pose angles; remove shot-type UI; preserve exports.
+- [x] Evidence-grounded local match report, cache/edits/downloads and actual inference.
+- [x] UI desktop/narrow/keyboard/axe/error-state review.
+- [x] Professional README, setup instructions, synthetic feature video and repo topics.
+- [x] Final build/checks, handoff, professional commits and GitHub push.

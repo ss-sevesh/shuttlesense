@@ -1,43 +1,139 @@
 # ShuttleSense
 
-Local tracked movement preview: open `/movement`, or choose **View tracked clip
-movement** in the workspace. It shows a coarse heatmap from saved player boxes,
-separate from the fictional coaching dashboard. Exact shoe contact is deferred.
-See [the preview report](docs/ground-contact.md#coarse-movement-preview) for the
-export command. Private results must exist locally; they are excluded from Git
-and deployment bundles. This does not automatically analyze new uploads.
+**Local AI badminton video analysis, grounded in rally evidence.**
 
-Windows sandbox shortcut (only after a setup failure; run with approved execution
-outside the sandbox): `npm.cmd run sandbox:fix -- -CheckOnly`, then
-`npm.cmd run sandbox:fix`. Retry a sandbox command immediately. Session agents
-must read [AGENTS.md](AGENTS.md), which now points directly to this repair.
+Replay rallies, inspect near-player poses, compare court movement and turn the
+available evidence into a practical training report. Videos and inference stay local.
 
-Desktop web prototype for a badminton coaching workspace, built with Next.js, React, TypeScript, native CSS, and Phosphor icons.
+![ShuttleSense synthetic feature demo](docs/media/review.png)
+
+[Watch the feature walkthrough](https://github.com/ss-sevesh/shuttlesense/blob/main/docs/media/shuttlesense-walkthrough.mp4)
+· [Download the MP4](https://raw.githubusercontent.com/ss-sevesh/shuttlesense/main/docs/media/shuttlesense-walkthrough.mp4)
+· [User guide](docs/USER-GUIDE.md) · [Analysis setup](docs/SETUP.md)
+· [Contributing](CONTRIBUTING.md)
+
+The walkthrough uses generated footage, synthetic poses and sample coaching.
+It demonstrates the interface, not model accuracy.
+
+## Try it in two minutes
+
+Install Node.js 22 or newer and Git:
 
 ```sh
-npm.cmd install
-npm.cmd run dev
+git clone https://github.com/ss-sevesh/shuttlesense.git
+cd shuttlesense
+npm install
+npm run dev
 ```
 
-Open http://127.0.0.1:3000. Use `npm.cmd run build` and `npm.cmd start` for a production preview. `npm.cmd run test:ui` runs the Playwright interaction and axe accessibility checks using an installed Chrome browser; `npm.cmd run typecheck` checks TypeScript. On macOS/Linux use `npm` instead of `npm.cmd`.
+Open **http://127.0.0.1:3000/demo** for the interactive feature demo.
+No Python, GPU, API key, model download or private footage is needed for the demo.
+On Windows PowerShell use `npm.cmd` and `npx.cmd` instead of the `.ps1` shims.
+The workspace is **http://127.0.0.1:3000**; saved recordings appear in **My Matches**.
 
-With the app running, `npm.cmd run screenshot` saves a desktop movement preview
-to `artifacts/movement-preview.png`. `npm.cmd run test:sandbox` checks the repair
-script using fake process commands; it never stops real helpers. The repair
-ignores old errors followed by successful setup. Git writes still use approved
-execution because the managed sandbox protects `.git`; this is an expected
-permission boundary, not a reason to weaken Windows permissions.
+## Features
 
-The UI includes match overview, rally review, court heatmap, evidence links, drill instructions and completion, theme switching, report/plan downloads, and local video preview. Filters and selected rallies are reflected in the URL. Drill completion is saved locally.
+| Feature | What it does |
+| --- | --- |
+| Rally replay | Play a bounded rally or final seconds; correct observed boundaries. |
+| Rally-only heatmap | Live movement inside selected rally windows; excludes between-point time. |
+| Combine rallies | Choose multiple rallies and show combined live progress or full totals. |
+| Evidence overlays | Toggle player boxes, body pose, shuttle proposals and near-side court lines. |
+| Hit-pose timestamps | Pause at a candidate frame, auto-scroll to video, or replay surrounding movement. |
+| Body angles | Inspect reliable shoulders, elbows, wrists, hips, knees and ankles; missing stays unknown. |
+| Loss review | Mark outcomes, view the attempt photo and request a local AI ending explanation. |
+| Image separation | Wrist-to-shuttle proxy or manually marked racket-head gap, in image pixels. |
+| AI match report | Timestamped observations, possible mistakes, suggested training and uncertainty. |
+| Private exports | Download report, exact AI evidence, and original detector data with separate corrections. |
 
-All match statistics, coaching explanations, heatmap values, and movement trails are fictional demo data. The court image is AI-generated. Choosing a video opens native playback on your device; it does not upload to a server or run AI analysis. The full analysis implementation remains in [the project plan](tasks/plan.md).
+Shot-type classification is removed from review and upload controls.
+Legacy classifier fields remain readable in saved reports and JSON exports.
 
-For a new coding session, start with [the handoff notes](tasks/HANDOFF.md) and the [task checklist](tasks/todo.md).
+## Real video analysis
 
-Tracking feasibility preparation and local Python checks are documented in [the evaluation protocol](docs/evaluation.md). The [first-video report](docs/first-video.md) records an offline person-detection experiment; stable identity tracking and coaching are not connected to the UI yet.
+The model pipeline currently targets **Windows with an NVIDIA CUDA GPU**,
+Python and FFmpeg. The interface/demo work without it. Follow [the setup guide](docs/SETUP.md),
+upload a short clip, mark four visible singles-court corners and enable required features.
 
-The [white-player tracking report](docs/white-tracking.md) and [ground-contact review](docs/ground-contact.md) record short-segment experiments, camera stability checks and remaining validation limits. Run `python analysis/test_feasibility.py` for offline regression checks after installing `analysis/requirements.txt`.
+Use a fixed camera with the full court and both players visible. Camera motion,
+broadcast cuts and occlusions reduce usable evidence. No training dataset is needed.
 
-Source font and image assets are included locally. `scripts/prepare-assets.mjs <image-path>` is a one-time asset preparation helper, not required to run the app. The test video is a generated one-second green frame used solely to verify native playback.
+| Component | Pretrained model / method |
+| --- | --- |
+| Players | YOLO11n-pose boxes + ByteTrack identities |
+| Body landmarks | MediaPipe Pose Landmarker Full |
+| Shuttle proposals | TrackNetV3 |
+| Floor segmentation | SegFormer B0 ADE20K |
+| Court markings | OpenCV white-pixel fitting guided by marked singles-court geometry |
+| Optional coaching/report | Pinned local Qwen3-VL-2B-Instruct |
 
-Verified with 5 Playwright checks, axe scans in light/dark themes, and a clean production browser console. Desktop Lighthouse: performance 100, accessibility 100. Captures and the audit are in `artifacts/`. The local taste skill informed the palette, typography, and spacing; product interactions were reviewed against the current [Web Interface Guidelines](https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md). Design dials: variance 6, motion 3, density 5.
+Weights are downloaded separately and excluded from Git.
+The current implementation is a research prototype, not a hosted analysis service.
+
+## What the evidence means
+
+- Rally endings are estimated shuttle stops, **not confirmed first ground touch**.
+  Line highlights do not provide verified in/out calls. Outcomes are user marked.
+- Hit poses are swing/contact candidates, not a validated hit count. Their count
+  need not match accepted legacy shot labels, which use separate filtering.
+- Movement is projected player-box occupancy, not verified foot contacts.
+  Heat uses a fixed **0–5 seconds per cell** scale; tooltips retain exact seconds.
+- Angles are confidence-gated, camera-dependent 2D estimates. Wrist angles use an
+  index-finger proxy. Automatic racket-face angles and physical reach are unavailable.
+- AI interpretations can be wrong. Reports cover the supplied recording, not unseen
+  parts of the original match. They distinguish observation from possible intent.
+  All eligible hit-pose timestamps/angles are retained; dense movement and shuttle
+  tracks use chronological one-second summaries. Download the AI evidence to inspect inputs.
+  Numerical angle prose is excluded or rewritten; exact joint values stay in the appendix.
+
+Independent detection accuracy and coaching usefulness remain unvalidated.
+See [the evaluation protocol](docs/evaluation.md).
+
+## Development
+
+```sh
+npm run build
+npm run typecheck
+npx playwright test tests/public-demo.spec.ts
+python -m unittest discover -s analysis -p test_match_report.py
+```
+
+Playwright uses an installed Chrome browser. Public-demo tests need no private files
+or models. Real-video tests require local saved reports and approved footage;
+do not run historical footage suites indiscriminately.
+
+Regenerate public assets with NumPy/OpenCV and FFmpeg:
+`python scripts/generate-demo.py`, start the app, then
+`node scripts/record-demo.mjs`. Both generators use synthetic data only.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    A[Local video + marked court] --> B[Tracking / pose workers]
+    B --> C[Saved evidence + rally windows]
+    C --> D[Replay / heatmap / poses]
+    D --> E[User outcomes + corrections]
+    C --> F[Local Qwen report]
+    E --> F
+    F --> G[Report + evidence downloads]
+```
+
+Next.js · React · TypeScript · native CSS · Python · PyTorch · OpenCV.
+Local jobs and cached reports live under ignored `data/analysis-jobs/`.
+Model work is serialized. Analysis APIs are loopback-only; do not expose the
+development server as a public upload service.
+
+## Privacy and project status
+
+Private footage, model weights, analysis results and review screenshots stay ignored.
+Only generated demo assets and a synthetic walkthrough are published.
+Model downloads access official hosts; inference then uses local files.
+
+No account system, cloud storage or trained badminton-specific intent model is included.
+Upstream models have their own terms; consult those before redistributing weights
+or commercial use. This repository grants no rights to private test footage.
+
+See [handoff](tasks/HANDOFF.md), [plan](tasks/plan.md) and [tasks](tasks/todo.md)
+for current work and research history. Open reproducible issues without private
+videos, credentials or personal data.

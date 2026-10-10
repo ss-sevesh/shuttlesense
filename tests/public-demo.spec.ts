@@ -1,0 +1,32 @@
+import {test,expect} from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+test('fresh-clone synthetic demo plays and demonstrates review without model inference',async({page,request})=>{
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('/demo');
+  await expect(page.getByRole('heading',{name:'Explore ShuttleSense.'})).toBeVisible();
+  await expect(page.locator('main')).toContainText('synthetic evidence');
+  const video=page.locator('video');await expect.poll(()=>video.evaluate((v:HTMLVideoElement)=>v.duration)).toBe(12);
+  await page.getByRole('button',{name:'Show attempt at 4.500 s',exact:true}).click();
+  await expect.poll(()=>video.evaluate((v:HTMLVideoElement)=>!v.seeking&&v.paused&&v.currentTime===4.5)).toBe(true);
+  const image=page.getByRole('figure',{name:'Exact attempt photo'}).locator('img');
+  await expect.poll(()=>image.evaluate((i:HTMLImageElement)=>i.naturalWidth)).toBe(1280);
+  expect((await image.boundingBox())!.width).toBeGreaterThan(0);
+  expect(await page.getByRole('figure',{name:'Exact attempt photo'}).innerText()).not.toMatch(/\d{5,}\.\d px/);
+  await page.getByRole('button',{name:'Generate match report',exact:true}).click();
+  await expect(page.getByRole('region',{name:'AI match report'})).toContainText('Synthetic report preview');
+  await expect(page.getByRole('button',{name:'Download report',exact:true})).toBeVisible();
+  await page.route('**/api/demo/report',async route=>{if(route.request().postDataJSON().generate===false)return route.continue();await route.fulfill({status:422,json:{error:'Local model unavailable. Retry.'}});});
+  await page.getByRole('button',{name:'Refresh match report',exact:true}).click();
+  await expect(page.getByRole('region',{name:'AI match report'})).toContainText('Local model unavailable. Retry.');
+  await expect(page.getByRole('button',{name:'Download report',exact:true})).toBeEnabled();
+  await page.unroute('**/api/demo/report');
+  await page.getByText('Technical details: poses & rally boundaries',{exact:true}).click();
+  await page.getByRole('button',{name:'Rally boundaries',exact:true}).click();
+  await page.getByLabel('Observed start (seconds)').fill('1.1');
+  await page.getByRole('button',{name:'Save verified window',exact:true}).click();
+  await expect(page.getByRole('region',{name:'AI match report'}).getByRole('alert')).toContainText('Rally boundaries or outcomes changed');
+  for(const width of [320,768,1024,1440]){await page.setViewportSize({width,height:1000});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);}
+  expect((await new AxeBuilder({page}).include('main').analyze()).violations).toEqual([]);
+  expect((await request.post('/api/demo/landing',{headers:{origin:'http://127.0.0.1:3000'},data:{rallyId:99,outcome:'lost'}})).status()).toBe(400);
+  expect(errors).toEqual([]);
+});
