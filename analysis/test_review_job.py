@@ -38,6 +38,10 @@ if (CACHE/'players.json').exists():
     def load(name): return json.loads((CACHE/name).read_text(encoding='utf-8'))
     poses,shuttle,fused=load('players.json'),load('shuttle.json'),load('final-v2/results.json')
     data=review_data(poses,shuttle,fused,'test.mp4',True,'original-sha')
+    ground={'status':'unavailable','model':'segformer','revision':'pinned','candidates':[],'reason':'Worker unavailable'}
+    with_ground=review_data(poses,shuttle,fused,'test.mp4',True,'original-sha',ground=ground)
+    assert with_ground['groundLanding']==ground and with_ground['rallies']==data['rallies']
+    assert with_ground['analysisSha256']==data['analysisSha256']  # Existing human shot/rally labels retain their identity.
     assert len(data['analysisSha256'])==64
     assert review_data(poses,shuttle,fused,'renamed.mp4',True,'original-sha')['analysisSha256']==data['analysisSha256']
     changed=json.loads(json.dumps(fused)); changed['hits'][0]['time_s']+=.01

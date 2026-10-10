@@ -5,6 +5,7 @@ export type ContactEvidence = { method: "wrist_distance"; status: string; frame:
 export type ShotCoaching = { status: "experimental" | "unavailable"; model?: string; revision?: string; evidenceSha256?: string; reason?: string; answer?: { shotType: string; visibleEvidence: string; uncertainty: string; coaching: string } };
 export type ReviewShot = { id: number; time: number; side: Side; trackId: number; predictedType: string | null; rawType: string | null; score: number | null; status: string; playStatus: string; reason: string; contact?: ContactEvidence; coaching?: ShotCoaching | null };
 export type ReviewRally = { id: number; start: number; end: number | null; reviewStop: number; hitCandidates: number; startStatus: string; endStatus: string };
+export type GroundLanding = { status: "experimental" | "unavailable"; model: string; revision: string; reason: string; candidates: { frame: number; time: number; point: [number, number]; status: "possible_landing"; holdFrames: number; floorScore: number }[] };
 export type ReviewData = {
   videoSha256: string; analysisSha256: string; fileName: string; duration: number; width: number; height: number; fps: number; cached: boolean; poseSampleHz: number;
   samples: { time: number; people: ReviewPerson[] }[];
@@ -14,6 +15,7 @@ export type ReviewData = {
   limitations: string[];
   pipelineVersion?: string;
   focusSide?: Side | null;
+  groundLanding?: GroundLanding;
 };
 export const shotTypes = ["smash", "clear", "drop", "lift", "drive", "net shot", "defensive net shot", "push", "net kill", "crosscourt net shot", "short serve", "long serve"] as const;
 export const canonicalShot = (value: string) => value.replace(/_/g," ").replace(/netshot/g,"net shot").replace(/netkill/g,"net kill");
@@ -32,7 +34,17 @@ export function isReviewData(value: unknown): value is ReviewData {
   const data = value as Partial<ReviewData>;
   return typeof data.videoSha256 === "string" && /^[a-f0-9]{64}$/i.test(data.videoSha256) && typeof data.analysisSha256 === "string" && /^[a-f0-9]{64}$/i.test(data.analysisSha256) && typeof data.fileName === "string" &&
     [data.duration,data.width,data.height,data.fps,data.poseSampleHz].every(value => typeof value === "number" && Number.isFinite(value) && value > 0) &&
-    Array.isArray(data.samples) && Array.isArray(data.shuttle) && Array.isArray(data.shots) && data.shots.every(shot => shot && typeof shot === "object" && validContact(shot.contact, data.duration!, data.fps!) && validCoaching(shot.coaching)) && Array.isArray(data.rallies) && Array.isArray(data.limitations) && !!data.metrics && typeof data.metrics === "object";
+    Array.isArray(data.samples) && Array.isArray(data.shuttle) && Array.isArray(data.shots) && data.shots.every(shot => shot && typeof shot === "object" && validContact(shot.contact, data.duration!, data.fps!) && validCoaching(shot.coaching)) && validGround(data.groundLanding, data.duration!, data.fps!, data.width!, data.height!) && Array.isArray(data.rallies) && Array.isArray(data.limitations) && !!data.metrics && typeof data.metrics === "object";
+}
+function validGround(ground: GroundLanding | undefined, duration: number, fps: number, width: number, height: number) {
+  if (ground === undefined) return true;
+  if (!ground || typeof ground !== "object" || !["experimental", "unavailable"].includes(ground.status) ||
+      ![ground.model, ground.revision, ground.reason].every(value => typeof value === "string") || !Array.isArray(ground.candidates)) return false;
+  if (ground.status === "unavailable") return ground.candidates.length === 0;
+  return ground.candidates.every(item => item && item.status === "possible_landing" && Number.isSafeInteger(item.frame) && item.frame >= 0 &&
+    Number.isFinite(item.time) && item.time >= 0 && item.time < duration && Math.abs(item.time - item.frame / fps) < .1 / fps &&
+    Number.isSafeInteger(item.holdFrames) && item.holdFrames >= 3 && Number.isFinite(item.floorScore) && item.floorScore >= 0 && item.floorScore <= 1 &&
+    Array.isArray(item.point) && item.point.length === 2 && item.point.every(Number.isFinite) && item.point[0] >= 0 && item.point[0] < width && item.point[1] >= 0 && item.point[1] < height);
 }
 function validCoaching(coaching: ShotCoaching | null | undefined) {
   if (coaching == null) return true;

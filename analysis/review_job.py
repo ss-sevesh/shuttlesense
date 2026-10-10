@@ -65,7 +65,7 @@ def shot_reason(hit):
     return 'Model evidence did not pass acceptance filters.'
 
 
-def review_data(poses, shuttle, fused, file_name, cached, original_hash, marked_corners=None):
+def review_data(poses, shuttle, fused, file_name, cached, original_hash, marked_corners=None, ground=None):
     from tracked_rallies import validate_observations, pose_measurements
     validate_observations(poses, shuttle)
     if poses['video_sha256'] != shuttle['video_sha256'] or fused['video_sha256'] != poses['video_sha256']:
@@ -101,6 +101,7 @@ def review_data(poses, shuttle, fused, file_name, cached, original_hash, marked_
             **({'contact':h['contact'], 'coaching':h.get('coaching')} if 'contact' in h else {})} for i,h in enumerate(fused['hits'])],
         'pipelineVersion':fused.get('pipeline_version', 'legacy-wrist-peaks'),
         'focusSide':fused.get('focus_side'),
+        **({'groundLanding':ground} if ground is not None else {}),
         'rallies': [{'id':i+1,'start':r['start_s'],'end':r['end_s'],'reviewStop':r['review_stop_s'],
             'hitCandidates':r['hit_candidates'],'startStatus':r['start_status'],'endStatus':r['end_status']} for i,r in enumerate(fused['rallies'])],
         'metrics': metrics, 'limitations': ['Predictions and contact candidates need human verification.',
@@ -176,6 +177,22 @@ def main():
             for hit in classified: hit['play_status']=play_status(hit['time_s'],rallies)
             fused={'video_sha256':poses['video_sha256'],'pipeline_version':PIPELINE_VERSION,'focus_side':'near','fps':poses['fps'],'hits':classified,'rallies':rallies}
             write_json(directory/'fused.json',fused)
+        stage('Segmenting floor and checking possible shuttle landings', 97)
+        from ground_landing import MODEL, REVISION
+        with (directory/'worker.log').open('a', encoding='utf-8') as log:
+            try:
+                # Cached jobs keep their model reports; the new pass reads the same normalized source.
+                write_json(directory/'shuttle.json', shuttle)
+                subprocess.run([str(ROOT/'data/hf-racquet-env/Scripts/python.exe'), 'analysis/ground_landing.py',
+                    '--video', str(directory/'source.mp4'), '--shuttle', str(directory/'shuttle.json'),
+                    '--output', str(directory/'ground')], cwd=ROOT, stdout=log, stderr=subprocess.STDOUT,
+                    check=True, timeout=max(120, metadata['duration']*10), creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+                ground=json.loads((directory/'ground/results.json').read_text(encoding='utf-8'))
+                if ground['videoSha256'] != poses['video_sha256']: raise ValueError('Floor results belong to another video')
+            except (subprocess.SubprocessError, OSError, ValueError) as error:
+                log.write(f'Floor segmentation unavailable: {type(error).__name__}\n')
+                ground={'status':'unavailable','model':MODEL,'revision':REVISION,'candidates':[],
+                    'reason':'Floor worker did not complete. See worker.log; rally endings remain unknown.'}
         from shot_coach import extract_frames
         stage('Extracting five-frame contact evidence', 97)
         extract_frames(directory/'source.mp4',fused['hits'],directory/'frames')
@@ -196,7 +213,7 @@ def main():
         with (directory/'source.mp4').open('rb') as source:
             if hashlib.file_digest(source,'sha256').hexdigest()!=poses['video_sha256']:
                 raise ValueError('The normalized video does not match its model reports. Rerun analysis.')
-        result=review_data(poses,shuttle,fused,request['fileName'],cached,original_hash,metadata['corners'])
+        result=review_data(poses,shuttle,fused,request['fileName'],cached,original_hash,metadata['corners'],ground)
         write_json(directory/'result.json',result)
         write_json(directory/'provenance.json',{'originalSha256':original_hash,'normalizedSha256':result['videoSha256'],'pipelineVersion':PIPELINE_VERSION,'cached':cached,'cornersPx':metadata['corners'],'cachedCornerTolerancePx':2 if cached else None})
         write_json(directory/'status.json',{'id':directory.name,'status':'complete','stage':'Ready for your verification','progress':100})

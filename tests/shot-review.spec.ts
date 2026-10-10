@@ -190,6 +190,9 @@ test('fresh six-second upload runs the actual GPU pipeline', async ({ page, requ
   expect(job.result.duration).toBeCloseTo(6,1);
   expect(job.result.metrics.shuttleFrames).toBe(180);
   expect(job.result.metrics.sampleCount).toBe(180);
+  expect(job.result.groundLanding.status).toBe('experimental');
+  expect(job.result.groundLanding.measurements.frames).toBe(180);
+  expect(job.result.rallies.every((rally: { end: number | null }) => rally.end === null)).toBe(true);
   await expect(page.locator('.review-summary > div').last().locator('dd')).toHaveText('00 rally windows reviewed');
   await page.screenshot({path:'artifacts/fresh-upload-review.png',fullPage:true});
 });

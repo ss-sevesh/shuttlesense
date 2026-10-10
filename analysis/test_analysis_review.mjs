@@ -25,4 +25,11 @@ for (const invalid of [{...contact,frame:NaN},{...contact,frames:[3,4,9,6,7]},{.
   assert.equal(isReviewData({...report,shots:[{contact:invalid}]}),false);
 }
 assert.equal(isReviewData({...report,shots:[null]}),false);
+const ground = {status:'experimental',model:'segformer',revision:'pinned',reason:'Needs review',candidates:[{frame:5,time:5/30,point:[10,10],status:'possible_landing',holdFrames:6,floorScore:.8}]};
+assert.equal(isReviewData({...report,groundLanding:ground}),true);
+assert.equal(isReviewData({...report,groundLanding:{...ground,status:'unavailable',candidates:[]}}),true);
+for (const bad of [{frame:-1},{time:NaN},{point:[33,10]},{floorScore:2},{holdFrames:0},{status:'confirmed'}]) {
+  assert.equal(isReviewData({...report,groundLanding:{...ground,candidates:[{...ground.candidates[0],...bad}]}}),false);
+}
+assert.equal(isReviewData({...report,groundLanding:null}),false);
 assert.equal(isReviewData({...report,shots:[{contact,coaching:{status:'experimental',answer:{shotType:'smash',visibleEvidence:{},uncertainty:'unknown',coaching:'Practice'}}}]}),false);

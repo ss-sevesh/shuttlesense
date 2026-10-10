@@ -1,5 +1,46 @@
 # ShuttleSense session handoff
 
+## Pretrained floor / landing candidates (2026-10-10)
+
+User requested the YOLOv8-seg floor -> shuttle overlap -> rally-end plan, with
+pretrained weights and no training. Read AGENTS/handoff and installed Next client
+guide. Official docs confirm COCO YOLOv8-seg has no floor/shuttlecock class, so used
+official pretrained NVIDIA SegFormer-B0 ADE20K (floor class), pinned revision
+489d5cd81a0b59fab9b7ea758d3548ebe99677da. Existing hf-racquet-env CUDA stack reused;
+no package installation, training or new plugin setup. Context7 verified APIs.
+Pinned safetensors/config download and SHA-256 checks under ignored data/models.
+
+analysis/ground_landing.py segments every normalized frame, joins existing TrackNet
+observations, checks continuous approach then .2s floor-supported stationary hold,
+rejects gaps/resets/motion-only overlap, emits possible_landing only. A held or
+airborne shuttle can overlap floor in 2D; no confirmed impact or automatic rally end.
+Upload worker integrates optional pass; failures return unavailable and preserve
+other analysis. UI adds candidate bounded replay, zero/unavailable messages and
+separate groundLanding JSON export. Existing rally correction form confirms observed
+endings; original saved analyses and human shot/rally fingerprints preserved.
+
+Full existing 40s clip dd88779c-8a2f-406e-a2a3-ebdf90038b47 processed:1202frames,
+43floor-overlap observations,55.2%mean floor area,zero qualifying landing candidates.
+CUDA47s first run/51s repeat including loading and diagnostic writes. Counts/runtime
+only, no landing ground truth or accuracy claim. Distributed overlays visually
+reviewed. Audited all1202shuttle joins and41sampled binary masks. Private outputs
+data/feasibility/ground-landing-01 include observations/results/masks/overlays.
+Separate saved trial d33f05e2-991f-4571-a6a4-1b72db67b144 reuses source via hardlink,
+copies original contact images and ground diagnostics; original job intact.
+Open http://127.0.0.1:3000/review/d33f05e2-991f-4571-a6a4-1b72db67b144.
+Manifest artifacts/ground-test-job.json. See docs/ground-landing.md for setup/limits.
+
+Ground candidate unit checks, review adaptation, Node review/route validation,
+typecheck and production build passed. Full18browser tests passed in2.4min with
+fresh6s actual GPU upload (new floor pass180frames/7.1s), prior local coaching,
+CPU upload, reviewed labels, replay/export/a11y. Focused2ground tests also passed
+after adding console and contact-image checks. Simulated positive candidate is
+explicitly synthetic; real trial has zero candidates. Movement screenshot refreshed.
+Production restarted127.0.0.1:3000, terminal session94117. Sandbox commands worked;
+no sandbox repair, process killing or settings changes. Footage/models/results stay
+ignored/private. No automatic RALLY ENDS accuracy claim; human observation is needed
+to assess misses and timestamp error before promoting this heuristic.
+
 ## Before-landing LLM evidence feature (2026-10-09)
 
 User explicitly requested frames BEFORE shuttle-ground landing sent to LLM for

@@ -81,7 +81,7 @@ export function AnalysisReview({ data, videoUrl }: { data: ReviewData; videoUrl:
     save({ ...reviews, rallies: { ...reviews.rallies, [rally.id]: { start, end, reviewedAt: new Date().toISOString() } } });
   }
   function download() {
-    const blob = new Blob([JSON.stringify({ videoSha256: data.videoSha256, analysisSha256: data.analysisSha256, pipelineVersion: data.pipelineVersion, focusSide: data.focusSide, fps: data.fps, fileName: data.fileName, duration: data.duration, modelShots: data.shots, modelRallies: data.rallies, humanReviews: reviews },null,2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify({ videoSha256: data.videoSha256, analysisSha256: data.analysisSha256, pipelineVersion: data.pipelineVersion, focusSide: data.focusSide, fps: data.fps, fileName: data.fileName, duration: data.duration, modelShots: data.shots, modelRallies: data.rallies, groundLanding: data.groundLanding, humanReviews: reviews },null,2)], { type: "application/json" });
     const url = URL.createObjectURL(blob), anchor = document.createElement("a");
     anchor.href = url; anchor.download = "shuttlesense-reviewed.json"; anchor.click();
     setTimeout(() => URL.revokeObjectURL(url),1000);
@@ -98,6 +98,14 @@ export function AnalysisReview({ data, videoUrl }: { data: ReviewData; videoUrl:
     <div className="review-workspace">
       <div className="review-main"><AnalysisCamera data={data} videoUrl={videoUrl} replay={replay} onTime={onTime}/>
         <LandingCoaching videoUrl={videoUrl} fps={data.fps} duration={data.duration} time={time} analysisSha256={data.analysisSha256}/>
+        {data.groundLanding && <section className="review-events" aria-label="Possible shuttle landings">
+          <h3>Possible shuttle landings</h3><p>{data.groundLanding.reason}</p>
+          {data.groundLanding.status === "experimental" && (data.groundLanding.candidates.length ?
+            <div className="review-table-wrap"><table className="review-shot-table"><caption>Replay each candidate to verify ground contact before marking a rally end.</caption>
+              <thead><tr><th scope="col">Time</th><th scope="col">Evidence</th></tr></thead><tbody>{data.groundLanding.candidates.map(item =>
+                <tr key={item.frame}><td><button type="button" onClick={() => play(item.time-1,item.time+1)}>Replay possible landing at {clock(item.time)}</button></td><td>Floor overlap followed by a short stop; ground contact unconfirmed.</td></tr>)}</tbody></table></div> :
+            <p>No landing candidates passed the checks. Rally endings remain unknown.</p>)}
+        </section>}
         <div className="review-tab-controls" role="group" aria-label="Review category"><button type="button" aria-pressed={tab === "shots"} onClick={() => setTab("shots")}>Shot types</button><button type="button" aria-pressed={tab === "rallies"} onClick={() => setTab("rallies")}>Rally windows</button></div>
         {tab === "shots" ? <section className="review-events" aria-label="Shot contacts">
           <div className="review-event-heading"><h3>Check the contact</h3><label>Show <select value={filter} onChange={event => { setFilter(event.target.value); setPage(0); }}><option value="all">All contacts</option><option value="labels">Model labels</option><option value="needs">Needs your review</option><option value="reviewed">Reviewed by you</option></select></label></div>
