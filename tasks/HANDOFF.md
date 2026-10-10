@@ -1,5 +1,52 @@
 # ShuttleSense session handoff
 
+## Text-only Qwen3-4B illustrated reports (2026-10-11)
+
+Report model is now Qwen/Qwen3-4B-Instruct-2507 with pinned Unsloth Q4_K_M GGUF
+through loopback Ollama. Shared identity: analysis/report_model.json; verified
+SHA2563605803b...4c67e597. Installer downloads GGUF/matching official tokenizer,
+checks checksum and imports shuttlesense-report:qwen3-4b-2507-q4km. No weights in Git.
+Existing Qwen3-VL loss explanation remains separate and unchanged.
+
+Report-v10 measures tokenizer context before inference. One structured call per
+eligible rally plus summary; oversized rallies split without discarding poses/bins.
+Every primary request retains exact named angles and pose frames. Wording checks
+reject unsupported angle-only prose, coordinate/cross-court claims and missing
+practice doses; one correction uses posture/timestamps and motion-availability
+counters. All primary/correction payloads and inference timings persist. A second
+failure stops, with no fabricated fallback. Outcomes remain explicitly user marked,
+separate from unknown causes/impact/intent. Model stays warm between calls, then
+unloads (including errors); five-minute lease covers abnormal worker exits.
+
+UI shows small exact loss photos beside per-rally descriptions. Read-only images
+reuse AttemptPhoto; shared attemptPhotoGeometry/attemptBones keep cropped pose/gap
+overlays identical in the HTML export. Latest browser-local manual racket marks
+are included, otherwise wrist proxy. Image pixels are never report-model inputs.
+Download report now saves self-contained printable HTML with embedded JPEGs;
+Download AI evidence retains source, provenance and actual text requests. HTML
+escapes untrusted prose, uses CSP, and aborts on a missing photo instead of saving
+an incomplete file. Stale boundaries/outcomes disable the illustrated download.
+
+Approved Paris350_434 review remains:
+http://127.0.0.1:3000/review/c278680c-fb33-4b1c-91d1-8daa17db95f6
+Final source key f56a6223365600fa128adf8f50802cdcb34d87e9fc9737277d033597d1e77a34.
+Latest fresh report31.396s, three primary calls plus one wording correction. First
+model initialization/draft run68.175s; neither timing includes downloads. All22
+eligible poses/angles supplied;35 original poses,13 appendix-only. Photos remain
+frame1184/39.467s and2416/80.533s, closest valid wrist gap in final2s, not ground touch.
+Private exports artifacts/paris434-match-report.html and paris434-report-evidence.json.
+
+Final build/typecheck, eight focused Playwright cases, four Python checks and setup
+-CheckOnly pass. Browser checks include offline JPEG byte equality to source frames,
+cropped pose overlays, injection escaping, missing/unknown/stale cases, cache reopen,
+320/768/1024/1440 layouts and axe. Illustrated export/review visually inspected.
+Synthetic44.5s walkthrough refreshed with text-only/attached-photo explanation.
+Full vision pipeline, detector accuracy and clean-machine setup were not rerun.
+Hugging Face Xet/large HTTP transfer stalled here; an ignored ranged-transfer helper
+retrieved the same pinned bytes, verified full checksum before the normal installer.
+Ollama serve is hidden on127.0.0.1:11434 (PID25884); no report weights remain loaded.
+Production Next server127.0.0.1:3000 session84244.
+
 ## Rally heatmaps, body angles, match reports and public demo (2026-10-10)
 
 Current extension uses only approved Paris350_434 saved analysis c278680c.

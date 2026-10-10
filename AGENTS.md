@@ -38,6 +38,14 @@ head marking is manual and stored per analysis/frame; never call this automatic
 racket tracking or a physical/metre distance. Keep the cropped photo and its pose/
 distance overlay aligned to the same original frame.
 
+Latest report request authorizes Qwen3-4B-Instruct-2507 through local Ollama for
+text-only recording reports. Supply every eligible hit-pose timestamp/available
+angle, reviewed rally windows, marked outcomes and tracking summaries. Never send
+photos to the report model. Attach confirmed-loss exact attempt photos and their
+pose/gap overlays after generation, beside descriptions and in the portable HTML
+download. Keep the separate vision ending coach unchanged. Ground contact, failure
+cause and intent remain unverified; outcomes are user markings, not impact decisions.
+
 Read `tasks/HANDOFF.md` before starting work. Do not make the user explain the
 sandbox repair again or search previous conversations for it.
 

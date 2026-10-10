@@ -43,7 +43,7 @@ The workspace is **http://127.0.0.1:3000**; saved recordings appear in **My Matc
 | Body angles | Inspect reliable shoulders, elbows, wrists, hips, knees and ankles; missing stays unknown. |
 | Loss review | Mark outcomes, view the attempt photo and request a local AI ending explanation. |
 | Image separation | Wrist-to-shuttle proxy or manually marked racket-head gap, in image pixels. |
-| AI match report | Timestamped observations, possible mistakes, suggested training and uncertainty. |
+| AI match report | Text-only Qwen3-4B reviews; lost-rally photos attached beside descriptions after generation. |
 | Private exports | Download report, exact AI evidence, and original detector data with separate corrections. |
 
 Shot-type classification is removed from review and upload controls.
@@ -65,7 +65,8 @@ broadcast cuts and occlusions reduce usable evidence. No training dataset is nee
 | Shuttle proposals | TrackNetV3 |
 | Floor segmentation | SegFormer B0 ADE20K |
 | Court markings | OpenCV white-pixel fitting guided by marked singles-court geometry |
-| Optional coaching/report | Pinned local Qwen3-VL-2B-Instruct |
+| Optional loss explanation | Pinned local Qwen3-VL-2B-Instruct (five ending-context images) |
+| Match report | Qwen3-4B-Instruct-2507, pinned Unsloth Q4_K_M GGUF through local Ollama; text only |
 
 Weights are downloaded separately and excluded from Git.
 The current implementation is a research prototype, not a hosted analysis service.
@@ -84,7 +85,13 @@ The current implementation is a research prototype, not a hosted analysis servic
   parts of the original match. They distinguish observation from possible intent.
   All eligible hit-pose timestamps/angles are retained; dense movement and shuttle
   tracks use chronological one-second summaries. Download the AI evidence to inspect inputs.
-  Numerical angle prose is excluded or rewritten; exact joint values stay in the appendix.
+  Numerical angle prose is excluded; exact joint values stay in the appendix.
+  Reports use one structured call per rally plus an overall summary when context fits.
+  Oversized rallies split without losing pose events. Ollama stays warm between
+  calls, then releases report weights so vision workers can use the GPU.
+  A wording check allows one automatic correction per response when needed;
+  failed validation is shown instead of fabricating a fallback report.
+  The portable HTML download embeds exact loss photos; Print saves it as PDF.
 
 Independent detection accuracy and coaching usefulness remain unvalidated.
 See [the evaluation protocol](docs/evaluation.md).

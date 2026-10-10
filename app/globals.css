@@ -475,4 +475,6 @@ strong { font-weight:600; }
 .report-sections { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 24px; }
 .report-meta { color:var(--muted); }
 .report-downloads { display:flex;flex-wrap:wrap;gap:10px;margin-top:16px; }
+.report-rally { display:flow-root; }
+.report-rally .attempt-photo { float:left;width:min(180px,45%);margin:8px 18px 12px 0; }
 @media(max-width:600px) { .report-sections,.pose-angle-list { grid-template-columns:minmax(0,1fr); } .match-report { padding:16px; } .rally-map-controls>label:first-child { flex-basis:100%;flex-wrap:wrap; } }

@@ -57,7 +57,7 @@ automatic racket detector or a physical distance measurement.
 
 ## Match report
 
-**Generate match report** asks the existing local Qwen model to review eligible
+**Generate match report** asks local Qwen3-4B-Instruct-2507 to review text evidence for eligible
 rallies. Every eligible hit-pose timestamp and available angle is supplied, along
 with outcomes, boundary corrections, movement occupancy/temporal summaries, ending
 evidence. Cached loss interpretations stay in the source appendix, not fresh model
@@ -68,13 +68,21 @@ Dense tracks are summarized in chronological one-second bins rather than sending
 thousands of raw frames. Long event lists are batched without silently dropping
 poses. A hard context failure is shown if the local capacity is exceeded.
 
-The report includes summary, observations, suggested training and uncertainty,
-plus each rally review. It covers this recording only. Body angles support possible
+The model receives no photos: one structured review per rally plus a recording
+summary when context fits. Generation time is displayed. A response gets one automatic
+wording correction if validation fails; all calls are logged. The finished report includes
+summary, observations, suggested training and uncertainty, plus each rally review.
+Small exact attempt photos accompany confirmed lost rallies with usable ending
+evidence; these are attached after generation. They use the same selection condition
+and optional manual racket mark as the loss review, not a first-ground-touch frame.
+It covers this recording only. Body angles support possible
 intent; they cannot prove what shot the player planned. Advice is experimental.
 
-**Download report** saves a Markdown document you can read or convert to PDF.
-**Download AI evidence** saves the source snapshot and actual system/section prompts.
-Training is generated from the preceding evidence-grounded summary and observations.
+**Download report** saves a portable HTML document with embedded loss photos and
+highlighted image gaps. It works offline; open it in your browser and use Print to
+save as PDF. A photo-download failure is shown rather than saving an incomplete file.
+**Download AI evidence** saves the source snapshot, pinned model provenance, actual
+text requests and inference timings. Training is grounded in the same rally evidence.
 Rally numbers match the selector; window IDs preserve the original detector identity.
 **Download reviewed JSON**
 keeps original detector data and browser corrections separate. Matching reports

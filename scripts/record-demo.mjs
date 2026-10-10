@@ -63,10 +63,10 @@ const report=page.getByRole('region',{name:'AI match report'});
 await report.getByRole('button',{name:'Generate match report',exact:true}).click();
 await report.getByText('Read each rally review',{exact:true}).waitFor();
 await report.evaluate(element=>element.scrollIntoView({block:'start'}));
-await chapter('10 / Local AI match report: observations, possible mistakes, training and uncertainty. This demo is sample copy.');
+await chapter('10 / Qwen3-4B uses text evidence only for reports. This demo shows synthetic sample copy, not inference.');
 await report.getByText('Read each rally review',{exact:true}).click();
 await report.evaluate(element=>element.scrollIntoView({block:'start'}));
-await chapter('11 / Review individual rallies, then download the report and the exact structured AI evidence.');
+await chapter('11 / Exact loss photos attach after generation. Download the illustrated HTML report and full AI evidence.');
 for(const label of ['Download report','Download AI evidence']){
   const download=page.waitForEvent('download');await report.getByRole('button',{name:label,exact:true}).click();await download;
 }

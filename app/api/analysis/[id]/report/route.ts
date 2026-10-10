@@ -60,6 +60,6 @@ export async function POST(request:Request,{params}:{params:Promise<{id:string}>
     return Response.json({report,evidence:{...evidence,modelRequests:report.modelRequests}},{headers:{'Cache-Control':'no-store'}});
   }catch(error){
     const detail=error && typeof error==='object' && 'stderr' in error?String(error.stderr).split('\n').findLast(line=>line.startsWith('ValueError:'))?.replace('ValueError: ','').trim():null;
-    return Response.json({error:detail || 'Local match report failed. Check the local CUDA/model environment and retry.'},{status:422});
+    return Response.json({error:detail || 'Local match report failed. Check Ollama and the report model installation, then retry.'},{status:422});
   }finally{await lock.close().catch(()=>undefined);await unlink(join(jobsRoot,'active.json')).catch(()=>undefined);}
 }

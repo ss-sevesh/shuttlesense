@@ -14,7 +14,8 @@ PyTorch 2.11 CUDA 12.8 and an RTX 4060 Laptop GPU with 8 GB VRAM. Other platform
 CPU-only full inference are not verified. Allow several GB for environments/model
 downloads and additional storage for videos, frames and outputs.
 
-Install Python, Node.js, Git, FFmpeg and an NVIDIA driver supporting CUDA 12.8.
+Install Python, Node.js, Git, FFmpeg, [Ollama](https://ollama.com/download/windows)
+and an NVIDIA driver supporting CUDA 12.8. Start Ollama (or `ollama serve`) before setup.
 Confirm `python --version`, `ffmpeg -version` and `nvidia-smi` work.
 Then, from the project root:
 
@@ -26,11 +27,28 @@ npm.cmd run dev
 ```
 
 The script creates local virtual environments, installs pinned libraries and
-downloads official YOLO, MediaPipe, TrackNet, SegFormer and Qwen files. It does not
+downloads YOLO, MediaPipe, TrackNet, SegFormer and Qwen files. Reports use the original
+Qwen3-4B-Instruct-2507 model with Unsloth's 2.50 GB Q4_K_M GGUF, pinned by revision
+and verified SHA256. It is imported into Ollama under a project-specific name;
+the separate Qwen vision model remains for loss explanations. Setup does not
 change global execution policy, system permissions or GPU drivers. The player and
 shuttle environments link to the shared model-runtime packages to avoid duplicate
 CUDA installations. Existing local files remain under ignored `data/`.
-`-CheckOnly` checks paths, imports and CUDA; it does not download or infer anything.
+`-CheckOnly` checks paths, imports, CUDA and the installed Ollama model identity;
+it does not download or infer anything.
+
+For an existing environment, install just the new report model with:
+
+```powershell
+& data/hf-racquet-env/Scripts/python.exe analysis/download_report_model.py
+```
+
+Reports call only `127.0.0.1:11434`, use a 16,384-token context and structured JSON
+output. Weights stay warm between calls, then unload to free GPU memory for vision
+workers; a five-minute idle lease covers abnormal exits. Every prompt is text; loss photos are
+embedded in the downloaded HTML afterwards. Generation duration and actual
+requests/timings are saved. If a Hugging Face Xet transfer stalls, rerun the
+installer with `$env:HF_HUB_DISABLE_XET = "1"` in that PowerShell process.
 
 The complete fresh-machine installer has not been exercised on a clean machine.
 The readiness check is verified against the existing local environments; dependency
@@ -49,7 +67,7 @@ their upstream authors' terms. Optional legacy BST setup is outside the current 
 5. Reopen it from **My Matches**, verify rally boundaries and mark outcomes.
    A ground-stop candidate alone does not determine who won.
 6. Explain confirmed losses or generate a match report separately. These actions
-   use the existing local Qwen model and cache matching evidence.
+   use separate local vision/text Qwen models and cache matching evidence.
 
 ## Troubleshooting
 
@@ -61,7 +79,7 @@ their upstream authors' terms. Optional legacy BST setup is outside the current 
 | No eligible rallies | Review unresolved windows and save observed boundaries before report generation. |
 | No angle | Pose/landmark confidence may be insufficient; Unknown is intentional. |
 | No heat before a rally | Live mode only accumulates elapsed time inside selected windows; choose Rally total for the full window. |
-| Report does not complete | Retry. A context-capacity failure is explicit; no pose events are silently dropped. |
+| Report does not complete | Start Ollama and rerun `analysis/download_report_model.py`. Context/output failures are explicit; no pose events are silently dropped. |
 | Changed boundaries/outcomes | Refresh the report. Cache identity includes current evidence and reviewed windows. |
 | Port 3000 busy | Reuse the existing project server or stop that known server before starting another. |
 

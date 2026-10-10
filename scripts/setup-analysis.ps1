@@ -8,16 +8,18 @@ function Run-Python([string]$Executable,[string[]]$Arguments) {
 }
 $runtimePython = Join-Path $projectRoot 'data/hf-racquet-env/Scripts/python.exe'
 if ($CheckOnly) {
-  foreach ($relative in @('data/hf-racquet-env/Scripts/python.exe','data/player-pose-env/Scripts/python.exe','data/tracknet-env/Scripts/python.exe','data/hf-racquet-baseline/yolo11n-pose.pt','data/models/mediapipe/pose_landmarker_full.task','data/models/tracknetv3/TrackNet_best.pt','data/models/tracknetv3/model.py','data/models/segformer-floor/provenance.json','data/models/shot-coach-qwen3-vl2b/provenance.json')) {
+  foreach ($relative in @('data/hf-racquet-env/Scripts/python.exe','data/player-pose-env/Scripts/python.exe','data/tracknet-env/Scripts/python.exe','data/hf-racquet-baseline/yolo11n-pose.pt','data/models/mediapipe/pose_landmarker_full.task','data/models/tracknetv3/TrackNet_best.pt','data/models/tracknetv3/model.py','data/models/segformer-floor/provenance.json','data/models/shot-coach-qwen3-vl2b/provenance.json','data/models/match-report-qwen3-4b/provenance.json')) {
     if (-not (Test-Path -LiteralPath (Join-Path $projectRoot $relative))) { throw "Missing: $relative. Run setup without -CheckOnly." }
   }
-  Run-Python $runtimePython @('-c',"import torch, transformers, cv2, numpy; print('CUDA available:', torch.cuda.is_available()); assert torch.cuda.is_available(), 'An NVIDIA CUDA GPU is required for the current local report pipeline'")
+  Run-Python $runtimePython @('-c',"import torch, transformers, cv2, numpy; print('CUDA available:', torch.cuda.is_available()); assert torch.cuda.is_available(), 'An NVIDIA CUDA GPU is required for the current local vision pipeline'")
   Run-Python (Join-Path $projectRoot 'data/player-pose-env/Scripts/python.exe') @('-c',"import mediapipe, ultralytics; print('Player runtime ready')")
   Run-Python (Join-Path $projectRoot 'data/tracknet-env/Scripts/python.exe') @('-c',"import torch, cv2; print('Shuttle runtime ready')")
+  Run-Python $runtimePython @('-c',"import sys; sys.path.insert(0,'analysis'); from match_report import ollama, CONFIG; assert 'sha256-' + CONFIG['sha256'] in ollama('show', {'model':CONFIG['ollamaModel']})['modelfile']; print('Pinned text report model ready')")
   Write-Output 'Analysis files and imports ready. This is not an end-to-end accuracy check.'
   exit
 }
 Get-Command python,ffmpeg -ErrorAction Stop | Out-Null
+Get-Command ollama -ErrorAction Stop | Out-Null
 Write-Output 'Preparing local environments and official pretrained models. Downloads may take several GB.'
 if (-not (Test-Path -LiteralPath $runtimePython)) { Run-Python 'python' @('-m','venv','data/hf-racquet-env') }
 Run-Python $runtimePython @('-m','pip','install','torch==2.11.0','--index-url','https://download.pytorch.org/whl/cu128')
@@ -38,4 +40,5 @@ if (-not (Test-Path -LiteralPath 'data/models/mediapipe/pose_landmarker_full.tas
 Run-Python $runtimePython @('analysis/download_tracknet.py')
 Run-Python $runtimePython @('analysis/ground_landing.py','--download')
 Run-Python $runtimePython @('analysis/download_shot_coach.py')
+Run-Python $runtimePython @('analysis/download_report_model.py')
 Write-Output 'Set $env:PYTHON_EXECUTABLE = "data/hf-racquet-env/Scripts/python.exe", then start the app. Run setup -CheckOnly to check readiness.'

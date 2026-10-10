@@ -1,5 +1,28 @@
 # ShuttleSense implementation plan
 
+## Text-only illustrated match report (2026-10-11)
+
+1. Pin Qwen3-4B-Instruct-2507 and Unsloth Q4_K_M GGUF by revision and SHA256;
+   import into local Ollama with the matching tokenizer. Retain the separate vision
+   model for existing loss coaching.
+2. Replace four section calls per small portion with one structured review per
+   rally and one recording summary. Measure context before sending; split only
+   oversized rallies, retaining every eligible pose and movement bin. Log actual
+   text requests and timings; keep the model warm between calls.
+3. Attach existing confirmed-loss attempt frames after generation. Display small
+   images beside rally descriptions and download a portable, printable HTML report
+   with embedded photos. No image bytes or photo requests go to the report model.
+4. Verify validation, all supplied angles/poses, text-only requests, standalone
+   exports and stale/error states; benchmark only Paris350_434. Update setup,
+   guides and handoff, then commit and push the complete change.
+
+Implementation and verification complete: pinned model installed; report-v10
+generated in31.396s with three primary requests and one wording correction; all22
+eligible poses and both exact loss photos verified. Build/typecheck, eight browser
+cases, four Python checks and existing-environment readiness pass. HTML photos and
+overlays work offline; synthetic walkthrough and guides updated. Clean-machine
+setup and full vision-model reruns remain outside this report change.
+
 ## Outcome
 
 Turn one phone-recorded badminton match into a short review: a recurring weakness, the rallies that support it, and a drill for the next session. Preserve the full vision of rally segmentation, player tracking, shot labels, movement heatmaps, and explanations, but prove the evidence-to-practice loop before adding every detector.

@@ -1,0 +1,9 @@
+{
+  "model": "Qwen/Qwen3-4B-Instruct-2507",
+  "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+  "quantizationRepository": "unsloth/Qwen3-4B-Instruct-2507-GGUF",
+  "quantizationRevision": "a06e946bb6b655725eafa393f4a9745d460374c9",
+  "filename": "Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+  "sha256": "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
+  "ollamaModel": "shuttlesense-report:qwen3-4b-2507-q4km"
+}
