@@ -5,7 +5,6 @@ import { useId } from "react";
 export function CourtMap({ mode = "heatmap", progress = 0, scope = "all", grid, position }: { mode?: "heatmap" | "trail" | "drill"; progress?: number; scope?: string; grid?: number[][]; position?: [number,number] }) {
   const point = { x: 120 + progress * 94, y: 205 - progress * 81 };
   const id = useId();
-  const peak = grid ? Math.max(0, ...grid.flat()) : 0;
   return <svg className={`court-map court-${mode}`} viewBox="0 0 280 360" role="img" aria-label={grid ? "Approximate tracked movement heatmap; shaded cells show projected box positions, not verified foot contacts" : mode === "heatmap" ? "Sample movement heatmap: most time near rear-left and base, with front-right marked as the review priority" : mode === "drill" ? "Diagonal drill: move from base to front-right, then recover to base" : "Illustrative player movement trail toward front-right"}>
     <defs>
       <radialGradient id={`heat-${id}`}><stop stopColor="#b9df94" stopOpacity=".9"/><stop offset=".5" stopColor="#8fc678" stopOpacity=".55"/><stop offset="1" stopColor="#7aac7a" stopOpacity="0"/></radialGradient>
@@ -13,7 +12,8 @@ export function CourtMap({ mode = "heatmap", progress = 0, scope = "all", grid, 
     </defs>
     <rect x="25" y="22" width="230" height="315" rx="3" fill="var(--court)"/>
     <rect x="25" y="22" width="230" height="315" fill={`url(#texture-${id})`}/>
-    {mode === "heatmap" && (grid ? <g>{grid.flatMap((row, y) => row.map((seconds, x) => seconds > 0 && <rect key={`${y}-${x}`} x={56 + x * 168 / 6} y={38 + y * 283 / 8} width={168 / 6} height={283 / 8} fill="var(--court-highlight)" opacity={.15 + .7 * seconds / peak}><title>{`Row ${y + 1}, column ${x + 1}: ${seconds.toFixed(2)} seconds of approximate positions`}</title></rect>))}</g> : <g><ellipse cx={scope === "lost" ? 90 : 107} cy="257" rx="69" ry="60" fill={`url(#heat-${id})`}/><ellipse cx="143" cy="211" rx={scope === "lost" ? 49 : 72} ry="77" fill={`url(#heat-${id})`}/><ellipse cx="195" cy="145" rx="43" ry="36" fill={`url(#heat-${id})`}/></g>)}
+    {/* Fixed seconds scale keeps the first observation faint instead of making it the maximum. */}
+    {mode === "heatmap" && (grid ? <g>{grid.flatMap((row, y) => row.map((seconds, x) => seconds > 0 && <rect key={`${y}-${x}`} x={56 + x * 168 / 6} y={38 + y * 283 / 8} width={168 / 6} height={283 / 8} fill="var(--court-highlight)" opacity={.85 * Math.min(seconds / 5, 1)}><title>{`Row ${y + 1}, column ${x + 1}: ${seconds.toFixed(2)} seconds of approximate positions`}</title></rect>))}</g> : <g><ellipse cx={scope === "lost" ? 90 : 107} cy="257" rx="69" ry="60" fill={`url(#heat-${id})`}/><ellipse cx="143" cy="211" rx={scope === "lost" ? 49 : 72} ry="77" fill={`url(#heat-${id})`}/><ellipse cx="195" cy="145" rx="43" ry="36" fill={`url(#heat-${id})`}/></g>)}
     <g stroke="var(--court-line)" strokeWidth="1.1" fill="none"><rect x="40" y="38" width="200" height="283"/><path d="M56 38V321M224 38V321M40 54H240M40 305H240M40 140H240M40 219H240M140 38V140M140 219V321"/></g>
     <path d="M25 180H255" stroke="var(--court-line)" strokeWidth="2" strokeDasharray="3 3"/>
     <text x="140" y="171" textAnchor="middle" fill="var(--court-line)" opacity=".8" fontSize="8" letterSpacing="2">NET</text>

@@ -1,5 +1,26 @@
 # ShuttleSense session handoff
 
+## Fixed live heat intensity (2026-10-10)
+
+User reported the initial point was immediately dark and requested GitHub commit.
+Cause: CourtMap divided every cell by the current maximum, so even the first
+fraction-second cell rendered at maximum opacity. Shared tracked-grid renderer
+now uses fixed linear 0–5 seconds per cell, capped at .85 opacity; no minimum
+opacity boost. Initial observations are faint, accumulated time darkens the cell,
+and five seconds or more reaches maximum. Review copy and upload legend state
+this scale. Demo illustrations, duration aggregation, saved data and exports
+remain unchanged. No new models, inference, footage or dependencies.
+
+Production build/typecheck passed. Three focused Playwright checks passed:
+approved Paris434 review at .2/2/10 seconds, rewind/repeat/zero intensity, existing
+synthetic elapsed samples/side/bounds and compact loss evidence/layout/marking.
+Checked initial screenshot; npm movement screenshot refreshed. UI rounds time
+to30fps, so regression seeks use frame-aligned times. Artifacts ignored.
+Prod127.0.0.1:3000 session86636; same c278680c review link. Only434 real footage
+tested; no full model rerun. Positions remain approximate box projections;
+5+second cells saturate visually, exact elapsed seconds remain in cell tooltips.
+
+
 ## Smaller photo, live map beside video (2026-10-10)
 
 User requested a smaller photo with description and live heatmap visible alongside

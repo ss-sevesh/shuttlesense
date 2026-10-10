@@ -111,7 +111,7 @@ export function UploadAnalysis({ file, url, onReady, onError }: { file: File; ur
         <h3 id="upload-heatmap-heading">Approximate movement heatmap</h3>
         <label>Show court side <select value={side} onChange={event => setSide(event.target.value)}><option value="near">Near side · yellow boxes</option><option value="far">Far side · blue boxes</option></select></label>
         <CourtMap grid={grid}/>
-        <div className="heatmap-legend"><span>Less time</span><div/><span>More time</span></div>
+        <div className="heatmap-legend"><span>0 s</span><div/><span>5+ s per cell</span></div>
         <p>{grid.flat().reduce((a,b) => a+b,0).toFixed(1)} seconds of detected positions. Box-bottom estimates; people on this side, not a verified player identity.</p>
       </section>}
     </div>
