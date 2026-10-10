@@ -9,6 +9,11 @@ test('selected loss photo aligns beside video, marks racket gap and pages techni
   const loss=page.getByRole('region',{name:'Lost rally review'});
   await loss.getByRole('button',{name:'Loss 2 · 81.5 s',exact:true}).click();
   const photo=loss.getByRole('figure',{name:'Exact attempt photo'});
+  expect((await photo.boundingBox())!.width).toBeLessThanOrEqual(160);
+  await photo.getByText('Why this photo?',{exact:true}).click();
+  await expect(photo).toContainText('relative to player height');
+  await expect(photo).toContainText('not a confirmed ground-touch');
+  await photo.getByText('Why this photo?',{exact:true}).click();
   await expect(photo).toContainText('80.533 s · frame 2416');
   await expect.poll(()=>photo.locator('img').evaluate((image:HTMLImageElement)=>image.naturalWidth)).toBe(1280);
   await expect(photo.locator('[data-attempt-distance]')).toHaveAttribute('data-attempt-distance','wrist-proxy');
@@ -16,6 +21,10 @@ test('selected loss photo aligns beside video, marks racket gap and pages techni
   const sidebarBox=(await page.locator('.review-sidebar').boundingBox())!;
   expect(sidebarBox.x).toBeGreaterThan(videoBox.x+videoBox.width);
   expect(Math.abs(sidebarBox.y-videoBox.y)).toBeLessThan(3);
+  const heatmapBox=(await page.locator('.review-heatmap').boundingBox())!;
+  expect(heatmapBox.x).toBeGreaterThan(videoBox.x+videoBox.width);
+  expect(heatmapBox.y).toBeGreaterThanOrEqual(0);
+  expect(heatmapBox.y+heatmapBox.height).toBeLessThan(1000);
   await loss.getByRole('button',{name:'Show attempt at 80.533 s',exact:true}).click();
   await expect.poll(()=>page.locator('.review-camera video').evaluate((v:HTMLVideoElement)=>!v.seeking&&v.readyState>=2&&v.paused)).toBe(true);
   expect((await request.get(`/api/analysis/${id}/frames/2416`)).headers()['content-type']).toBe('image/jpeg');

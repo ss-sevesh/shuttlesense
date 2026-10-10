@@ -185,3 +185,6 @@ UI contract: existing cream/green tokens and replay/heatmap patterns are the ref
 
 ## Compact side-by-side loss review
 Use existing video/evidence and cream-green UI. Move selected loss details beside video, live heatmap below video, technical section below grid. Keep only relevant pose/shot tables and boundary correction; paginate tables five rows with labelled controls. Exact attempt JPEG uses evidence frame, overlaid same-frame pose and wrist/shuttle endpoints; manual racket-head marking measures racket-to-tracked-shuttle pixel separation without claiming automatic racket detection. Scope: review/loss components, exact-frame API and decoder, focused browser tests, handoff. No new detector/training or LLM rerun.
+
+## Smaller photo and always-visible live map
+Keep existing loss-review design and evidence selection. Place live heatmap beside video inside sticky main column; make exact attempt photograph a small inset beside explanation, explain the closest normalized wrist-gap selection in its caption. Preserve overlays, marking coordinates, paging and cached AI; no model rerun. Verify desktop visibility, smaller photo, mobile overflow, selection and replay.

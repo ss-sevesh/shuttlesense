@@ -45,6 +45,7 @@ export function AttemptPhoto({ data, videoUrl, evidence }: {data:ReviewData;vide
       </svg>
     </button>
     <figcaption><strong>{evidence.time.toFixed(3)} s · frame {evidence.frame}</strong><p>{racket?'Manually marked racket head → tracked shuttle':'Wrist proxy → tracked shuttle'}: <strong>{gap.toFixed(1)} px</strong> in the original frame. {racket?'Image gap, not a confirmed contact distance.':'Mark the racket head to measure its gap instead.'}</p></figcaption>
+    <details className="attempt-photo-condition"><summary>Why this photo?</summary><p>Smallest visible wrist-to-shuttle gap relative to player height, from continuous tracking within the final two seconds before the estimated rally end. This is not a confirmed ground-touch or racket-contact frame.</p></details>
     <div className="attempt-photo-controls"><button type="button" aria-pressed={marking} onClick={()=>setMarking(!marking)}>{marking?'Finish marking':'Mark racket head'}</button>{racket&&<button type="button" onClick={()=>mark(null)}>Reset racket mark</button>}</div>
     {marking&&<p>Click the racket head in this photo, or focus the photo and use arrow keys to move the mark by 5 pixels.</p>}
     {error&&<p role="status">{error}</p>}

@@ -172,3 +172,8 @@ does not claim the upload/worker or production checkpoints are complete.
 - [x] Simplify necessary technical evidence and paginate five rows.
 - [x] Show selected loss reason and exact annotated photo beside video; support racket-head marking.
 - [x] Verify exact frame, overlays, pagination, selection, layout and existing controls; update handoff and commit/push.
+
+## Smaller photo and always-visible live map
+- [x] Place compact live map beside video and small attempt photo beside description.
+- [x] Explain existing final-two-second normalized wrist-gap photo condition.
+- [x] Verify layout and existing evidence/replay controls; update handoff and commit/push.

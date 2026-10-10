@@ -84,7 +84,7 @@ export function AnalysisReview({ data, videoUrl }: { data: ReviewData; videoUrl:
     <header className="review-heading"><div><h2>Your recording</h2><p>{data.fileName} | {clock(data.duration)}</p></div><button type="button" onClick={download}>Download reviewed JSON</button></header>
     <div className="review-workspace loss-workspace">
       <div className="review-main"><AnalysisCamera data={data} videoUrl={videoUrl} replay={replay} onTime={onTime}/>
-        <section className="review-heatmap"><h3>{readable(side)} player movement</h3><CourtMap grid={map.grid} position={person?.court}/><p>{number.format(map.seconds)} seconds of in-court positions up to the current video time. Heat builds during playback and rewinds when you seek back. The dot shows the current approximate position.</p></section>
+        <section className="review-heatmap"><h3>{readable(side)} player movement</h3><CourtMap grid={map.grid} position={person?.court}/><p>{number.format(map.seconds)} s tracked so far. Updates with playback and rewinds with the video. Dot: current position.</p></section>
       </div>
       <aside className="review-sidebar" aria-label="Selected loss explanation and attempt photo"><LossReview data={data} videoUrl={videoUrl} onReview={onLossReview} replay={value=>setReplay(previous=>({...value,token:(previous?.token ?? 0)+1}))}/></aside>
     </div>

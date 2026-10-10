@@ -73,9 +73,10 @@ export function LossReview({ data, videoUrl, replay, onReview }: { data: ReviewD
     {!ready && !error && <p role="status">Loading saved outcomes…</p>}
     {rally && outcomes[rally.id] === 'lost' && <div className="loss-selected">
       <div className="loss-title"><h4>What happened before {rally.end!.toFixed(1)} s?</h4><button type="button" onClick={() => replay({start:rally.start,end:rally.end!})}>Replay full rally</button><button type="button" onClick={() => replay({start:Math.max(rally.start,rally.end!-3),end:rally.end!})}>Replay final seconds</button></div>
-      {ending?.evidence && <AttemptPhoto key={`${data.analysisSha256}-${ending.evidence.frame}`} data={data} videoUrl={videoUrl} evidence={ending.evidence}/>}
       {ending?.evidence ? <div className="loss-observation"><button type="button" onClick={() => replay({start:ending.evidence!.time,end:ending.evidence!.time,paused:true})}>Show attempt at {ending.evidence.time.toFixed(3)} s</button><p>{readable(ending.status)} · {ending.evidence.pose}</p></div> : <p>Attempt or distance evidence is unavailable.</p>}
       <div className="loss-explanation"><h4>Possible attempt & why it failed</h4>
+      {ending?.evidence && <AttemptPhoto key={`${data.analysisSha256}-${ending.evidence.frame}`} data={data} videoUrl={videoUrl} evidence={ending.evidence}/>}
+
         {report?.coaching.status === 'experimental' && report.coaching.answer ? <><p>{report.coaching.answer.visibleEvidence}</p><h5>Try next time</h5><p>{report.coaching.answer.coaching}</p><details className="loss-uncertainty"><summary>What these frames cannot prove</summary><p>{report.coaching.answer.uncertainty}</p></details></> : <p>{report?.coaching.reason ?? 'The local AI reviews only the final frames of this lost rally, not every shot.'}</p>}
         <button type="button" disabled={busy || !ready} onClick={() => void generate()}>{busy ? 'Reviewing ending locally…' : report?.coaching.status === 'experimental' ? 'Review ending again' : 'Explain this loss with local AI'}</button>
         <p>Outcome marked by you. Intent is an interpretation; the end marker is a shuttle stop estimate, not exact first touch. Distances are image measurements, not metres.</p>

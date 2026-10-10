@@ -1,5 +1,34 @@
 # ShuttleSense session handoff
 
+## Smaller photo, live map beside video (2026-10-10)
+
+User requested a smaller photo with description and live heatmap visible alongside
+video without scrolling, and asked which frame is selected. Attempt photo is now
+160px inset floating beside loss explanation. Live map sits in150px column next
+to video in sticky main area; both visible in desktop viewport. At<=600px, full-
+width video and compact horizontal map stack to preserve usable video controls.
+Same review/job/link; overlays, manual source-pixel marking and evidence unchanged.
+
+Photo caption adds Why this photo? Existing ending_reviews() chooses minimum
+wrist-shuttle distance / near-player box height from trailing continuous valid
+tracking in last2s before estimated end (bounded to rally). Missing pose/shuttle,
+cuts or identity changes break continuity; inadequate evidence stays Unknown.
+Near wrists/torso confidence>=.5. Photo is not first ground touch or proven racket
+contact. Example39.466667s(frame1184),80.533333s(frame2416), before estimated
+ends40.2/81.5. The local AI explanation uses5ending-context frames, not solely
+this single selected photo. No detector/LLM rerun, new model or footage.
+
+Production build/typecheck pass.4focused browser tests pass (compact layout,
+loss API/UI, approved434near overlays/heatmap); new assertions photo<=160px,
+photo-selection explanation, map beside video and entirely in desktop viewport.
+Existing mark/pixel-step/reload,5rowpages,seekedpose/replay/auto-scroll, AI/outcome
+cache, JSON, axe and mobile overflow checks pass. Screenshot refreshed via npm;
+compact-loss screenshot inspected. Prod127.0.0.1:3000 session63349. Latest review
+/review/c278680c-fb33-4b1c-91d1-8daa17db95f6. No independent impact/racket/intent
+accuracy check; default wrist proxy and manually marked racket gap limitations
+remain. No subagents/dependencies.
+
+
 ## Compact side-by-side loss evidence (2026-10-10)
 
 User requested necessary technical details only, five-row paging, explanation
