@@ -10,6 +10,12 @@ shuttle/ground-touch evidence: YOLO players, TrackNet shuttle and ground model o
 body pose, shot classification, LLM and contact-image extraction off. Additional
 models may run only when the user selects their analysis switches or requests them.
 
+Latest user request enables pretrained near-side body pose and visible near-side
+white court markings. Body pose now defaults on; shot classification and LLM
+remain off. Far-side tracking may support rally starts, but player analysis and
+hit-pose evidence must remain near-side. Pose/contact and line-fit estimates must
+not be described as perfect models, confirmed impacts, or exact in/out calls.
+
 Read `tasks/HANDOFF.md` before starting work. Do not make the user explain the
 sandbox repair again or search previous conversations for it.
 

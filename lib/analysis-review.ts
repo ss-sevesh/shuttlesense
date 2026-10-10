@@ -19,6 +19,8 @@ export type ReviewData = {
   groundLanding?: GroundLanding;
   options?: AnalysisOptions;
   sceneSummary?: { courtSegments: [number, number][]; excludedFrames: number };
+  courtLines?: { method: string; reason: string; segments: { start: number; end: number; lines: { name: string; points: [number, number][]; support: number }[] }[] };
+  hitPoses?: { frame: number; time: number; trackId: number; status: string; pose: string; reason: string; measurements: { elbow: number | null; bodyLean: number | null } }[];
 };
 export const shotTypes = ["smash", "clear", "drop", "lift", "drive", "net shot", "defensive net shot", "push", "net kill", "crosscourt net shot", "short serve", "long serve"] as const;
 export const canonicalShot = (value: string) => value.replace(/_/g," ").replace(/netshot/g,"net shot").replace(/netkill/g,"net kill");
@@ -36,9 +38,18 @@ export function isReviewData(value: unknown): value is ReviewData {
   if (!value || typeof value !== "object") return false;
   const data = value as Partial<ReviewData>;
   try { analysisOptions(data.options); } catch { return false; }
+  if (!validNearEvidence(data)) return false;
   return typeof data.videoSha256 === "string" && /^[a-f0-9]{64}$/i.test(data.videoSha256) && typeof data.analysisSha256 === "string" && /^[a-f0-9]{64}$/i.test(data.analysisSha256) && typeof data.fileName === "string" &&
     [data.duration,data.width,data.height,data.fps,data.poseSampleHz].every(value => typeof value === "number" && Number.isFinite(value) && value > 0) &&
     Array.isArray(data.samples) && Array.isArray(data.shuttle) && Array.isArray(data.shots) && data.shots.every(shot => shot && typeof shot === "object" && validContact(shot.contact, data.duration!, data.fps!) && validCoaching(shot.coaching)) && validGround(data.groundLanding, data.duration!, data.fps!, data.width!, data.height!) && Array.isArray(data.rallies) && Array.isArray(data.limitations) && !!data.metrics && typeof data.metrics === "object";
+}
+function validNearEvidence(data: Partial<ReviewData>) {
+  const point = (p: number[]) => Array.isArray(p) && p.length === 2 && p.every(v => Number.isFinite(v) && v >= 0 && v <= 1);
+  if (data.courtLines !== undefined) {
+    const lines = data.courtLines;
+    if (!lines || typeof lines.method !== 'string' || typeof lines.reason !== 'string' || !Array.isArray(lines.segments) || !lines.segments.every(s => s && Number.isFinite(s.start) && Number.isFinite(s.end) && s.start >= 0 && s.end > s.start && s.end <= data.duration!+.001 && Array.isArray(s.lines) && s.lines.every(l => l && typeof l.name === 'string' && Array.isArray(l.points) && l.points.length === 2 && l.points.every(point) && Number.isFinite(l.support) && l.support >= 0 && l.support <= 1))) return false;
+  }
+  return data.hitPoses === undefined || (Array.isArray(data.hitPoses) && data.hitPoses.every(e => e && Number.isSafeInteger(e.frame) && e.frame >= 0 && e.frame < Math.round(data.duration!*data.fps!) && Number.isFinite(e.time) && Math.abs(e.time-e.frame/data.fps!) < .1/data.fps! && Number.isSafeInteger(e.trackId) && ['estimated_contact','swing_candidate'].includes(e.status) && typeof e.pose === 'string' && typeof e.reason === 'string' && e.measurements && [e.measurements.elbow,e.measurements.bodyLean].every(v => v === null || (Number.isFinite(v) && v >= 0 && v <= 180))));
 }
 function validGround(ground: GroundLanding | undefined, duration: number, fps: number, width: number, height: number) {
   if (ground === undefined) return true;

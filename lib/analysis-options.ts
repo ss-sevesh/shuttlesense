@@ -1,4 +1,4 @@
-export const defaultAnalysisOptions = { yolo: true, shuttle: true, ground: true, pose: false, shots: false, llm: false };
+export const defaultAnalysisOptions = { yolo: true, shuttle: true, ground: true, pose: true, shots: false, llm: false };
 export type AnalysisOptions = typeof defaultAnalysisOptions;
 export function analysisOptions(value: unknown): AnalysisOptions {
   if (value === undefined) return { ...defaultAnalysisOptions };

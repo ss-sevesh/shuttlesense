@@ -101,6 +101,7 @@ def review_data(poses, shuttle, fused, file_name, cached, original_hash, marked_
             **({'contact':h['contact'], 'coaching':h.get('coaching')} if 'contact' in h else {})} for i,h in enumerate(fused['hits'])],
         'pipelineVersion':fused.get('pipeline_version', 'legacy-wrist-peaks'),
         'focusSide':fused.get('focus_side'),
+        **({key:fused[key] for key in ('courtLines','hitPoses') if key in fused}),
         **({'groundLanding':ground} if ground is not None else {}),
         'rallies': [{'id':i+1,'start':r['start_s'],'end':r['end_s'],'reviewStop':r['review_stop_s'],
             'hitCandidates':r['hit_candidates'],'startStatus':r['start_status'],'endStatus':r['end_status']} for i,r in enumerate(fused['rallies'])],
@@ -223,6 +224,14 @@ def main():
                     hit.setdefault('coaching',{'status':'unavailable','reason':'Local vision worker did not complete. See worker.log.'})
                 write_json(directory/'fused.json',fused)
         stage('Preparing values for review', 98)
+        from focused_rallies import scene_scan, court_segments
+        from near_evidence import court_lines, hit_poses
+        scenes = scene_scan(directory/'source.mp4', poses['settings']['corners_px'])
+        visible = {s['source_frame']: scenes[s['source_frame']]['court'] for s in poses['samples']}
+        near_poses = {**poses, 'samples': [{**s, 'players': [p for p in s['players'] if p['side'] == 'near'] if visible[s['source_frame']] else []} for s in poses['samples']]}
+        fused['courtLines'] = court_lines(directory/'source.mp4', poses['settings']['corners_px'], court_segments(scenes), poses['fps'])
+        fused['hitPoses'] = hit_poses(near_poses, shuttle, scenes)
+        write_json(directory/'fused.json', fused)
         with (directory/'source.mp4').open('rb') as source:
             if hashlib.file_digest(source,'sha256').hexdigest()!=poses['video_sha256']:
                 raise ValueError('The normalized video does not match its model reports. Rerun analysis.')

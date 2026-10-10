@@ -81,24 +81,27 @@ export function AnalysisReview({ data, videoUrl }: { data: ReviewData; videoUrl:
     save({ ...reviews, rallies: { ...reviews.rallies, [rally.id]: { start, end, reviewedAt: new Date().toISOString() } } });
   }
   function download() {
-    const blob = new Blob([JSON.stringify({ videoSha256: data.videoSha256, analysisSha256: data.analysisSha256, pipelineVersion: data.pipelineVersion, focusSide: data.focusSide, fps: data.fps, fileName: data.fileName, duration: data.duration, options: data.options, modelShots: data.shots, modelRallies: data.rallies, groundLanding: data.groundLanding, humanReviews: reviews },null,2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify({ videoSha256: data.videoSha256, analysisSha256: data.analysisSha256, pipelineVersion: data.pipelineVersion, focusSide: data.focusSide, fps: data.fps, fileName: data.fileName, duration: data.duration, options: data.options, modelShots: data.shots, modelRallies: data.rallies, groundLanding: data.groundLanding, courtLines: data.courtLines, hitPoses: data.hitPoses, humanReviews: reviews },null,2)], { type: "application/json" });
     const url = URL.createObjectURL(blob), anchor = document.createElement("a");
     anchor.href = url; anchor.download = "shuttlesense-reviewed.json"; anchor.click();
     setTimeout(() => URL.revokeObjectURL(url),1000);
   }
   return <div className="analysis-review">
-    {data.focusSide === "near" && <p>Near-player analysis: contact frames, pose measurements, movement, and local vision coaching.</p>}
+    {data.focusSide === "near" && <p>Near-player analysis: court markings, hit candidates, pose measurements and movement.</p>}
     <header className="review-heading"><div><h2>Review your recording</h2><p>{data.fileName} · {clock(data.duration)} · {data.width} × {data.height}</p></div><button type="button" onClick={download}>Download reviewed JSON</button></header>
     {data.options && <p>Enabled: {Object.entries(data.options).filter(([,enabled]) => enabled).map(([key]) => ({ yolo: 'YOLO players', shuttle: 'shuttle tracking', ground: 'ground checks', pose: 'body pose', shots: 'shot classification', llm: 'LLM coaching' })[key]).join(', ')}.</p>}
     {data.sceneSummary && <p>{data.sceneSummary.courtSegments.length} court-view segments; {(data.sceneSummary.excludedFrames/data.fps).toFixed(1)} seconds excluded from rally tracking because the court view was unavailable.</p>}
     <dl className="review-summary">
-      <div><dt>Contact candidates</dt><dd>{data.shots.length}</dd></div>
+      <div><dt>{data.hitPoses ? 'Hit-pose candidates' : 'Contact candidates'}</dt><dd>{data.hitPoses?.length ?? data.shots.length}</dd></div>
       <div><dt>Model shot labels</dt><dd>{accepted}<small>{data.shots.length-accepted} unknown</small></dd></div>
       <div><dt>Possible rally starts</dt><dd>{data.rallies.length}<small>{data.rallies.filter(rally => rally.end !== null).length} estimated endings</small></dd></div>
       <div><dt>Your reviewed shots</dt><dd>{Object.keys(reviews.shots).length}<small>{Object.keys(reviews.rallies).length} rally windows reviewed</small></dd></div>
     </dl>
     <div className="review-workspace">
       <div className="review-main"><AnalysisCamera data={data} videoUrl={videoUrl} replay={replay} onTime={onTime}/>
+        {data.hitPoses && <section className="review-events" aria-label="Near-side hit poses"><h3>Near-side hit poses</h3><p>Pretrained MediaPipe body landmarks with wrist/shuttle contact estimates. Timestamps identify observed frames, not confirmed impact. Pose descriptions are arm positions, not shot classifications.</p>
+          {data.hitPoses.length ? <div className="review-table-wrap"><table className="review-shot-table"><caption>Select a timestamp to pause at its pose frame, or replay the movement.</caption><thead><tr><th scope="col">Timestamp / frame</th><th scope="col">Pose</th><th scope="col">Evidence</th><th scope="col">Replay</th></tr></thead><tbody>{data.hitPoses.map(event => <tr key={event.frame}><td><button type="button" onClick={() => setReplay(previous => ({ start: event.time, end: event.time, token: (previous?.token ?? 0)+1, paused: true }))}>Show pose at {event.time.toFixed(3)} s · frame {event.frame}</button></td><td>{event.pose}{event.measurements.elbow != null && <p>Elbow: {event.measurements.elbow.toFixed(1)}°</p>}{event.measurements.bodyLean != null && <p>Body lean: {event.measurements.bodyLean.toFixed(1)}°</p>}</td><td>{readable(event.status)} · {readable(event.reason)}</td><td><button type="button" onClick={() => play(event.time-.6,event.time+.6)}>Replay pose at {event.time.toFixed(3)} s</button></td></tr>)}</tbody></table></div> : <p>No near-side hit poses passed the checks{data.options?.pose === false ? ' because body pose was disabled' : ''}. Missing evidence remains unknown.</p>}
+        </section>}
         {data.options?.llm !== false && <LandingCoaching videoUrl={videoUrl} fps={data.fps} duration={data.duration} time={time} analysisSha256={data.analysisSha256}/>}
         {data.groundLanding && <section className="review-events" aria-label="Possible shuttle landings">
           <h3>Possible shuttle landings</h3><p>{data.groundLanding.reason}</p>

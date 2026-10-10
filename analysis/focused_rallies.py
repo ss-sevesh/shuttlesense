@@ -5,7 +5,7 @@ import math
 import cv2
 import numpy as np
 
-DEFAULT_OPTIONS = dict(yolo=True, shuttle=True, ground=True, pose=False, shots=False, llm=False)
+DEFAULT_OPTIONS = dict(yolo=True, shuttle=True, ground=True, pose=True, shots=False, llm=False)
 
 
 def validate_options(value):
@@ -103,6 +103,7 @@ def run_focused(directory, request, metadata, original_hash, options, run, stage
     if options['yolo']:
         command = [str(ROOT/'data/player-pose-env/Scripts/python.exe'), 'analysis/player_pose.py', str(source), '--end', str(info['duration']), '--sample-hz', '30', '--imgsz', '640', '--tracker', 'analysis/bytetrack-phone.yaml', '--allow-reacquisition', '--corners', *map(str, np.asarray(info['corners']).flatten()), '--output', str(directory/'players.json')]
         if not options['pose']: command.append('--skip-pose')
+        else: command.append('--near-pose')
         run(command, 'YOLO player tracking' + (' and body pose' if options['pose'] else ' (body pose disabled)'), 12, 45)
         poses = json.loads((directory/'players.json').read_text())
         for row, scene in zip(poses['samples'], scenes):
@@ -127,13 +128,22 @@ def run_focused(directory, request, metadata, original_hash, options, run, stage
     if options['ground']:
         run([str(ROOT/'data/hf-racquet-env/Scripts/python.exe'), 'analysis/ground_landing.py', '--video', str(source), '--shuttle', str(directory/'shuttle.json'), '--output', str(directory/'ground')], 'Segmenting ground and checking shuttle stops', 80, 96)
         ground = json.loads((directory/'ground/results.json').read_text())
-    fused = {'video_sha256': source_hash, 'pipeline_version': 'selectable-rally-motion-v1', 'fps': 30, 'hits': [], 'rallies': rally_windows(shuttle['samples'], scenes, 30, ground), 'options': options}
+    from near_evidence import court_lines, hit_poses
+    stage('Fitting near-side court lines and joining hit poses', 97)
+    lines = court_lines(source, info['corners'], segments, 30)
+    events = hit_poses(poses, shuttle, scenes) if options['pose'] and options['shuttle'] else []
+    windows = rally_windows(shuttle['samples'], scenes, 30, ground)
+    for window in windows:
+        stop = window['end_s'] if window['end_s'] is not None else window['review_stop_s']
+        window['hit_candidates'] = sum(window['start_s'] <= event['time'] <= stop for event in events)
+    fused = {'video_sha256': source_hash, 'pipeline_version': 'near-lines-hit-pose-v1', 'focus_side': 'near', 'fps': 30, 'hits': [], 'rallies': windows, 'options': options, 'courtLines': lines, 'hitPoses': events}
     write_json(directory/'fused.json', fused)
     result = review_data(poses, shuttle, fused, request['fileName'], False, original_hash, metadata['corners'], ground)
     result['options'] = options
     if not options['shuttle']: result['metrics']['shuttleFrames'] = 0
     if not options['yolo']: result['metrics']['sampleCount'] = 0
     result['limitations'] = ['Rally windows group observed shuttle motion; starts and endings require review.', 'Court-view patches exclude closeups. Camera movement, gradual transitions and identity switches remain unvalidated.', 'YOLO tracks players; TrackNet tracks the shuttle. Floor overlap is not proof of ground touch.', 'No LLM or contact-frame extraction ran.']
+    result['limitations'].append('Court lines are fitted observations, not exact boundaries. Hit times use wrist/shuttle proximity; pose labels describe 2D arm position, not shot type or confirmed racket impact.')
     result['sceneSummary'] = {'courtSegments': [[a/30,b/30] for a,b in segments], 'excludedFrames': sum(not r['court'] for r in scenes)}
     write_json(directory/'result.json', result)
     write_json(directory/'provenance.json', {'originalSha256': original_hash, 'normalizedSha256': source_hash, 'pipelineVersion': fused['pipeline_version'], 'options': options})

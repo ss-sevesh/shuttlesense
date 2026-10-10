@@ -1,5 +1,50 @@
 # ShuttleSense session handoff
 
+## Near-side line highlights and hit poses (2026-10-10)
+
+User requested visible near-side white court lines and pretrained pose at
+near-player hit timestamps, no LLM. Far-side observations may support rally
+starts; all player analysis / hit-pose evidence remains near-side. ONLY Paris
+350_434 may be used for real-video tests. Read prior handoff, AGENTS, installed
+Next docs; used Ponytail, Context7 and browser-testing skills. No subagents,
+training, packages or new weights. Existing pretrained MediaPipe Full reused.
+
+analysis/near_evidence.py rectifies marked singles corners, combines white pixels
+from 11 frames per accepted segment and robustly fits eight near-court markings
+in geometry-guided corridors. Missing evidence abstains. Cyan SVG highlights
+toggle independently and hide during close-ups; approximate line centres, not
+exact line edges or in/out calls. --near-pose retains both YOLO player tracks
+but only infers near pose in the focused path. Body pose default now ON;
+classification/LLM default OFF. Saved explicit old options remain readable.
+
+Existing wrist-motion / shuttle-distance contact reports provide same-frame
+pose candidates, simple arm-height descriptions and elbow/body-lean angles.
+New hitPoses list has 3-decimal times/frame numbers, pause-at-frame, bounded
+replay and JSON export, separate from classifier shots. Near-only review data,
+validated optional fields, candidate counts in summary and rally windows.
+Descriptions are 2D posture, not classified shot types or confirmed impact.
+
+Actual full job463e4a85-6672-4c80-8c47-5ba25b21da38 completed on exact84s Paris
+434 source (hash8a1220a5b75f746bbf9efbf3bdbae32676b5b51e7a7b78cc1fdeecf1767c957d),
+all2520normalized30FPSframes. Eightlines per3courtsegments. Near poses2004/2520
+aftercloseup exclusion; farposes0. 35events:20refined distance minima and15swing
+seeds. Fivepriorrallywindows retained; possiblegroundstops40.20/81.50 unchanged.
+Pose145.9s, floor111.5s. Verified source/report hashes, timestamps, near-only
+savedpeople and noLLM/classifier/contact-image outputs. Visual line and pose
+sheets inspected. Opposite-arm peaks and pickup movements produce false hit
+candidates; accuracy / exact impact timing are NOT validated. Original rally-only
+job60993f74 remains intact. Private manifest artifacts/paris434-near-job.json.
+
+Unitchecks coverlinefit/clutter/occlusion/confidence/exactframejoins/excludedviews,
+options/reportvalidation, plus8contact and3playerselection checks. Typecheck and
+productionbuild passed. Focused3Playwrightchecks onproduction verifydefaults,
+dependencycascades, old434rallyreport, newlineoverlay/cut hiding, nearposes,
+pauseattimestamp/boundedreplay,export,noLLM,a11y and cleanconsole. No old footage
+tests or optional full classifier/LLM pipeline rerun. Manual DevTools report
+loaded8lines/35posebuttons, video ready4/84s, nooverflow or consoleerrors.
+Movement screenshot refreshed. Production127.0.0.1:3000 session91914.
+Open /review/463e4a85-6672-4c80-8c47-5ba25b21da38. Details docs/near-lines-hit-poses.md.
+
 ## Selectable rally-only Paris350_434 test (2026-10-10)
 
 User corrected scope: use ONLY Men's Singles Badminton FULL FINAL🏸 _ Paris

@@ -9,8 +9,8 @@ test('analysis switches default to the focused rally test and enforce dependenci
   await page.getByRole('button', { name: 'Upload Match', exact: true }).click();
   await page.getByLabel('Match video', { exact: true }).setInputFiles(file!);
   const options = page.getByRole('group', { name: 'Analysis options' });
-  for (const label of ['YOLO player tracking', 'Shuttle tracking (TrackNet)', 'Ground segmentation and touch candidates']) await expect(options.getByLabel(label, { exact: true })).toBeChecked();
-  for (const label of ['Body pose', 'Shot classification', 'LLM coaching and frame extraction']) await expect(options.getByLabel(label, { exact: true })).not.toBeChecked();
+  for (const label of ['YOLO player tracking', 'Shuttle tracking (TrackNet)', 'Ground segmentation and touch candidates', 'Body pose']) await expect(options.getByLabel(label, { exact: true })).toBeChecked();
+  for (const label of ['Shot classification', 'LLM coaching and frame extraction']) await expect(options.getByLabel(label, { exact: true })).not.toBeChecked();
   await options.getByLabel('LLM coaching and frame extraction').check();
   for (const label of ['Body pose', 'Shot classification', 'YOLO player tracking']) await expect(options.getByLabel(label, { exact: true })).toBeChecked();
   await options.getByLabel('YOLO player tracking').uncheck();

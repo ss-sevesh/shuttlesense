@@ -85,6 +85,7 @@ def main():
     parser.add_argument("--far-roi", type=int, nargs=4, metavar=("X", "Y", "WIDTH", "HEIGHT"))
     parser.add_argument("--allow-reacquisition", action="store_true")
     parser.add_argument("--skip-pose", action="store_true", help="Track YOLO boxes without MediaPipe inference")
+    parser.add_argument("--near-pose", action="store_true", help="Keep far player boxes but infer pose only for the near player")
     parser.add_argument("--corners", type=float, nargs=8, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--detector", type=Path, default=Path("data/hf-racquet-baseline/yolo11n-pose.pt"))
@@ -156,7 +157,7 @@ def main():
             players = select_players(boxes, matrix, locked, recovery, source_frame / fps)
             timestamp = round(source_frame / fps * 1000)
             for player in players:
-                if args.skip_pose:
+                if args.skip_pose or (args.near_pose and player['side'] != 'near'):
                     player.update(keypoints_xy=[], keypoint_scores=[], pose_detected=False)
                     continue
                 identity = player["side"] if recovery is not None else player["track_id"]
@@ -191,6 +192,7 @@ def main():
     report["settings"]["tracker_values_sha256"] = hashlib.sha256(json.dumps(tracker_settings, sort_keys=True).encode()).hexdigest()
     report["settings"]["pose_min_input_height"] = 256
     report["settings"]["pose_enabled"] = not args.skip_pose
+    report["settings"]["pose_focus_side"] = 'near' if args.near_pose else 'both'
     if args.skip_pose:
         report["settings"]["pose_model"] = report["settings"]["pose_device"] = None
     args.output.parent.mkdir(parents=True, exist_ok=True)

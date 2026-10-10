@@ -27,6 +27,11 @@ for (const invalid of [{...contact,frame:NaN},{...contact,frames:[3,4,9,6,7]},{.
   assert.equal(isReviewData({...report,shots:[{contact:invalid}]}),false);
 }
 assert.equal(isReviewData({...report,shots:[null]}),false);
+const hitPose = {frame:5,time:5/30,trackId:1,status:'estimated_contact',pose:'Raised arm',reason:'estimated',measurements:{elbow:120,bodyLean:null}};
+const courtLines = {method:'white_fit',reason:'Verify',segments:[{start:0,end:1,lines:[{name:'Singles left',points:[[.1,.5],[.1,.9]],support:.9}]}]};
+assert.equal(isReviewData({...report,hitPoses:[hitPose],courtLines}),true);
+for (const bad of [{frame:100},{time:.9},{status:'confirmed_hit'},{measurements:{elbow:Infinity,bodyLean:0}}]) assert.equal(isReviewData({...report,hitPoses:[{...hitPose,...bad}]}),false);
+assert.equal(isReviewData({...report,courtLines:{...courtLines,segments:[{start:0,end:4,lines:[]}]}}),false);
 const ground = {status:'experimental',model:'segformer',revision:'pinned',reason:'Needs review',candidates:[{frame:5,time:5/30,point:[10,10],status:'possible_landing',holdFrames:6,floorScore:.8}]};
 assert.equal(isReviewData({...report,groundLanding:ground}),true);
 assert.equal(isReviewData({...report,groundLanding:{...ground,status:'unavailable',candidates:[]}}),true);
