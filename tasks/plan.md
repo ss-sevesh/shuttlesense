@@ -176,3 +176,9 @@ Do not quietly lower thresholds to pass a checkpoint. Record measured failures a
 - Confirm the proposed evaluation targets before using them as acceptance gates.
 
 The user has reviewed the frontend prototype and requested moving into real implementation. Continue with the pending tasks in `todo.md`; `HANDOFF.md` records the current state and missing inputs.
+
+## Loss-only rally review - 2026-10-10
+
+User confirms near player lost both completed Paris350_434 rallies (40.2s/81.5s). Use existing rally segmentation; null-ending walking/toss candidates are excluded from main loss review. Persist Won/Lost/Unknown separately from detector evidence. Only confirmed Lost rallies can invoke local Qwen. Five frames cover up to two seconds, inside the rally and after the preceding detected hit; report times/provenance and uncertainty, never assert intent or metre distances. Preserve old reports and technical evidence.
+
+UI contract: existing cream/green tokens and replay/heatmap patterns are the references. Primary action: replay a lost rally, then inspect its ending. Video and live heatmap first; compact rally outcomes and one selected loss explanation; full pose/shot/ground tables closed under Technical details. Desktop split view, narrow screens stack; native labelled controls, busy/error/empty states. Scope: landing API/worker/prompt + loss review component, existing review/upload layout, focused tests and handoff. No new dependency or training.

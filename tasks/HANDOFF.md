@@ -1,5 +1,56 @@
 # ShuttleSense session handoff
 
+## Loss-only local AI review (2026-10-10)
+
+Latest user authorization overrides earlier no-LLM constraint ONLY for explaining
+lost-rally endings. User explicitly confirmed BOTH completed Paris350_434 rallies
+are near-player losses (40.2s / 81.5s); do not ask again. Persisted separately in
+ignored job loss-reviews/3.json and 5.json, keyed to analysisSha256. New main UI
+shows only confirmed losses with completed ends, not null-ending walking/toss
+windows or every shot. Won/Unknown corrections persist locally; only Lost can
+invoke AI. Unchanged detector reports and full pose/shot/rally tables remain in
+closed Technical details. MyMatches links open the main review, not joint angles.
+
+Reused existing pretrained local Qwen3-VL-2B-Instruct, same pinned revision and
+manifest hash checks; no cloud or training. landing API accepts rallyId, reads
+saved outcome, derives end frame server-side, rejects unconfirmed/null endings,
+limits request size and requires local same-origin POST. Atomic per-rally saves.
+Upload no longer offers all-shot LLM; startJob rejects llm=true whole-video runs.
+Legacy saved reports remain readable. Loss prompt version before-landing-v2-loss-
+bounds. Worker independently checks source hash, analysis/outcome and rally end.
+Five frames cover up to last2s, after previous near hit (excluding contact proxies
+within .5s of the ending attempt), clipped to rally/current court segment; final
+attempt included. This is a detected-hit boundary, not guaranteed racket impact.
+
+Actual local inference succeeded for both losses: first frames1146,1161,1176,
+1190,1205 (38.2-40.1667s); second2385,2400,2415,2429,2444 (79.5-81.4667s).
+Inference35.521s /32.062s (model load/hash verification additional). Reports and
+JPEGs in ignored job landing/1206 and /2445; cached answers reused. Qwen describes
+possible reach/return; specific intended shot remains unknown and advice is
+experimental. Do not claim proven failure cause, exact impact, in/out or metres.
+Ground stop times may include rolling/walking after first touch. No detector rerun,
+no new footage, no changed rally/pose/line model evidence.
+
+Used planning, frontend UI and React review skills. Existing workspace cream/green
+and replay/heatmap components served as visual references; contract in plan.md.
+Main video/live heatmap, two loss buttons, ending pose/distance, cautious explanation
+and five evidence images; deeper measurements/outcome correction collapse. JSON
+export includes outcomes and explanations inspected in this mounted review.
+
+Verification: production build/typecheck;8focused Playwright tests (all approved
+434 sources or synthetic) covering old reviews/overlays/controls, loss API gates,
+atomic outcome persistence/reload, cached inference, images, JSON export, replay,
+pose pause/autoscroll, heatmap rewind, axe, no JS errors, widths320/768/1024/1440.
+4landing bounds/prompt tests and1mockedQwen retry/cache/failure test pass. Final
+loss API/UI pair rerun after outcome type validation. Review desktop/mobile images
+in artifacts/paris434-loss-review*.png; npm screenshot refreshed movement preview.
+Prod http://127.0.0.1:3000 session95645. Latest review remains
+/review/c278680c-fb33-4b1c-91d1-8daa17db95f6, listed MyMatches /?view=matches.
+No independent coach/intent accuracy validation, full tracker reruns or other-video
+suites. All private footage, confirmations, reports, weights and screenshots stay
+ignored. No subagents or new dependencies.
+
+
 ## Pretrained BST and observable ending review (2026-10-10)
 
 User authorized implementation: pretrained shots, bounded frames after previous

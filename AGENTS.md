@@ -20,8 +20,16 @@ Latest request enables pretrained BST shot classification and near-player ending
 review. Far-player poses may run as internal BST context; display only near-side
 shots/player evidence. Classifier windows start after the previous detected hit,
 include the current hit and follow-through, and exclude the next detected hit and
-camera cuts. LLM remains off. Describe visible attempts and image separation;
+camera cuts. LLM remains off for shot classification. Describe visible attempts and image separation;
 never claim inferred intent, physical reach, metres or confirmed first ground touch.
+
+Latest request authorizes the local pretrained vision LLM only for explaining
+confirmed near-player lost rally endings, using earlier frames inside that rally
+and after the preceding near hit. The user confirmed both completed Paris434
+rallies (40.2s and 81.5s) are near-player losses. Persist those confirmations
+separately; do not treat a ground stop as automatic winner detection. Keep casual
+walking/tossing windows and all-shot lists out of the main loss review. Possible
+intent must be presented as uncertain interpretation, never established fact.
 
 Read `tasks/HANDOFF.md` before starting work. Do not make the user explain the
 sandbox repair again or search previous conversations for it.

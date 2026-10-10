@@ -82,8 +82,8 @@ export function StartShotAnalysis({ file, corners, onMarkCourt, onComplete }: { 
     } finally { setBusy(false); }
   }
   return <section className="shot-upload-start" aria-label="Shot and rally analysis">
-    {!id && <fieldset disabled={busy}><legend>Analysis options</legend><p>Choose what runs before generating results. Required features enable together.</p>
-      {([['yolo', 'YOLO player tracking'], ['shuttle', 'Shuttle tracking (TrackNet)'], ['ground', 'Ground segmentation and touch candidates'], ['pose', 'Body pose'], ['shots', 'Shot classification'], ['ending','Near-player ending review'], ['llm', 'LLM coaching and frame extraction']] as const).map(([key,label]) =>
+    {!id && <fieldset disabled={busy}><legend>Analysis options</legend><p>Choose your tracking features. Local AI explanations are available separately for lost rallies after analysis.</p>
+      {([['yolo', 'YOLO player tracking'], ['shuttle', 'Shuttle tracking (TrackNet)'], ['ground', 'Ground segmentation and touch candidates'], ['pose', 'Body pose'], ['shots', 'Shot classification'], ['ending','Near-player ending review']] as const).map(([key,label]) =>
         <label key={key} style={{ display: 'block' }}><input type="checkbox" checked={options[key] ?? false} onChange={event => toggle(key,event.target.checked)}/>{label}</label>)}
     </fieldset>}
     {!id && <><div><span className="intro-label">YOUR VIDEO · REAL ANALYSIS</span><h3>Review Your Shots & Rallies</h3><p>See player posture, shuttle detections and predicted shot types. Confirm or correct what you observe.</p></div>
@@ -97,7 +97,7 @@ export function SavedAnalysisReview({ id }: { id: string }) {
   const [data, setData] = useState<ReviewData | null>(null);
   const ready = useCallback((result: ReviewData) => setData(result), []);
   return <main id="main" className="saved-analysis main-content"><a className="skip-link" href="#review-content">Skip to review</a><a className="text-button" href="/">Back to Workspace <ArrowUpRight size={16} aria-hidden="true"/></a>
-    <div className="page-heading"><div><div className="intro-label">YOUR VIDEO REVIEW</div><h1>{data?.options?.shots === false ? 'Check the Rally Boundaries.' : 'Check the Contact. Choose the Shot.'}</h1><p>Watch the evidence, then confirm the rally boundaries.</p></div>{data && <span className="review-badge"><CheckCircle size={16} aria-hidden="true"/>Analysis Ready</span>}</div>
+    <div className="page-heading"><div><div className="intro-label">YOUR VIDEO REVIEW</div><h1>Review the rallies you lost.</h1><p>Watch the final seconds, inspect the attempt, and understand what could improve.</p></div>{data && <span className="review-badge"><CheckCircle size={16} aria-hidden="true"/>Analysis Ready</span>}</div>
     <div id="review-content">{data ? <AnalysisReview key={data.analysisSha256} data={data} videoUrl={`/api/analysis/${encodeURIComponent(id)}/video`}/> : <AnalysisJobProgress id={id} onComplete={ready}/>}</div>
   </main>;
 }

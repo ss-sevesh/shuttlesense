@@ -1,8 +1,28 @@
 import unittest
-from landing_coach import before_frames, landing_prompt, pose_context
+from landing_coach import before_frames, landing_prompt, pose_context, loss_frames
 
 
 class LandingTests(unittest.TestCase):
+    def test_loss_frames_stay_after_previous_hit_and_inside_camera_segment(self):
+        data = {'fps':30,'sceneSummary':{'courtSegments':[[0,10]]},'shots':[
+            {'side':'near','time':8.5,'playStatus':'possible_play'},
+            {'side':'near','time':9.8,'playStatus':'possible_play'}],
+            'endingReview':[{'rallyId':3,'evidence':{'time':9.7}}]}
+        rally = {'id':3,'start':7,'end':10}
+        frames = loss_frames(data,rally)
+        self.assertEqual(len(set(frames)),5)
+        self.assertGreater(frames[0],8.5*30)
+        self.assertLess(frames[0],9.7*30) # Includes the final attempted return.
+        self.assertLess(frames[-1],10*30)
+        data['sceneSummary']['courtSegments']=[[9,10]]
+        self.assertGreaterEqual(loss_frames(data,rally)[0],270)
+        with self.assertRaises(ValueError): loss_frames(data,{**rally,'end':None})
+        data['sceneSummary']['courtSegments']=[[0,8]]
+        with self.assertRaises(ValueError): loss_frames(data,rally)
+        text=landing_prompt({'rallyId':3,'outcome':'lost'})
+        self.assertIn('possible intent',text)
+        self.assertIn('not metres',text)
+
     def test_frames_cover_preceding_second_and_exclude_landing(self):
         self.assertEqual(before_frames(300, 30, 1202), [270, 278, 285, 292, 299])
         for frame in (0, 29, 1202, -1):

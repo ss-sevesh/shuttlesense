@@ -24,6 +24,7 @@ test('Paris near-court lines and hit-pose frames are visible without LLM', async
   await page.getByLabel('Near-side court lines').uncheck();
   await expect(page.locator('[data-court-line]')).toHaveCount(0);
   await page.getByLabel('Near-side court lines').check();
+  await page.getByText('Technical details: shots, poses & rally boundaries',{exact:true}).click();
   const region = page.getByRole('region',{name:'Near-side hit poses'});
   await expect(region).toContainText('Raised arm means the wrist is above the shoulder');
   const event = data.hitPoses.find((e: {status:string;pose:string}) => e.status==='estimated_contact' && e.pose!=='Pose uncertain') ?? data.hitPoses[0];

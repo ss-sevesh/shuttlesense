@@ -48,6 +48,7 @@ export async function acquireAnalysisLock() {
 }
 export async function startJob(file: File, corners: number[], selected?: AnalysisOptions) {
   const options = analysisOptions(selected);
+  if (options.llm) throw new Error('Whole-video LLM coaching is disabled. Generate an explanation for a confirmed lost rally after analysis.');
   const lock = await acquireAnalysisLock();
   await lock.writeFile(JSON.stringify({ pid: process.pid }));
   await lock.close();

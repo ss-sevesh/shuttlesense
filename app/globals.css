@@ -406,3 +406,22 @@ strong { font-weight:600; }
 .contact-frames figcaption { font-size: .75rem; padding-block: .35rem; }
 .landing-coaching form { display: grid; gap: .7rem; margin-block: 1rem; }
 .landing-coaching input { width: 100%; min-width: 0; }
+/* Loss review follows the existing cream/green workspace palette. */
+.loss-review { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 24px; }
+.loss-review h3 { margin: 6px 0; font-size: 24px; }
+.loss-tabs { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0; }
+.loss-tabs button { padding: 12px 18px; border-radius: 8px; }
+.loss-tabs button[aria-pressed="true"] { background: var(--accent); color: var(--white); }
+.loss-title { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.loss-title h4 { flex: 1 1 220px; margin: 12px 0; font-size: 19px; }
+.loss-observation { border-left: 3px solid var(--accent); padding: 12px 16px; margin: 16px 0; background: var(--surface); }
+.loss-review p { line-height: 1.65; }
+.loss-explanation h5 { font-size: 16px; margin-bottom: 8px; }
+.loss-explanation > button { margin-top: 12px; }
+.loss-explanation > p:last-child, .loss-uncertainty { font-size: 13px; color: var(--muted); }
+.loss-frames, .loss-outcomes, .review-technical { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 20px; }
+.loss-review summary, .review-technical summary { cursor: pointer; font-weight: 600; padding: 8px 0; }
+.loss-outcomes label { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 12px 0; }
+.loss-review .contact-frames { grid-template-columns: repeat(5,minmax(0,1fr)); }
+.review-sidebar .review-heatmap { margin-top: 0; }
+@media (max-width: 700px) { .loss-review .contact-frames { grid-template-columns: repeat(2,minmax(0,1fr)); } .loss-review .review-event-heading { flex-wrap: wrap; } }

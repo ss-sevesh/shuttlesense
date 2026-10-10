@@ -27,6 +27,7 @@ test('Paris434 pretrained shots and final movement evidence are usable without L
   expect(data.endingReview.filter((e:{status:string})=>e.status==='unknown')).toHaveLength(3);
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.emulateMedia({reducedMotion:'reduce'});await page.goto(`/review/${manifest.id}`);
+  await page.getByText('Technical details: shots, poses & rally boundaries',{exact:true}).click();
   await expect(page.getByText('Pretrained BST-0 uses body movement',{exact:false})).toBeVisible();
   const region=page.getByRole('region',{name:'Near-player ending review'});
   await expect(region).toContainText('not metres or physical reach');
@@ -44,7 +45,7 @@ test('Paris434 pretrained shots and final movement evidence are usable without L
   const exported=JSON.parse(readFileSync((await (await download).path())!,'utf8'));
   expect(exported.endingReview).toEqual(data.endingReview);expect(exported.modelShots).toEqual(data.shots);
   await expect(page.getByRole('region',{name:'Before-landing coaching'})).toHaveCount(0);
-  await page.goto('/?view=matches');await expect(page.locator(`a[href="/review/${manifest.id}#camera-values"]`)).toBeVisible();
+  await page.goto('/?view=matches');await expect(page.locator(`a[href="/review/${manifest.id}"]`)).toBeVisible();
   expect((await new AxeBuilder({page}).include('main').analyze()).violations).toEqual([]);
   expect(errors).toEqual([]);
 });

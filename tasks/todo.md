@@ -161,3 +161,9 @@ does not claim the upload/worker or production checkpoints are complete.
 - [ ] Exposed shot classes meet the agreed validation gates, with sample counts and coverage reported.
 - [ ] Shot-aware explanations remain traceable to evidence and qualified where causation is uncertain.
 - [ ] The complete upload -> tracking -> rallies -> shots -> insight -> drill flow passes on real held-out footage.
+
+## Loss-only review - current
+- [x] Persist confirmed loss outcomes and enforce loss-only inference.
+- [x] Bound earlier-frame evidence to the rally/previous hit, explain cautiously with local pretrained Qwen.
+- [x] Simplify review UI: video, live heatmap, two loss endings, collapsed technical details.
+- [x] Verify actual approved video, API gates, frame bounds, UI, build; update handoff and commit/push.

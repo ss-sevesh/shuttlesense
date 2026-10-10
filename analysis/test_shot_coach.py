@@ -70,7 +70,7 @@ class CoachTests(unittest.TestCase):
                 coached = json.loads((root / 'landing.json').read_text())['hits'][0]
                 self.assertEqual(coached['coaching']['status'], 'experimental')
                 self.assertEqual(coached['coaching']['answer']['shotType'], 'unknown')
-                self.assertEqual(coached['coaching']['promptVersion'], 'before-landing-v1')
+                self.assertEqual(coached['coaching']['promptVersion'], 'before-landing-v2-loss-bounds')
                 self.assertEqual(coached['landing'], landing['landing'])
                 coach(root, landing=True)
                 self.assertEqual(model.generate.call_count, prior_calls + 1)

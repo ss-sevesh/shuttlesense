@@ -11,7 +11,7 @@ MODEL = 'Qwen/Qwen3-VL-2B-Instruct'
 REVISION = '89644892e4d85e24eaac8bacfd4f463576704203'
 MODEL_DIR = Path('data/models/shot-coach-qwen3-vl2b')
 PROMPT_VERSION = 'five-frames-v1'
-LANDING_PROMPT_VERSION = 'before-landing-v1'
+LANDING_PROMPT_VERSION = 'before-landing-v2-loss-bounds'
 SHOT_TYPES = ['unknown', 'smash', 'clear', 'drop', 'lift', 'drive', 'net shot', 'defensive net shot',
               'push', 'net kill', 'crosscourt net shot', 'short serve', 'long serve']
 
@@ -102,7 +102,7 @@ def coach(directory, landing=False):
     from transformers import AutoProcessor, AutoModelForImageTextToText
     from review_job import write_json
     report_file = directory / ('landing.json' if landing else 'fused.json')
-    fused = json.loads(report_file.read_text())
+    fused = json.loads(report_file.read_text(encoding='utf-8'))
     fps = fused['fps']
     frames = directory / 'frames'
     cache = directory / 'coaching'
