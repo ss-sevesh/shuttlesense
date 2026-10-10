@@ -96,6 +96,22 @@ def evidence_hash(hit, fps, frames):
     return value.hexdigest()
 
 
+def load_coach_model():
+    import torch
+    from transformers import AutoProcessor, AutoModelForImageTextToText
+    manifest = json.loads((MODEL_DIR / 'provenance.json').read_text())
+    if manifest['model'] != MODEL or manifest['revision'] != REVISION:
+        raise ValueError('Coaching model revision mismatch')
+    for name, expected in manifest['sha256'].items():
+        with (MODEL_DIR / name).open('rb') as source:
+            if hashlib.file_digest(source, 'sha256').hexdigest() != expected:
+                raise ValueError('Coaching model file hash mismatch')
+    processor = AutoProcessor.from_pretrained(MODEL_DIR, local_files_only=True, trust_remote_code=False)
+    model = AutoModelForImageTextToText.from_pretrained(MODEL_DIR, local_files_only=True, trust_remote_code=False,
+        dtype=torch.bfloat16, attn_implementation='sdpa').to('cuda').eval()
+    return processor, model
+
+
 def coach(directory, landing=False):
     import torch
     from PIL import Image
@@ -129,16 +145,7 @@ def coach(directory, landing=False):
         raw = ''
         try:
             if model is None:
-                manifest = json.loads((MODEL_DIR / 'provenance.json').read_text())
-                if manifest['model'] != MODEL or manifest['revision'] != REVISION:
-                    raise ValueError('Coaching model revision mismatch')
-                for name, expected in manifest['sha256'].items():
-                    with (MODEL_DIR / name).open('rb') as source:
-                        if hashlib.file_digest(source, 'sha256').hexdigest() != expected:
-                            raise ValueError('Coaching model file hash mismatch')
-                processor = AutoProcessor.from_pretrained(MODEL_DIR, local_files_only=True, trust_remote_code=False)
-                model = AutoModelForImageTextToText.from_pretrained(MODEL_DIR, local_files_only=True, trust_remote_code=False,
-                    dtype=torch.bfloat16, attn_implementation='sdpa').to('cuda').eval()
+                processor, model = load_coach_model()
             images = []
             for frame in contact['frames']:
                 with Image.open(frames / f'{frame}.jpg') as image:

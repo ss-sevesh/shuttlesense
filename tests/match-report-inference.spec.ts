@@ -1,0 +1,32 @@
+import {test,expect} from '@playwright/test';
+import {readFileSync} from 'node:fs';
+const id=JSON.parse(readFileSync('artifacts/paris434-shot-job.json','utf8')).id;
+
+test('approved Paris recording generates and reopens a local evidence-grounded match report',async({page,request})=>{
+  test.setTimeout(900000);
+  const response=await request.post(`/api/analysis/${id}/report`,{headers:{origin:'http://127.0.0.1:3000'},data:{rallies:{}},timeout:850000});
+  expect(response.status(),await response.text()).toBe(200);
+  const {report,evidence}=await response.json();
+  expect(report.status).toBe('experimental');expect(report.rallyReports).toHaveLength(2);
+  expect(evidence.rallies.filter((r:{eligible:boolean})=>r.eligible).every((r:{outcome:string})=>r.outcome==='lost')).toBe(true);
+  expect(evidence.allHitPoses.length).toBeGreaterThan(0);
+  const supplied=evidence.modelRequests.filter((r:{section:string;synthesis:boolean;rewrite?:boolean})=>r.section==='observations' && !r.synthesis && !r.rewrite).flatMap((r:{prompt:string})=>JSON.parse(r.prompt.split('EVIDENCE: ')[1].split('\nWrite ONLY')[0]).hitPoses);
+  const eligiblePoses=evidence.rallies.filter((r:{eligible:boolean})=>r.eligible).flatMap((r:{hitPoses:{frame:number;angles:Record<string,number|null>}[]})=>r.hitPoses);
+  expect(supplied.map((p:{frame:number})=>p.frame).sort((a:number,b:number)=>a-b)).toEqual(eligiblePoses.map((p:{frame:number})=>p.frame).sort((a:number,b:number)=>a-b));
+  for(const pose of supplied)expect(pose.angles).toEqual(eligiblePoses.find((p:{frame:number})=>p.frame===pose.frame).angles);
+  expect(report.answer.training.length).toBeGreaterThan(20);
+  expect(report.answer.training).toMatch(/practi[cs]e|drill|repetitions|repeat|sets|step/i);
+  for(const answer of [report.answer,...report.rallyReports.map((r:{answer:Record<string,string>})=>r.answer)])expect(Object.values(answer).join(' ')).not.toMatch(/\d\s*(degrees?\b|deg\b|°)/i);
+  await page.goto(`/review/${id}`);
+  const region=page.getByRole('region',{name:'AI match report'});
+  await expect(region.getByRole('button',{name:'Download report',exact:true})).toBeVisible();
+  let download=page.waitForEvent('download');await region.getByRole('button',{name:'Download report',exact:true}).click();
+  const reportDownload=await download;await reportDownload.saveAs('artifacts/paris434-match-report.md');
+  const markdown=readFileSync((await reportDownload.path())!,'utf8');
+  expect(markdown).toContain(report.answer.training);expect(markdown).toContain('## Rally 1 (window 3)');
+  download=page.waitForEvent('download');await region.getByRole('button',{name:'Download AI evidence',exact:true}).click();
+  const evidenceDownload=await download;await evidenceDownload.saveAs('artifacts/paris434-report-evidence.json');
+  const saved=JSON.parse(readFileSync((await evidenceDownload.path())!,'utf8'));
+  expect(saved).toEqual(evidence);
+  await page.reload();await expect(region).toContainText(report.answer.summary);
+});

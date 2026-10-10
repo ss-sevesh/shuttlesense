@@ -10,14 +10,12 @@ test('analysis switches default to the focused rally test and enforce dependenci
   await page.getByLabel('Match video', { exact: true }).setInputFiles(file!);
   const options = page.getByRole('group', { name: 'Analysis options' });
   for (const label of ['YOLO player tracking', 'Shuttle tracking (TrackNet)', 'Ground segmentation and touch candidates', 'Body pose']) await expect(options.getByLabel(label, { exact: true })).toBeChecked();
-  for (const label of ['Shot classification']) await expect(options.getByLabel(label, { exact: true })).not.toBeChecked();
+  await expect(options.getByLabel('Shot classification', { exact: true })).toHaveCount(0);
   await expect(options.getByLabel('Near-player ending review')).not.toBeChecked();
   await options.getByLabel('Near-player ending review').check();
   for (const label of ['Body pose','Ground segmentation and touch candidates','Shuttle tracking (TrackNet)','YOLO player tracking']) await expect(options.getByLabel(label,{exact:true})).toBeChecked();
-  await options.getByLabel('Shot classification').check();
-  for (const label of ['Body pose', 'Shot classification', 'YOLO player tracking']) await expect(options.getByLabel(label, { exact: true })).toBeChecked();
   await options.getByLabel('YOLO player tracking').uncheck();
-  for (const label of ['Body pose', 'Shot classification']) await expect(options.getByLabel(label, { exact: true })).not.toBeChecked();
+  await expect(options.getByLabel('Body pose', { exact: true })).not.toBeChecked();
   await expect(options.getByLabel('Near-player ending review')).not.toBeChecked();
   await options.getByLabel('Shuttle tracking (TrackNet)', { exact: true }).uncheck();
   await expect(options.getByLabel('Ground segmentation and touch candidates')).not.toBeChecked();
@@ -25,7 +23,7 @@ test('analysis switches default to the focused rally test and enforce dependenci
   await expect(options.getByLabel('Shuttle tracking (TrackNet)', { exact: true })).toBeChecked();
   await options.getByLabel('YOLO player tracking').check();
   await expect(page.locator('.local-preview')).toHaveAttribute('aria-busy', 'false');
-  await page.getByRole('button', { name: 'Analyze Shots & Rallies', exact: true }).click();
+  await page.getByRole('button', { name: 'Analyze Rallies & Poses', exact: true }).click();
   const picker = page.locator('.corner-picker');
   const box = await picker.boundingBox(); expect(box).toBeTruthy();
   for (const [x,y] of [[461/1280,325/720],[817/1280,325/720],[999/1280,670/720],[284/1280,670/720]]) await picker.click({ position: { x: x*box!.width, y: y*box!.height } });
@@ -35,7 +33,7 @@ test('analysis switches default to the focused rally test and enforce dependenci
     sent = JSON.parse(String((await body.formData()).get('options')));
     await route.fulfill({ status: 422, json: { error: 'Options captured; no model run in this control test.' } });
   });
-  await page.getByRole('button', { name: 'Analyze Shots & Rallies', exact: true }).click();
+  await page.getByRole('button', { name: 'Analyze Rallies & Poses', exact: true }).click();
   await expect(page.getByRole('alert').filter({ hasText: 'Options captured' })).toBeVisible();
   expect(sent).toEqual({ yolo: true, shuttle: true, ground: true, pose: false, shots: false, llm: false, ending:false });
   const invalid = await request.post('/api/analysis', { headers: { origin: 'http://127.0.0.1:3000' }, multipart: { video: { name: file!, mimeType: 'video/mp4', buffer: readFileSync(file!) }, corners: '[0.3,0.2,0.7,0.2,0.9,0.9,0.1,0.9]', options: JSON.stringify({ yolo:true, shuttle:false,ground:true,pose:false,shots:false,llm:false }) } });

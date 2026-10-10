@@ -102,20 +102,28 @@ export function nearestIndex(rows: { time: number }[], time: number, tolerance: 
   const index = low === rows.length || (low > 0 && time - rows[low - 1].time < rows[low].time - time) ? low - 1 : low;
   return index >= 0 && Math.abs(rows[index].time - time) <= tolerance ? index : -1;
 }
-export function movementHeatmap(data: Pick<ReviewData,'samples'|'poseSampleHz'|'duration'>, side: Side, time: number) {
+export function movementHeatmap(data: Pick<ReviewData,'samples'|'poseSampleHz'|'duration'>, side: Side, time: number, windows?: [number,number][]) {
   const grid: number[][] = Array.from({length:8}, () => Array(6).fill(0));
   let seconds = 0;
+  const intervals: [number,number][] = [];
+  for (const [start,end] of (windows ?? [[0,data.duration]]).filter(([start,end])=>validInterval(start,end,data.duration)).sort((a,b)=>a[0]-b[0])) {
+    const last = intervals.at(-1);
+    if (last && start<=last[1]) last[1]=Math.max(last[1],end);
+    else intervals.push([start,end]);
+  }
   for (const sample of data.samples) {
     if (sample.time >= time) break;
     for (const person of sample.people) {
       const [x,y] = person.court;
       if (person.side !== side || !Number.isFinite(x) || !Number.isFinite(y) || x < 0 || x > 1 || y < 0 || y > 1) continue;
-      const weight = Math.max(0,Math.min(1/data.poseSampleHz,time-sample.time,data.duration-sample.time));
+      const stop = Math.min(sample.time+1/data.poseSampleHz,time,data.duration);
+      const weight = intervals.reduce((total,[start,end])=>total+Math.max(0,Math.min(stop,end)-Math.max(sample.time,start)),0);
       grid[Math.min(7,Math.floor(y*8))][Math.min(5,Math.floor(x*6))] += weight;
       seconds += weight;
     }
   }
-  return {grid,seconds};
+  const windowSeconds=intervals.reduce((total,[start,end])=>total+Math.max(0,Math.min(end,time)-start),0);
+  return {grid,seconds,windowSeconds};
 }
 export function validInterval(start: number, end: number, duration: number) { return Number.isFinite(start) && Number.isFinite(end) && start >= 0 && end > start && end <= duration; }
 export type HumanReviews = { shots: Record<string, { label: string; reviewedAt: string }>; rallies: Record<string, { start: number; end: number; reviewedAt: string }> };

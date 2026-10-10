@@ -20,7 +20,7 @@ test('selected loss photo aligns beside video, marks racket gap and pages techni
   const videoBox=(await page.locator('.review-camera video').boundingBox())!;
   const sidebarBox=(await page.locator('.review-sidebar').boundingBox())!;
   expect(sidebarBox.x).toBeGreaterThan(videoBox.x+videoBox.width);
-  expect(Math.abs(sidebarBox.y-videoBox.y)).toBeLessThan(3);
+  expect(Math.abs(sidebarBox.y-(await page.locator(".review-main").boundingBox())!.y)).toBeLessThan(3);
   const heatmapBox=(await page.locator('.review-heatmap').boundingBox())!;
   expect(heatmapBox.x).toBeGreaterThan(videoBox.x+videoBox.width);
   expect(heatmapBox.y).toBeGreaterThanOrEqual(0);
@@ -42,7 +42,7 @@ test('selected loss photo aligns beside video, marks racket gap and pages techni
   await page.reload();await loss.getByRole('button',{name:'Loss 2 · 81.5 s',exact:true}).click();
   await expect(photo.locator('[data-attempt-distance]')).toHaveAttribute('data-attempt-distance','manual-racket');
   await photo.getByRole('button',{name:'Reset racket mark'}).click();
-  await page.getByText('Technical details: shots, poses & rally boundaries',{exact:true}).click();
+  await page.getByText('Technical details: poses & rally boundaries',{exact:true}).click();
   await page.getByRole('button',{name:'Hit poses',exact:true}).click();
   const poses=page.getByRole('region',{name:'Near-side hit poses'});
   await expect(poses.locator('tbody tr')).toHaveCount(5);
@@ -52,14 +52,10 @@ test('selected loss photo aligns beside video, marks racket gap and pages techni
   expect(await poses.locator('tbody tr').first().innerText()).not.toBe(first);
   await poses.getByRole('navigation',{name:'Pose pages'}).getByRole('button',{name:'Previous'}).click();
   expect(await poses.locator('tbody tr').first().innerText()).toBe(first);
-  await page.getByRole('button',{name:'Shot types',exact:true}).click();
-  const shots=page.getByRole('region',{name:'Shot contacts'});
-  await expect(shots.locator('tbody tr')).toHaveCount(5);
-  await shots.getByRole('navigation',{name:'Contact pages'}).getByRole('button',{name:'Next'}).click();
-  expect(await shots.locator('tbody tr').count()).toBeLessThanOrEqual(5);
+  await expect(page.getByRole('button',{name:'Shot types',exact:true})).toHaveCount(0);
   await expect(page.getByRole('region',{name:'Possible shuttle landings'})).toHaveCount(0);
   await expect(page.getByRole('region',{name:'Near-player ending review'})).toHaveCount(0);
-  await page.getByText('Technical details: shots, poses & rally boundaries',{exact:true}).click();
+  await page.getByText('Technical details: poses & rally boundaries',{exact:true}).click();
   await page.screenshot({path:'artifacts/paris434-compact-loss.png',fullPage:true});
   expect((await new AxeBuilder({page}).include('main').analyze()).violations).toEqual([]);
   for(const width of [320,768]) {await page.setViewportSize({width,height:900});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);}

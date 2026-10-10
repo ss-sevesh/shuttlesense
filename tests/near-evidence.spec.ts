@@ -24,7 +24,7 @@ test('Paris near-court lines and hit-pose frames are visible without LLM', async
   await page.getByLabel('Near-side court lines').uncheck();
   await expect(page.locator('[data-court-line]')).toHaveCount(0);
   await page.getByLabel('Near-side court lines').check();
-  await page.getByText('Technical details: shots, poses & rally boundaries',{exact:true}).click();
+  await page.getByText('Technical details: poses & rally boundaries',{exact:true}).click();
   await page.getByRole('button',{name:'Hit poses',exact:true}).click();
   const region = page.getByRole('region',{name:'Near-side hit poses'});
   await expect(region).toContainText('Raised arm: wrist above shoulder');
@@ -43,13 +43,14 @@ test('Paris near-court lines and hit-pose frames are visible without LLM', async
   await expect(page.locator('[data-court-line]')).toHaveCount(0);
   const heatmap = page.locator('.review-heatmap');
   const heat = () => heatmap.locator('rect title').allTextContents();
+  await video.evaluate((v: HTMLVideoElement) => { v.currentTime=35; });
   await expect.poll(async () => (await heat()).length).toBeGreaterThan(0);
   const laterHeat = await heat();
   await video.evaluate((v: HTMLVideoElement) => { v.currentTime=0; });
   await expect.poll(heat).toEqual([]);
-  await video.evaluate((v: HTMLVideoElement) => { v.currentTime=24; });
+  await video.evaluate((v: HTMLVideoElement) => { v.currentTime=35; });
   await expect.poll(heat).toEqual(laterHeat);
-  await video.evaluate(async (v: HTMLVideoElement) => { v.currentTime=2; await v.play(); });
+  await video.evaluate(async (v: HTMLVideoElement) => { v.currentTime=30; await v.play(); });
   const earlyHeat = await heat();
   await expect.poll(heat).not.toEqual(earlyHeat);
   await video.evaluate((v: HTMLVideoElement) => v.pause());

@@ -10,20 +10,23 @@ test('Paris live heat starts faint and uses fixed accumulated seconds through pl
   const video = page.locator('.review-camera video');
   const cells = page.locator('.review-heatmap rect').filter({has:page.locator('title')});
   await expect(video).toBeVisible();
-  for (const time of [.2, 2, 10, .2, 0]) {
+  const first=data.rallies.find((r:{end:number|null})=>r.end!==null);
+  const windows:[number,number][]=[[first.start,first.end]];
+  const initial=Math.ceil(first.start*30)/30+.2;
+  for (const time of [0,initial,35,40,initial,0]) {
     await video.evaluate((v:HTMLVideoElement,t) => {v.pause();v.currentTime=t;},time);
-    const expected = movementHeatmap(data,'near',time).grid.flat().filter(seconds=>seconds>0);
+    const expected = movementHeatmap(data,'near',time,windows).grid.flat().filter(seconds=>seconds>0);
     await expect.poll(async()=>cells.locator('title').allTextContents()).toEqual(
-      movementHeatmap(data,'near',time).grid.flatMap((row,y)=>row.flatMap((seconds,x)=>seconds>0 ? [`Row ${y+1}, column ${x+1}: ${seconds.toFixed(2)} seconds of approximate positions`] : []))
+      movementHeatmap(data,'near',time,windows).grid.flatMap((row,y)=>row.flatMap((seconds,x)=>seconds>0 ? [`Row ${y+1}, column ${x+1}: ${seconds.toFixed(2)} seconds of approximate positions`] : []))
     );
     const opacity = await cells.evaluateAll(rows=>rows.map(row=>Number(row.getAttribute('opacity'))));
     expect(opacity).toEqual(expected.map(seconds=>.85*Math.min(seconds/5,1)));
-    if (time===.2) {
+    if (time===initial) {
       expect(opacity.length).toBeGreaterThan(0);
       expect(Math.max(...opacity)).toBeLessThan(.05);
       await page.screenshot({path:'artifacts/paris434-heat-start.png'});
     }
-    if (time===10) await page.screenshot({path:'artifacts/paris434-heat-later.png'});
+    if (time===40) await page.screenshot({path:'artifacts/paris434-heat-later.png'});
   }
 });
 
