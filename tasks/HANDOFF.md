@@ -1,5 +1,31 @@
 # ShuttleSense session handoff
 
+## Playback heatmap and timestamp scrolling (2026-10-10)
+
+Latest user corrected their contact-timing concern: Replay showed surrounding
+movement; Show pose was satisfactory. Scope narrowed to live heatmap and automatic
+scrolling to video from timestamps. Pose/contact logic, line fitting, saved reports
+and generation pipeline are unchanged. The in-progress line-fit experiment was
+reverted; preliminary RacketVision weights/configs remain ignored in data/models,
+and isolated mmpose dependencies in data/rtmdet-env, but neither is integrated or
+required. No new inference or LLM ran for the final scope.
+
+movementHeatmap uses only elapsed sample durations, excludes invalid/outside court
+positions, separates sides, and rebuilds when rewinding. Review renders it at the
+existing playback clock with current approximate position dot. All replay/show-
+pose actions scroll the camera into view centrally in AnalysisCamera; reduced
+motion uses instant scrolling. Saved data and exports remain compatible.
+
+Production build and typecheck passed. Two focused Playwright tests passed:
+synthetic elapsed/partial/rewind/side/bounds heat checks plus real Paris434 review
+covering playback heat growth, seek reset/repeat, paused pose and bounded replay,
+desktop instant/mobile smooth scrolling, line toggle/cuts, export, no LLM, a11y
+and no console errors. Only approved434 footage was used. Movement screenshot
+refreshed. Production loopback3000 session3180 serves the updated app. Existing
+review /review/463e4a85-6672-4c80-8c47-5ba25b21da38 needs only browser reload.
+Full model pipeline and other footage suites were not rerun. Heat locations remain
+approximate projected player boxes, not verified foot contacts.
+
 ## Near-side line highlights and hit poses (2026-10-10)
 
 User requested visible near-side white court lines and pretrained pose at

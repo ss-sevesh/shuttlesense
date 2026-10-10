@@ -2,7 +2,7 @@
 
 import { useId } from "react";
 
-export function CourtMap({ mode = "heatmap", progress = 0, scope = "all", grid }: { mode?: "heatmap" | "trail" | "drill"; progress?: number; scope?: string; grid?: number[][] }) {
+export function CourtMap({ mode = "heatmap", progress = 0, scope = "all", grid, position }: { mode?: "heatmap" | "trail" | "drill"; progress?: number; scope?: string; grid?: number[][]; position?: [number,number] }) {
   const point = { x: 120 + progress * 94, y: 205 - progress * 81 };
   const id = useId();
   const peak = grid ? Math.max(0, ...grid.flat()) : 0;
@@ -17,6 +17,7 @@ export function CourtMap({ mode = "heatmap", progress = 0, scope = "all", grid }
     <g stroke="var(--court-line)" strokeWidth="1.1" fill="none"><rect x="40" y="38" width="200" height="283"/><path d="M56 38V321M224 38V321M40 54H240M40 305H240M40 140H240M40 219H240M140 38V140M140 219V321"/></g>
     <path d="M25 180H255" stroke="var(--court-line)" strokeWidth="2" strokeDasharray="3 3"/>
     <text x="140" y="171" textAnchor="middle" fill="var(--court-line)" opacity=".8" fontSize="8" letterSpacing="2">NET</text>
+    {position && position.every(v => Number.isFinite(v) && v >= 0 && v <= 1) && <circle data-live-position="true" cx={56+position[0]*168} cy={38+position[1]*283} r="5" fill="#ffe766" stroke="#183522" strokeWidth="2"><title>Current approximate player position</title></circle>}
     {mode === "heatmap" ? <g>{!grid && <><rect x="179" y="190" width="51" height="50" rx="3" fill="none" stroke="var(--court-line)" strokeDasharray="4 3"/><circle cx="205" cy="214" r="10" fill="var(--court-line)"/><text x="205" y="217" textAnchor="middle" fill="var(--court)" fontSize="10" fontWeight="700">1</text></>}<text x="140" y="351" textAnchor="middle" fill="var(--muted)" fontSize="10">YOUR SIDE</text></g> : <g><path d="M120 263L101 224L140 233L213 204L140 263" fill="none" stroke="var(--court-highlight)" strokeWidth="2.5" strokeDasharray="6 4"/><circle cx={mode === "drill" ? 140 : point.x} cy={mode === "drill" ? 263 : point.y + 63} r="7" fill="var(--court-highlight)" stroke="var(--court-line)" strokeWidth="2"/><circle cx="213" cy="204" r="10" fill="none" stroke="var(--court-highlight)" strokeWidth="2"/><text x="140" y="288" textAnchor="middle" fill="var(--court-line)" fontSize="10">BASE</text><text x="204" y="193" textAnchor="middle" fill="var(--court-line)" fontSize="9">FRONT-RIGHT</text></g>}
   </svg>;
 }

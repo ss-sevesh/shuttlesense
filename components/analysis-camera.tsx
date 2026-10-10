@@ -30,6 +30,7 @@ export function AnalysisCamera({ data, videoUrl, replay, onTime }: { data: Revie
   }, [onTime]);
   useEffect(() => {
     if (!replay || !video.current) return;
+    video.current.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
     bound.current = replay.end;
     video.current.currentTime = replay.start;
     if (replay.paused) { video.current.pause(); bound.current = null; return; }

@@ -56,6 +56,12 @@ accuracy: a 30 FPS frame spans about 33ms, and the contact proxy can be wrong.
 Pickup/tossing and opposite-arm peaks can produce false hit candidates.
 Exports include `courtLines` and `hitPoses`, separately from classifier shots.
 
+Timestamp and bounded replay buttons scroll the video into view. Smooth scrolling
+respects the browser's reduced-motion preference. The movement heatmap now uses
+only positions elapsed at the current playback time, including between points:
+playing adds heat, seeking back rebuilds it, and a yellow dot marks the current
+approximate player position. It uses saved tracking, not new live inference.
+
 Sources: [OpenCV geometric transformations](https://docs.opencv.org/4.x/da/d6e/tutorial_py_geometric_transformations.html),
 [Google Pose Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker).
 

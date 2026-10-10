@@ -5,7 +5,7 @@ import { AnalysisCamera, type ReplayWindow } from "@/components/analysis-camera"
 import { CourtMap } from "@/components/court-map";
 import { ContactEvidence } from "@/components/contact-evidence";
 import { LandingCoaching } from "@/components/landing-coaching";
-import { canonicalShot, nearestIndex, parseReviews, readable, reviewReason, reviewStorageKey, shotTypes, validInterval, type HumanReviews, type ReviewData, type Side } from "@/lib/analysis-review";
+import { canonicalShot, movementHeatmap, nearestIndex, parseReviews, readable, reviewReason, reviewStorageKey, shotTypes, validInterval, type HumanReviews, type ReviewData, type Side } from "@/lib/analysis-review";
 
 const number = new Intl.NumberFormat("en", { maximumFractionDigits: 1 });
 const clock = (seconds: number) => `${Math.floor(seconds / 60)}:${(seconds % 60).toFixed(1).padStart(4,"0")}`;
@@ -43,18 +43,7 @@ export function AnalysisReview({ data, videoUrl }: { data: ReviewData; videoUrl:
   function play(start: number, end: number) { setReplay(previous => ({ start: Math.max(0,start), end: Math.min(data.duration,end), token: (previous?.token ?? 0)+1 })); }
   const sampleIndex = nearestIndex(data.samples, time, 1.5 / data.poseSampleHz);
   const person = sampleIndex >= 0 ? data.samples[sampleIndex].people.find(person => person.side === side) : null;
-  const map = useMemo(() => {
-    const grid: number[][] = Array.from({ length: 8 }, () => Array(6).fill(0));
-    let seconds = 0;
-    data.samples.forEach(sample => sample.people.filter(person => person.side === side).forEach(person => {
-      const [x,y] = person.court;
-      if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || x > 1 || y < 0 || y > 1) return;
-      const weight = Math.max(0, Math.min(1/data.poseSampleHz, data.duration-sample.time));
-      grid[Math.min(7,Math.floor(y*8))][Math.min(5,Math.floor(x*6))] += weight;
-      seconds += weight;
-    }));
-    return { grid, seconds };
-  }, [data,side]);
+  const map = useMemo(() => movementHeatmap(data,side,time), [data,side,time]);
   const filtered = data.shots.filter(shot => filter === "all" || (filter === "labels" ? shot.predictedType !== null : filter === "reviewed" ? !!reviews.shots[shot.id] : !reviews.shots[shot.id]));
   const pageCount = Math.max(1,Math.ceil(filtered.length/20));
   const displayed = filtered.slice(Math.min(page,pageCount-1)*20,(Math.min(page,pageCount-1)+1)*20);
@@ -131,7 +120,7 @@ export function AnalysisReview({ data, videoUrl }: { data: ReviewData; videoUrl:
         <section id="camera-values" className="review-live" tabIndex={-1} aria-label="Camera values"><div className="review-event-heading"><h3>Camera values</h3><span>{clock(time)}</span></div>{data.focusSide === "near" ? <p>Near player</p> : <label htmlFor="review-side">Player <select id="review-side" value={side} onChange={e => setSide(e.target.value as Side)}><option value="near">Near player</option><option value="far">Far player</option></select></label>}<p>{person ? `Tracked player #${person.trackId} · ${person.poseDetected ? "Pose observed" : "Pose unavailable"}` : "Player tracking unavailable at this frame"}</p>
           <dl className="review-measurements">{([['Left elbow','leftElbow'],['Right elbow','rightElbow'],['Left knee','leftKnee'],['Right knee','rightKnee'],['Wrist speed','wristSpeed']] as const).map(([label,key]) => <div key={key}><dt>{label}</dt><dd>{person?.measurements?.[key] == null ? "Unavailable" : `${number.format(person.measurements[key]!)} ${key === "wristSpeed" ? "body heights/s" : "°"}`}</dd></div>)}</dl><p>Angles come from visible 2D landmarks. Wrist speed is relative to box height, not metres per second.</p>
         </section>
-        <section className="review-heatmap"><h3>{readable(side)} player movement</h3><CourtMap grid={map.grid}/><p>{number.format(map.seconds)} seconds of in-court positions. Brighter cells indicate more time. All activity is included, including between points.</p></section>
+        <section className="review-heatmap"><h3>{readable(side)} player movement</h3><CourtMap grid={map.grid} position={person?.court}/><p>{number.format(map.seconds)} seconds of in-court positions up to the current video time. Heat builds during playback and rewinds when you seek back. The dot shows the current approximate position.</p></section>
         <section className="review-quality"><h3>Data availability</h3><dl className="review-measurements"><div><dt>Near tracking</dt><dd>{percent(data.metrics.nearTracked,data.metrics.sampleCount)}</dd></div>{data.focusSide !== "near" && <div><dt>Far tracking</dt><dd>{percent(data.metrics.farTracked,data.metrics.sampleCount)}</dd></div>}<div><dt>Near poses</dt><dd>{percent(data.metrics.nearPoses,data.metrics.sampleCount)}</dd></div>{data.focusSide !== "near" && <div><dt>Far poses</dt><dd>{percent(data.metrics.farPoses,data.metrics.sampleCount)}</dd></div>}<div><dt>Shuttle proposals</dt><dd>{percent(data.metrics.shuttleDetected,data.metrics.shuttleFrames)}</dd></div></dl><p>Availability measures how often data exists. It does not measure correctness.</p></section>
       </aside>
     </div>
