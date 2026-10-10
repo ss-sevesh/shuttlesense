@@ -54,7 +54,7 @@ test('loss-first review keeps technical tables closed and replay, heatmap and ev
   await expect(page.locator('[data-ending-distance]')).toHaveCount(1);
   await expect(region.getByRole('heading',{name:'Try next time'})).toBeVisible();
   await region.getByText('See the five frames used by the AI',{exact:true}).click();
-  await expect(region.locator('figure')).toHaveCount(5);
+  await expect(region.locator('.contact-frames figure')).toHaveCount(5);
   await region.locator('.loss-frames').scrollIntoViewIfNeeded();
   await expect.poll(()=>region.locator('img').evaluateAll(images=>images.every(image=>(image as HTMLImageElement).naturalWidth>0))).toBe(true);
   await page.screenshot({path:'artifacts/paris434-loss-review.png',fullPage:true});

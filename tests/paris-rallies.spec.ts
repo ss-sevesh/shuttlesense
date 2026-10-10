@@ -66,12 +66,12 @@ test('Paris 350_434 shows rally windows with LLM and contact extraction disabled
   await expect(page.getByRole('region', { name: 'Before-landing coaching' })).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Contact frame evidence' })).toHaveCount(0);
   await page.getByText('Technical details: shots, poses & rally boundaries',{exact:true}).click();
-  await expect(page.getByRole('region', { name: 'Possible shuttle landings' }).getByRole('button', { name: /Replay possible landing/ })).toHaveCount(2);
+  await expect(page.getByRole('region',{name:'Possible shuttle landings'})).toHaveCount(0);
   const rallies = page.getByRole('region', { name: 'Rally windows' });
   await expect(rallies).toBeVisible();
-  await expect(rallies.locator('select option')).toHaveCount(result.rallies.length);
+  await expect(rallies.locator('select option')).toHaveCount(result.rallies.filter((r:{end:number|null})=>r.end!==null).length);
   await rallies.getByRole('button', { name: 'Replay this window' }).click();
-  await expect.poll(() => page.locator('.review-camera video').evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThan(result.rallies[0].start);
+  await expect.poll(() => page.locator('.review-camera video').evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThan(result.rallies.find((r:{end:number|null})=>r.end!==null).start);
   expect((await request.post(`/api/analysis/${manifest.id}/landing`, { headers: { origin: 'http://127.0.0.1:3000' }, data: { frame: 60 } })).status()).toBe(409);
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download reviewed JSON' }).click();

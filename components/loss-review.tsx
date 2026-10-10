@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import type { ReviewData, ShotCoaching } from '@/lib/analysis-review';
 import { readable } from '@/lib/analysis-review';
 import type { ReplayWindow } from './analysis-camera';
+import { AttemptPhoto } from './attempt-photo';
 
 export type LossReport = { rallyId: number; landingFrame: number; frames: number[]; analysisSha256: string; coaching: ShotCoaching };
-export function LossReview({ data, videoUrl, replay, onReview }: { data: ReviewData; videoUrl: string; replay: (value: Omit<ReplayWindow, 'token'>) => void; onReview:(outcomes:Record<number,string>,report:LossReport|null)=>void }) {
+export function LossReview({ data, videoUrl, replay, onReview }: { data: ReviewData; videoUrl: string; replay: (value: Omit<ReplayWindow, 'token'>) => void; onReview:(outcomes:Record<number,string>,report:LossReport|null,selected:number|null)=>void }) {
   const endpoint = `${videoUrl.replace(/\/video$/, '')}/landing`;
   const rallies = data.rallies.filter(r => r.end !== null);
   const [outcomes, setOutcomes] = useState<Record<number,string>>({});
@@ -18,7 +19,7 @@ export function LossReview({ data, videoUrl, replay, onReview }: { data: ReviewD
   const rally = rallies.find(r => r.id === selected);
   const ending = data.endingReview?.find(e => e.rallyId === selected);
   const losses = rallies.filter(r => outcomes[r.id] === 'lost');
-  useEffect(() => {onReview(outcomes,report);}, [outcomes,report,onReview]);
+  useEffect(() => {onReview(outcomes,report,selected);}, [outcomes,report,selected,onReview]);
   useEffect(() => {
     let cancelled = false;
     fetch(`${endpoint}?losses=1`).then(async response => {
@@ -66,15 +67,16 @@ export function LossReview({ data, videoUrl, replay, onReview }: { data: ReviewD
     finally { setBusy(false); }
   }
   return <section className="loss-review" aria-label="Lost rally review" aria-busy={busy}>
-    <div className="review-event-heading"><div><span className="intro-label">NEAR PLAYER · ENDING REVIEW</span><h3>{losses.length} lost {losses.length === 1 ? 'rally' : 'rallies'}</h3></div><p>Replay the ending. Understand the attempt.</p></div>
+    <div className="review-event-heading"><div><span className="intro-label">NEAR PLAYER · ENDING REVIEW</span><h3>{losses.length} lost {losses.length === 1 ? 'rally' : 'rallies'}</h3></div></div>
     <div className="loss-tabs" role="group" aria-label="Lost rallies">{losses.map((r,index) => <button type="button" key={r.id} disabled={busy} aria-pressed={selected === r.id} onClick={() => {setSelected(r.id);setError('');replay({start:Math.max(r.start,r.end!-3),end:r.end!});}}>Loss {index+1} · {r.end!.toFixed(1)} s</button>)}</div>
     {ready && !losses.length && <p>No confirmed losses yet. Mark a completed rally as Lost below to review its ending.</p>}
     {!ready && !error && <p role="status">Loading saved outcomes…</p>}
     {rally && outcomes[rally.id] === 'lost' && <div className="loss-selected">
       <div className="loss-title"><h4>What happened before {rally.end!.toFixed(1)} s?</h4><button type="button" onClick={() => replay({start:rally.start,end:rally.end!})}>Replay full rally</button><button type="button" onClick={() => replay({start:Math.max(rally.start,rally.end!-3),end:rally.end!})}>Replay final seconds</button></div>
-      {ending?.evidence ? <div className="loss-observation"><button type="button" onClick={() => replay({start:ending.evidence!.time,end:ending.evidence!.time,paused:true})}>Show attempt at {ending.evidence.time.toFixed(3)} s</button><p>{readable(ending.status)} · {ending.evidence.pose}</p><p>Visible wrist–shuttle gap: <strong>{ending.evidence.distancePx.toFixed(1)} px</strong> ({ending.evidence.distanceHeights.toFixed(2)} player heights). Shuttle to camera-{ending.evidence.horizontalOffsetPx >= 0 ? 'right' : 'left'}.</p></div> : <p>Attempt or distance evidence is unavailable.</p>}
+      {ending?.evidence && <AttemptPhoto key={`${data.analysisSha256}-${ending.evidence.frame}`} data={data} videoUrl={videoUrl} evidence={ending.evidence}/>}
+      {ending?.evidence ? <div className="loss-observation"><button type="button" onClick={() => replay({start:ending.evidence!.time,end:ending.evidence!.time,paused:true})}>Show attempt at {ending.evidence.time.toFixed(3)} s</button><p>{readable(ending.status)} · {ending.evidence.pose}</p></div> : <p>Attempt or distance evidence is unavailable.</p>}
       <div className="loss-explanation"><h4>Possible attempt & why it failed</h4>
-        {report?.coaching.status === 'experimental' && report.coaching.answer ? <><p>{report.coaching.answer.visibleEvidence}</p><h5>Try next time</h5><p>{report.coaching.answer.coaching}</p><p className="loss-uncertainty">Uncertainty: {report.coaching.answer.uncertainty}</p></> : <p>{report?.coaching.reason ?? 'The local AI reviews only the final frames of this lost rally, not every shot.'}</p>}
+        {report?.coaching.status === 'experimental' && report.coaching.answer ? <><p>{report.coaching.answer.visibleEvidence}</p><h5>Try next time</h5><p>{report.coaching.answer.coaching}</p><details className="loss-uncertainty"><summary>What these frames cannot prove</summary><p>{report.coaching.answer.uncertainty}</p></details></> : <p>{report?.coaching.reason ?? 'The local AI reviews only the final frames of this lost rally, not every shot.'}</p>}
         <button type="button" disabled={busy || !ready} onClick={() => void generate()}>{busy ? 'Reviewing ending locally…' : report?.coaching.status === 'experimental' ? 'Review ending again' : 'Explain this loss with local AI'}</button>
         <p>Outcome marked by you. Intent is an interpretation; the end marker is a shuttle stop estimate, not exact first touch. Distances are image measurements, not metres.</p>
       </div>

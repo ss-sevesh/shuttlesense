@@ -67,7 +67,7 @@ def loss_frames(data, rally):
     # Keep the final attempted return; nearby contact proxies can be the same swing.
     previous = max((s['time'] for s in data['shots'] if s['side'] == 'near'
                     and rally['start'] <= s['time'] < attempt - .5
-                    and s['playStatus'] == 'possible_play'), default=None)
+                    and s['playStatus'] in ('possible_play', 'estimated_play_window')), default=None)
     if previous is not None: start = max(start, round(previous * data['fps']) + 1)
     segments = data.get('sceneSummary', {}).get('courtSegments', [])
     segment = next((s for s in segments if s[0] <= (end - 1) / data['fps'] < s[1]), None)

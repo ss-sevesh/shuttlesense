@@ -167,3 +167,8 @@ does not claim the upload/worker or production checkpoints are complete.
 - [x] Bound earlier-frame evidence to the rally/previous hit, explain cautiously with local pretrained Qwen.
 - [x] Simplify review UI: video, live heatmap, two loss endings, collapsed technical details.
 - [x] Verify actual approved video, API gates, frame bounds, UI, build; update handoff and commit/push.
+
+## Compact side-by-side loss review
+- [x] Simplify necessary technical evidence and paginate five rows.
+- [x] Show selected loss reason and exact annotated photo beside video; support racket-head marking.
+- [x] Verify exact frame, overlays, pagination, selection, layout and existing controls; update handoff and commit/push.

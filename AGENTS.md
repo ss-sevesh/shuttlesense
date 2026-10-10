@@ -31,6 +31,13 @@ separately; do not treat a ground stop as automatic winner detection. Keep casua
 walking/tossing windows and all-shot lists out of the main loss review. Possible
 intent must be presented as uncertain interpretation, never established fact.
 
+Latest review UI request: loss explanation and exact attempt photo beside video;
+Technical details keeps only relevant poses, estimated shots and boundary correction,
+with five rows per table page. Photo distance defaults to a wrist proxy. Racket
+head marking is manual and stored per analysis/frame; never call this automatic
+racket tracking or a physical/metre distance. Keep the cropped photo and its pose/
+distance overlay aligned to the same original frame.
+
 Read `tasks/HANDOFF.md` before starting work. Do not make the user explain the
 sandbox repair again or search previous conversations for it.
 

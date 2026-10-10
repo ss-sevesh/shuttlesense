@@ -1,5 +1,50 @@
 # ShuttleSense session handoff
 
+## Compact side-by-side loss evidence (2026-10-10)
+
+User requested necessary technical details only, five-row paging, explanation
+beside video and an exact attempt photograph with highlighted racket/shuttle gap.
+Implemented same existing c278680c-fb33-4b1c-91d1-8daa17db95f6 review link. Desktop
+video/live heatmap left, selected loss/explanation/photo right; video column stays
+visible while reading the reason. Narrow screens stack. Technical details below
+contain only selected-rally hit poses, estimated playing shots/corrections and
+boundary correction, mutually exclusive tabs; pose and shot tables page five rows.
+Removed duplicate ending/ground tables, tracking coverage/raw score dumps and
+post-point contact lists. Technical evidence stops at estimated attempt+.5s where
+available (follow-through retained, later pickup candidates excluded). Raw reports
+and JSON exports preserve all original detector evidence.
+
+Exact attempt photos: normalized frames1184 at39.466667s,2416 at80.533333s.
+frames API admits only contact-list/ending-evidence frames; cold ending frames
+are decoded by evidence_frame.py, validated against source hash and job result,
+then atomically published via temporary directory. No arbitrary frame access,
+LLM/detector execution or new dependency. Photo crop encloses near player's box,
+shuttle and marked point; pose/distance overlay uses original-frame coordinates.
+Default orange gap is WRIST PROXY, not automatically detected racket distance.
+User can Mark racket head on photo, keyboard arrows move5source pixels; manual
+mark is saved by analysisSha/frame in browser localStorage. Marked head-to-tracked-
+shuttle gap is image pixels, not physical/metre/contact distance. Never claim
+automatic racket detection or verified shuttle location. Crop and overlay scales
+remain aligned. AI descriptions remain experimental unchanged cached answers.
+
+Found normalized review playStatus is estimated_play_window, not possible_play;
+both accepted in loss worker's previous-hit boundary and technical shot filter.
+Regression now exercises normalized status. Actual approved434 reports retained.
+No new footage, model weights/training, tracking rerun or fresh LLM inference.
+
+Build/typecheck pass;9focused Playwright tests pass (approved434 only/synthetic),
+including5-row next/previous, selected loss/table linkage, JPEG gate, exact photo,
+source-pixel arrow movement, manual mark persistence/reset, completed video seek,
+side-by-side layout, replay/pause/autoscroll, overlays, heatmap rewind, outcome/
+AI gating, saved listing, JSON, axe, clean JS errors, mobile overflow. New compact
+UI test rerun passes after stronger completed-seek/pixel-step assertions.
+6Python tests pass: evidence frame authorization, landing bounds/prompt/context,
+mocked Qwen retry/cache/failure. View artifacts/paris434-compact-loss.png and
+paris434-side-reason.png (viewport reason/video), npm screenshot refreshed.
+Prod127.0.0.1:3000 session21516. No automated racket model/independent coach or
+intent accuracy check; first-touch and in/out still uncertain. No subagents.
+
+
 ## Loss-only local AI review (2026-10-10)
 
 Latest user authorization overrides earlier no-LLM constraint ONLY for explaining

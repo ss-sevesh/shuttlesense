@@ -425,3 +425,23 @@ strong { font-weight:600; }
 .loss-review .contact-frames { grid-template-columns: repeat(5,minmax(0,1fr)); }
 .review-sidebar .review-heatmap { margin-top: 0; }
 @media (max-width: 700px) { .loss-review .contact-frames { grid-template-columns: repeat(2,minmax(0,1fr)); } .loss-review .review-event-heading { flex-wrap: wrap; } }
+.loss-workspace { grid-template-columns:minmax(0,1.5fr) minmax(360px,1fr); }
+.loss-workspace .review-sidebar > .loss-review { margin-top:0;padding:20px;background:var(--surface);border:1px solid var(--line);border-radius:10px; }
+.loss-workspace .review-main > .review-heatmap { margin-top:20px;padding:18px;border:1px solid var(--line);border-radius:10px; }
+.loss-workspace .review-heatmap .court-map { height:220px; }
+.loss-workspace .loss-review h3 { font-size:21px; }
+.loss-workspace .loss-review h4 { font-size:17px; }
+.loss-workspace .loss-review p { margin-block:8px;font-size:13px; }
+.loss-workspace .loss-tabs { margin-block:12px; }
+.loss-workspace .loss-title h4 { flex-basis:100%; }
+.loss-workspace .review-main { position:sticky;top:0; }
+.attempt-photo { margin:16px 0; }
+.analysis-review .attempt-photo-image { display:block;position:relative;width:100%;padding:0;border:0;overflow:hidden;border-radius:8px; }
+.attempt-photo-image img { display:block;width:100%;height:auto; }
+.attempt-photo-image svg { position:absolute;inset:0;width:100%;height:100%;pointer-events:none; }
+.attempt-photo-image[aria-label="Mark racket head on attempt photo"] { cursor:crosshair; }
+.attempt-photo figcaption { margin-top:8px;font-size:12px; }
+.attempt-photo-controls,.review-shot-correction { display:flex;align-items:center;flex-wrap:wrap;gap:8px; }
+.review-shot-correction { margin-block:12px; }
+.review-shot-correction p { flex-basis:100%; }
+@media (max-width:900px) { .loss-workspace { grid-template-columns:minmax(0,1fr); } .loss-workspace .review-main { position:static; } .loss-workspace .review-sidebar { grid-template-columns:minmax(0,1fr); } }

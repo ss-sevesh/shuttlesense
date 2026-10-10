@@ -5,7 +5,7 @@ from landing_coach import before_frames, landing_prompt, pose_context, loss_fram
 class LandingTests(unittest.TestCase):
     def test_loss_frames_stay_after_previous_hit_and_inside_camera_segment(self):
         data = {'fps':30,'sceneSummary':{'courtSegments':[[0,10]]},'shots':[
-            {'side':'near','time':8.5,'playStatus':'possible_play'},
+            {'side':'near','time':8.5,'playStatus':'estimated_play_window'},
             {'side':'near','time':9.8,'playStatus':'possible_play'}],
             'endingReview':[{'rallyId':3,'evidence':{'time':9.7}}]}
         rally = {'id':3,'start':7,'end':10}
