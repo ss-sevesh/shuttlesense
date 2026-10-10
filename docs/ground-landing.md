@@ -43,7 +43,7 @@ Hugging Face; footage and frames stay local.
 - Every frame gets a semantic mask: winning class must be floor with score >=0.6.
   Low-resolution labels resize with nearest-neighbor interpolation; floor scores
   resize linearly. Model scores are not measured accuracy.
-- A candidate needs continuous visible observations over an approximately 0.15s
+- A candidate needs continuous visible observations over an approximately 0.5s
   approach followed by a 0.2s stationary hold (at least three frames each).
 - The hold must stay within 4px at 720px picture height, scaled with image height,
   and every held point must overlap that frame's floor mask. Approach displacement
@@ -51,6 +51,11 @@ Hugging Face; footage and frames stay local.
   invalidate the window; disappearance is never a landing.
 - Candidates within 0.75s are suppressed. Time is the beginning of the projected
   stationary hold, not a measured first-impact time.
+
+The approach lookback was extended from0.15s to0.5s after the Paris350_434 trial
+showed a missed gradual stop. See [current selectable rally test](selectable-rally-test.md).
+The older40s trial below used the earlier heuristic and was not rerun after the
+user restricted testing to Paris350_434.
 
 Private outputs include `results.json`, per-frame `observations.json`, and sampled
 binary masks and overlays once per second. Upload jobs write them under `ground/`.

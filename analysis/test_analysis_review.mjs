@@ -19,6 +19,8 @@ assert.match(reviewReason('The predicted player side did not match the contact.'
 console.log('Review synchronization, interval validation, reasons and stored corrections passed.');
 const contact = {method:'wrist_distance',status:'estimated',frame:5,seedFrame:4,wrist:'left',distancePx:3,distanceHeights:.03,windowFrames:[0,10],frames:[3,4,5,6,7],measurements:{elbow:150,armExtension:150,bodyLean:30,armElevation:90,racketFace:null}};
 const report = {videoSha256:'a'.repeat(64),analysisSha256:'b'.repeat(64),fileName:'test.mp4',duration:1,width:32,height:32,fps:30,poseSampleHz:30,samples:[],shuttle:[],shots:[{contact}],rallies:[],limitations:[],metrics:{}};
+assert.equal(isReviewData({...report,options:{yolo:true,shuttle:true,ground:true,pose:false,shots:false,llm:false}}),true);
+assert.equal(isReviewData({...report,options:{yolo:true,shuttle:false,ground:true,pose:false,shots:false,llm:false}}),false);
 assert.equal(isReviewData(report),true);
 assert.equal(isReviewData({...report,shots:[{}]}),true); // Saved legacy reports remain readable.
 for (const invalid of [{...contact,frame:NaN},{...contact,frames:[3,4,9,6,7]},{...contact,measurements:{...contact.measurements,elbow:Infinity}},{...contact,status:'identity_switch'}]) {

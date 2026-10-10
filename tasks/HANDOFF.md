@@ -1,5 +1,54 @@
 # ShuttleSense session handoff
 
+## Selectable rally-only Paris350_434 test (2026-10-10)
+
+User corrected scope: use ONLY Men's Singles Badminton FULL FINAL🏸 _ Paris
+Replays_350_434.mp4 for testing henceforth; no425/WhatsApp/substitute footage.
+Task is rally division/shuttle-ground evidence, not LLM extraction. Persisted
+restriction in AGENTS.md. Exact84s60FPS clip normalized2520frames/30FPS. Added six
+pre-generation switches:YOLO players/TrackNet shuttle/ground defaultON;
+MediaPipe pose/BST shots/LLM and contact images defaultOFF. UI cascades prerequisites,
+API/Python validate booleans/dependencies, saves/exports options. New focused path
+skips contact/angle/BST/Qwen/image-extraction work. YOLO uses existing checkpoint
+boxes with --skip-pose. LLM panel hidden and direct landing POST409 for disabled jobs.
+Legacy saved reviews remain readable; optional full classification/coaching retained.
+
+Broadcast-aware focused pass reuses six fixed floor-line patches to excludecloseups
+and separates TrackNet/background/temporal ensembles into3court segments:
+0–20.900s,27.700–43.867s,52.233–83.100s. Excluded482frames/16.067s. Motion-group
+rally review bounds never bridge cuts and unknown endings remain unknown.
+Actual job60993f74-19c4-42d9-a80f-373c257952a5 completed; manifest artifacts/paris434-job.json.
+Open http://127.0.0.1:3000/review/60993f74-19c4-42d9-a80f-373c257952a5.
+Source hash verified against exact434file and provenance. Shuttle1496/2520proposals,
+73.4%of acceptedcourtframes, availability NOT accuracy. YOLO79.7s; TrackNetsegment
+passes51.4/40.6/74.0s; ground112.6s. Ground512overlapframes/37.1%meanfloorarea.
+
+Initial .15s approachlookback found0stops; observations showed gradualground slowing
+was missed. New gradual-stop unitregression failed before fix. v2uses .5s continuous
+approach, same .2s floorhold/4px720height radius. Recomputed candidates from saved
+observations, no modelrerun:frame1206/40.200s and2445/81.500s. Saved groundreport
+records recomputation. These are projectedSTOPtimes afterdeceleration/rolling,
+not measured firsttouch. Focused report refreshed/fingerprint changed with newends.
+
+5reviewwindows:5.233–17.100(endunknown),19.833–20.900(endunknown),29.433–40.200
+(possiblegroundstop;reviewstop40.733),41.800–43.867(endunknown),58.233–81.500
+(possiblegroundstop;reviewstop81.933). Visualcontext inspection:3mainexchanges,
+2shortpost-point/pickup falsecandidates. Automatic rallydivision is NOT reliableyet;
+firstexchange has noqualifyinggroundstop. No independentlabels/accuracyclaim.
+Privateauditimages artifacts/paris434-window-audit.jpg/paris434-stops-audit.jpg and
+groundmasks under job/ground. No contact/angles/shots/frames/landing artifacts created.
+
+Options/dependencyunitchecks, motion/gap/cut unitchecks, gradualgroundstop test,
+3playerselection tests, Nodereview/routevalidation, typecheck/build passed. Focused
+2Playwrighttests pass onproduction:exact434uploadcontrols/options/defaults/dependencies,
+invalidoptionAPI, real5windowreplay/2candidatedisplay/export/a11y/disabledLLMPOST.
+Initial devtests hit rapid FastRefresh reloads during jobfilewrites; concurrenttest
+runs also collided in test-results. Production reruns pass; devreload issue is not
+claimedfixed. Do not run broadoldrealvideo suites because fixtures violate restriction.
+Production server127.0.0.1:3000 terminal55599; screenshotparis434-review.png visually
+inspected, requiredmovement screenshot refreshed. No packages/modeldownloads/training,
+subagents or settings/sandbox repairs. See docs/selectable-rally-test.md.
+
 ## Pretrained floor / landing candidates (2026-10-10)
 
 User requested the YOLOv8-seg floor -> shuttle overlap -> rally-end plan, with

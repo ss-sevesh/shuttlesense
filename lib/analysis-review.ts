@@ -1,3 +1,4 @@
+import { analysisOptions, type AnalysisOptions } from './analysis-options.ts';
 export type Side = "near" | "far";
 export type Measurements = { leftElbow: number | null; rightElbow: number | null; leftKnee: number | null; rightKnee: number | null; wristSpeed: number | null };
 export type ReviewPerson = { trackId: number; side: Side; box: [number, number, number, number]; court: [number, number]; landmarks: [number, number][]; scores: number[]; poseDetected: boolean; measurements?: Measurements };
@@ -16,6 +17,8 @@ export type ReviewData = {
   pipelineVersion?: string;
   focusSide?: Side | null;
   groundLanding?: GroundLanding;
+  options?: AnalysisOptions;
+  sceneSummary?: { courtSegments: [number, number][]; excludedFrames: number };
 };
 export const shotTypes = ["smash", "clear", "drop", "lift", "drive", "net shot", "defensive net shot", "push", "net kill", "crosscourt net shot", "short serve", "long serve"] as const;
 export const canonicalShot = (value: string) => value.replace(/_/g," ").replace(/netshot/g,"net shot").replace(/netkill/g,"net kill");
@@ -32,6 +35,7 @@ export function reviewReason(value: string) {
 export function isReviewData(value: unknown): value is ReviewData {
   if (!value || typeof value !== "object") return false;
   const data = value as Partial<ReviewData>;
+  try { analysisOptions(data.options); } catch { return false; }
   return typeof data.videoSha256 === "string" && /^[a-f0-9]{64}$/i.test(data.videoSha256) && typeof data.analysisSha256 === "string" && /^[a-f0-9]{64}$/i.test(data.analysisSha256) && typeof data.fileName === "string" &&
     [data.duration,data.width,data.height,data.fps,data.poseSampleHz].every(value => typeof value === "number" && Number.isFinite(value) && value > 0) &&
     Array.isArray(data.samples) && Array.isArray(data.shuttle) && Array.isArray(data.shots) && data.shots.every(shot => shot && typeof shot === "object" && validContact(shot.contact, data.duration!, data.fps!) && validCoaching(shot.coaching)) && validGround(data.groundLanding, data.duration!, data.fps!, data.width!, data.height!) && Array.isArray(data.rallies) && Array.isArray(data.limitations) && !!data.metrics && typeof data.metrics === "object";

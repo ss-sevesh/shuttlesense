@@ -1,5 +1,15 @@
 ## Session startup and Windows sandbox
 
+## Testing footage (user instruction, 2026-10-10)
+
+Use only `Men's Singles Badminton FULL FINAL🏸 _ Paris Replays_350_434.mp4`
+for real-video tests from now on. Do not substitute `_350_425`, WhatsApp clips,
+or `videoplayback.mp4`, including when choosing existing integration tests.
+Synthetic unit/control tests are fine. Current focus is rally division and
+shuttle/ground-touch evidence: YOLO players, TrackNet shuttle and ground model on;
+body pose, shot classification, LLM and contact-image extraction off. Additional
+models may run only when the user selects their analysis switches or requests them.
+
 Read `tasks/HANDOFF.md` before starting work. Do not make the user explain the
 sandbox repair again or search previous conversations for it.
 

@@ -22,7 +22,7 @@ export function AnalysisReview({ data, videoUrl }: { data: ReviewData; videoUrl:
   const onTime = useCallback((time: number) => setTime(time), []);
   const [replay, setReplay] = useState<ReplayWindow | null>(null);
   const [side, setSide] = useState<Side>("near");
-  const [tab, setTab] = useState("shots");
+  const [tab, setTab] = useState(data.options?.shots === false ? "rallies" : "shots");
   const [filter, setFilter] = useState("all");
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<number | null>(data.shots[0]?.id ?? null);
@@ -81,7 +81,7 @@ export function AnalysisReview({ data, videoUrl }: { data: ReviewData; videoUrl:
     save({ ...reviews, rallies: { ...reviews.rallies, [rally.id]: { start, end, reviewedAt: new Date().toISOString() } } });
   }
   function download() {
-    const blob = new Blob([JSON.stringify({ videoSha256: data.videoSha256, analysisSha256: data.analysisSha256, pipelineVersion: data.pipelineVersion, focusSide: data.focusSide, fps: data.fps, fileName: data.fileName, duration: data.duration, modelShots: data.shots, modelRallies: data.rallies, groundLanding: data.groundLanding, humanReviews: reviews },null,2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify({ videoSha256: data.videoSha256, analysisSha256: data.analysisSha256, pipelineVersion: data.pipelineVersion, focusSide: data.focusSide, fps: data.fps, fileName: data.fileName, duration: data.duration, options: data.options, modelShots: data.shots, modelRallies: data.rallies, groundLanding: data.groundLanding, humanReviews: reviews },null,2)], { type: "application/json" });
     const url = URL.createObjectURL(blob), anchor = document.createElement("a");
     anchor.href = url; anchor.download = "shuttlesense-reviewed.json"; anchor.click();
     setTimeout(() => URL.revokeObjectURL(url),1000);
@@ -89,6 +89,8 @@ export function AnalysisReview({ data, videoUrl }: { data: ReviewData; videoUrl:
   return <div className="analysis-review">
     {data.focusSide === "near" && <p>Near-player analysis: contact frames, pose measurements, movement, and local vision coaching.</p>}
     <header className="review-heading"><div><h2>Review your recording</h2><p>{data.fileName} · {clock(data.duration)} · {data.width} × {data.height}</p></div><button type="button" onClick={download}>Download reviewed JSON</button></header>
+    {data.options && <p>Enabled: {Object.entries(data.options).filter(([,enabled]) => enabled).map(([key]) => ({ yolo: 'YOLO players', shuttle: 'shuttle tracking', ground: 'ground checks', pose: 'body pose', shots: 'shot classification', llm: 'LLM coaching' })[key]).join(', ')}.</p>}
+    {data.sceneSummary && <p>{data.sceneSummary.courtSegments.length} court-view segments; {(data.sceneSummary.excludedFrames/data.fps).toFixed(1)} seconds excluded from rally tracking because the court view was unavailable.</p>}
     <dl className="review-summary">
       <div><dt>Contact candidates</dt><dd>{data.shots.length}</dd></div>
       <div><dt>Model shot labels</dt><dd>{accepted}<small>{data.shots.length-accepted} unknown</small></dd></div>
@@ -97,7 +99,7 @@ export function AnalysisReview({ data, videoUrl }: { data: ReviewData; videoUrl:
     </dl>
     <div className="review-workspace">
       <div className="review-main"><AnalysisCamera data={data} videoUrl={videoUrl} replay={replay} onTime={onTime}/>
-        <LandingCoaching videoUrl={videoUrl} fps={data.fps} duration={data.duration} time={time} analysisSha256={data.analysisSha256}/>
+        {data.options?.llm !== false && <LandingCoaching videoUrl={videoUrl} fps={data.fps} duration={data.duration} time={time} analysisSha256={data.analysisSha256}/>}
         {data.groundLanding && <section className="review-events" aria-label="Possible shuttle landings">
           <h3>Possible shuttle landings</h3><p>{data.groundLanding.reason}</p>
           {data.groundLanding.status === "experimental" && (data.groundLanding.candidates.length ?
@@ -112,14 +114,14 @@ export function AnalysisReview({ data, videoUrl }: { data: ReviewData; videoUrl:
           {shot && <div className="review-selected" key={shot.id}><div><span>Contact {shot.id} · {clock(shot.time)} · {readable(shot.side)} player</span><h4>{readable(shot.predictedType)}</h4><p>Model score: {shot.score === null ? "Unavailable" : percent(shot.score,1)}. This score is not measured accuracy.</p><p>{reviewReason(shot.reason)}</p><p className="review-status">{shot.playStatus === "outside_play" ? "Outside a detected play window" : shot.playStatus === "end_uncertain_review" ? "Rally ending is uncertain; this could be after the point" : readable(shot.playStatus)}</p><button type="button" onClick={() => play(shot.time-.6,shot.time+.8)}>Replay this contact</button></div>
             <form onSubmit={reviewShot}><label htmlFor="review-shot-label">What do you see?</label><select id="review-shot-label" name="shot-label" defaultValue={reviews.shots[shot.id]?.label ?? (shot.predictedType ? canonicalShot(shot.predictedType) : "unknown")}>{shotTypes.map(type => <option key={type} value={type}>{readable(type)}</option>)}<option value="not playing">Not a playing shot / shuttle toss</option><option value="unknown">Cannot tell</option></select><button type="submit" disabled={!loaded}>Save shot review</button>{reviews.shots[shot.id] && <p>You marked: {readable(reviews.shots[shot.id].label)}</p>}</form>
           </div>}
-          {shot && <ContactEvidence shot={shot} videoUrl={videoUrl} fps={data.fps}/>}
+          {shot && data.options?.llm !== false && <ContactEvidence shot={shot} videoUrl={videoUrl} fps={data.fps}/>}
           {displayed.length ? <div className="review-table-wrap"><table className="review-shot-table"><caption>{filtered.length} contacts in this filter. Select a contact to inspect it.</caption><thead><tr><th scope="col">Time</th><th scope="col">Player</th><th scope="col">Model label</th><th scope="col">Score</th><th scope="col">Your review</th></tr></thead><tbody>{displayed.map(item => <tr key={item.id} data-selected={item.id === selected}><td><button type="button" aria-pressed={item.id === selected} aria-label={`Review contact ${item.id} at ${clock(item.time)}`} onClick={() => { setSelected(item.id); play(item.time-.6,item.time+.8); }}>{clock(item.time)}</button></td><td>{readable(item.side)}</td><td>{readable(item.predictedType)}</td><td>{item.score === null ? "Unavailable" : percent(item.score,1)}</td><td>{reviews.shots[item.id] ? readable(reviews.shots[item.id].label) : "Needs review"}</td></tr>)}</tbody></table></div> : <p>No contacts match this filter.</p>}
           <nav className="review-pagination" aria-label="Contact pages"><button type="button" disabled={page <= 0} onClick={() => setPage(page-1)}>Previous</button><span>Page {Math.min(page+1,pageCount)} of {pageCount}</span><button type="button" disabled={page+1 >= pageCount} onClick={() => setPage(page+1)}>Next</button></nav>
-        </section> : <section className="review-events" aria-label="Rally windows"><h3>Verify the start and end</h3><p>A possible serve start is a review cue. A window with an unknown ending may include walking or tossing.</p>
+        </section> : <section className="review-events" aria-label="Rally windows"><h3>Verify the start and end</h3><p>{data.options?.shots === false ? 'Windows group sustained shuttle motion. Gaps and camera cuts bound replay; ground contact remains unconfirmed.' : 'A possible serve start is a review cue. A window with an unknown ending may include walking or tossing.'}</p>
           {data.rallies.length ? <><label htmlFor="review-rally-picker">Review window</label><select id="review-rally-picker" value={rallyId ?? ""} onChange={e => setRallyId(Number(e.target.value))}>{data.rallies.map(rally => <option key={rally.id} value={rally.id}>Window {rally.id} · {clock(rally.start)} · {rally.end === null ? "Ending unknown" : "Estimated ending"}</option>)}</select>
             {rally && <div className="review-selected" key={rally.id}><div><h4>Window {rally.id}</h4><dl><div><dt>Possible start</dt><dd>{clock(rally.start)}</dd></div><div><dt>Model ending</dt><dd>{rally.end === null ? "Unknown" : clock(rally.end)}</dd></div><div><dt>Contact candidates</dt><dd>{rally.hitCandidates}</dd></div></dl><button type="button" onClick={() => { const human = reviews.rallies[rally.id]; play(human?.start ?? rally.start,human?.end ?? rally.end ?? rally.reviewStop); }}>Replay this window</button>{rally.end === null && <p>Replay stops at {clock(rally.reviewStop)} for review. That timestamp is not a detected rally end.</p>}</div>
               <form onSubmit={reviewRally}><label htmlFor="rally-start">Observed start (seconds)</label><input id="rally-start" name="rally-start" type="number" min="0" max={data.duration} step="0.001" required autoComplete="off" defaultValue={Number((reviews.rallies[rally.id]?.start ?? rally.start).toFixed(3))}/><button type="button" onClick={e => { const input = e.currentTarget.form?.elements.namedItem("rally-start") as HTMLInputElement; if (input) input.value = time.toFixed(3); }}>Use current time for start</button><label htmlFor="rally-end">Observed end (seconds)</label><input id="rally-end" name="rally-end" type="number" min="0" max={data.duration} step="0.001" required autoComplete="off" defaultValue={reviews.rallies[rally.id]?.end != null || rally.end != null ? Number((reviews.rallies[rally.id]?.end ?? rally.end!).toFixed(3)) : ""}/><button type="button" onClick={e => { const input = e.currentTarget.form?.elements.namedItem("rally-end") as HTMLInputElement; if (input) input.value = time.toFixed(3); }}>Use current time for end</button><button type="submit" disabled={!loaded}>Save verified window</button>{reviews.rallies[rally.id] && <p>Your window: {clock(reviews.rallies[rally.id].start)} to {clock(reviews.rallies[rally.id].end)}</p>}</form>
-            </div>}</> : <p>No possible service starts were found. Shot contacts are still available for review.</p>}
+            </div>}</> : <p>{data.options?.shots === false ? 'No sustained shuttle-motion windows were found. Inspect the tracking and ground candidates.' : 'No possible service starts were found. Shot contacts are still available for review.'}</p>}
         </section>}
       </div>
       <aside className="review-sidebar" aria-label="Tracking values and heatmap">

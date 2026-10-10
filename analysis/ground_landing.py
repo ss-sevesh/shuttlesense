@@ -21,7 +21,7 @@ def candidates(rows, fps, width, height):
         raise ValueError('Expected positive finite dimensions and FPS')
     radius = 4 * height / 720
     hold = max(3, math.ceil(.2 * fps))
-    approach = max(3, math.ceil(.15 * fps))
+    approach = max(3, math.ceil(.5 * fps))
     events, last = [], -math.inf
     for i, row in enumerate(rows):
         point = row['point']
@@ -126,9 +126,9 @@ def analyze(video, shuttle, output):
     finally:
         capture.release()
     events = candidates(rows, fps, width, height)
-    report = {'status': 'experimental', 'method': 'floor_overlap_and_stop', 'model': MODEL, 'revision': REVISION,
+    report = {'status': 'experimental', 'method': 'floor_overlap_and_stop_v2', 'model': MODEL, 'revision': REVISION,
               'videoSha256': shuttle['video_sha256'], 'fps': fps, 'width': width, 'height': height,
-              'settings': {'floorThreshold': .6, 'stationaryRadiusPx': 4*height/720, 'holdSeconds': .2, 'approachSeconds': .15},
+              'settings': {'floorThreshold': .6, 'stationaryRadiusPx': 4*height/720, 'holdSeconds': .2, 'approachSeconds': .5},
               'candidates': events, 'measurements': {'frames': len(rows), 'floorOverlapFrames': sum(r['floor'] for r in rows),
               'meanFloorFraction': float(np.mean([r['floorFraction'] for r in rows])), 'seconds': time.perf_counter()-started, 'device': device},
               'reason': 'Floor overlap and a projected stop suggest a landing; neither proves ground contact. Missing detections do not count as landings.'}

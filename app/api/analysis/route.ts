@@ -1,4 +1,5 @@
 import { localRequest, startJob, uploadLimit } from '@/lib/analysis-jobs';
+import { analysisOptions } from '@/lib/analysis-options';
 
 export const runtime = 'nodejs';
 export async function POST(request: Request) {
@@ -21,7 +22,8 @@ export async function POST(request: Request) {
     if (!(file instanceof File) || !file.size || file.size > uploadLimit || !/\.(mp4|mov|webm)$/i.test(file.name) || (file.type && !['video/mp4', 'video/quicktime', 'video/webm'].includes(file.type))) return Response.json({ error: 'Choose a readable MP4, MOV or WebM under 100 MB.' }, { status: 400 });
     const corners: unknown = JSON.parse(String(form.get('corners')));
     if (!Array.isArray(corners) || corners.length !== 8 || !corners.every(n => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 1)) return Response.json({ error: 'Mark four distinct court corners inside the picture.' }, { status: 400 });
-    return Response.json(await startJob(file, corners), { status: 202, headers: { 'Cache-Control': 'no-store' } });
+    const options = analysisOptions(form.has('options') ? JSON.parse(String(form.get('options'))) : undefined);
+    return Response.json(await startJob(file, corners, options), { status: 202, headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Upload failed.';
     return Response.json({ error: message }, { status: message.includes('Another full-video') || message.includes('EEXIST') ? 429 : 422 });

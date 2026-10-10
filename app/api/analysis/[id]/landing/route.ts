@@ -51,6 +51,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     directory = jobPath((await params).id);
     const result = JSON.parse(await readFile(join(directory, 'result.json'), 'utf8'));
     if (frame < Math.round(result.fps) || frame >= Math.round(result.duration * result.fps)) return Response.json({ error: 'Choose a time after the first second and before the recording ends.' }, { status: 422 });
+    if (result.options?.llm === false) return Response.json({ error: 'LLM coaching was disabled for this analysis.' }, { status: 409 });
   } catch { return Response.json({ error: 'Completed analysis not found.' }, { status: 404 }); }
   const lockPath = join(jobsRoot, 'active.json');
   let lock;

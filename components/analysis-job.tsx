@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ArrowUpRight, CheckCircle, UploadSimple } from "@phosphor-icons/react";
 import { AnalysisReview } from "@/components/analysis-review";
 import { isReviewData, type ReviewData } from "@/lib/analysis-review";
+import { defaultAnalysisOptions, type AnalysisOptions } from "@/lib/analysis-options";
 
 type Job = { id: string; status: "queued" | "processing" | "complete" | "failed"; stage: string; progress: number; error?: string; result?: ReviewData };
 
@@ -50,11 +51,24 @@ export function StartShotAnalysis({ file, corners, onMarkCourt, onComplete }: { 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [failed, setFailed] = useState(false);
+  const [options, setOptions] = useState<AnalysisOptions>({ ...defaultAnalysisOptions });
+  function toggle(key: keyof AnalysisOptions, checked: boolean) {
+    const next = { ...options, [key]: checked };
+    if (checked && key === 'llm') next.shots = true;
+    if (checked && next.shots) next.pose = next.shuttle = true;
+    if (checked && next.pose) next.yolo = true;
+    if (checked && key === 'ground') next.shuttle = true;
+    if (!next.yolo) next.pose = false;
+    if (!next.shuttle) next.ground = false;
+    if (!next.pose || !next.shuttle) next.shots = false;
+    if (!next.shots) next.llm = false;
+    setOptions(next);
+  }
   async function start() {
     if (busy) return;
     if (corners.length !== 4) { onMarkCourt(); return; }
     setBusy(true); setError(""); setFailed(false);
-    const form = new FormData(); form.set("video", file); form.set("corners", JSON.stringify(corners.flat()));
+    const form = new FormData(); form.set("video", file); form.set("corners", JSON.stringify(corners.flat())); form.set("options", JSON.stringify(options));
     try {
       const response = await fetch("/api/analysis", { method: "POST", body: form });
       const result = await response.json();
@@ -66,6 +80,10 @@ export function StartShotAnalysis({ file, corners, onMarkCourt, onComplete }: { 
     } finally { setBusy(false); }
   }
   return <section className="shot-upload-start" aria-label="Shot and rally analysis">
+    {!id && <fieldset disabled={busy}><legend>Analysis options</legend><p>Choose what runs before generating results. Required features enable together.</p>
+      {([['yolo', 'YOLO player tracking'], ['shuttle', 'Shuttle tracking (TrackNet)'], ['ground', 'Ground segmentation and touch candidates'], ['pose', 'Body pose'], ['shots', 'Shot classification'], ['llm', 'LLM coaching and frame extraction']] as const).map(([key,label]) =>
+        <label key={key} style={{ display: 'block' }}><input type="checkbox" checked={options[key]} onChange={event => toggle(key,event.target.checked)}/>{label}</label>)}
+    </fieldset>}
     {!id && <><div><span className="intro-label">YOUR VIDEO · REAL ANALYSIS</span><h3>Review Your Shots & Rallies</h3><p>See player posture, shuttle detections and predicted shot types. Confirm or correct what you observe.</p></div>
       <button className="primary-button" disabled={busy} onClick={() => void start()}><UploadSimple size={17} aria-hidden="true"/>{busy ? "Uploading Video…" : failed ? "Retry Shots & Rallies" : "Analyze Shots & Rallies"}</button></>}
     {error && <p className="inline-error" role="alert">{error}</p>}
@@ -77,7 +95,7 @@ export function SavedAnalysisReview({ id }: { id: string }) {
   const [data, setData] = useState<ReviewData | null>(null);
   const ready = useCallback((result: ReviewData) => setData(result), []);
   return <main id="main" className="saved-analysis main-content"><a className="skip-link" href="#review-content">Skip to review</a><a className="text-button" href="/">Back to Workspace <ArrowUpRight size={16} aria-hidden="true"/></a>
-    <div className="page-heading"><div><div className="intro-label">YOUR VIDEO REVIEW</div><h1>Check the Contact. Choose the Shot.</h1><p>Watch the evidence, then confirm the shot type and rally boundaries.</p></div>{data && <span className="review-badge"><CheckCircle size={16} aria-hidden="true"/>Analysis Ready</span>}</div>
+    <div className="page-heading"><div><div className="intro-label">YOUR VIDEO REVIEW</div><h1>{data?.options?.shots === false ? 'Check the Rally Boundaries.' : 'Check the Contact. Choose the Shot.'}</h1><p>Watch the evidence, then confirm the rally boundaries.</p></div>{data && <span className="review-badge"><CheckCircle size={16} aria-hidden="true"/>Analysis Ready</span>}</div>
     <div id="review-content">{data ? <AnalysisReview key={data.analysisSha256} data={data} videoUrl={`/api/analysis/${encodeURIComponent(id)}/video`}/> : <AnalysisJobProgress id={id} onComplete={ready}/>}</div>
   </main>;
 }

@@ -84,6 +84,7 @@ def main():
     parser.add_argument("--tracker", default="bytetrack.yaml")
     parser.add_argument("--far-roi", type=int, nargs=4, metavar=("X", "Y", "WIDTH", "HEIGHT"))
     parser.add_argument("--allow-reacquisition", action="store_true")
+    parser.add_argument("--skip-pose", action="store_true", help="Track YOLO boxes without MediaPipe inference")
     parser.add_argument("--corners", type=float, nargs=8, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--detector", type=Path, default=Path("data/hf-racquet-baseline/yolo11n-pose.pt"))
@@ -93,7 +94,7 @@ def main():
         parser.error("Require finite start/end, positive duration and positive sample rate")
     if not 64 <= args.imgsz <= 1920 or args.imgsz % 32:
         parser.error("Detector size must be a multiple of 32 from 64 through 1920")
-    for path in [args.video, args.detector, args.pose_model]:
+    for path in [args.video, args.detector] + ([] if args.skip_pose else [args.pose_model]):
         if not path.is_file():
             parser.error(f"Missing input: {path}")
     corners = np.array(args.corners).reshape(4, 2)
@@ -122,7 +123,7 @@ def main():
         tracker = BYTETracker(args=IterableSimpleNamespace(**tracker_settings))
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     detector = YOLO(str(args.detector))
-    options = vision.PoseLandmarkerOptions(base_options=python.BaseOptions(model_asset_path=str(args.pose_model)), running_mode=vision.RunningMode.VIDEO, num_poses=1, min_pose_detection_confidence=.35, min_pose_presence_confidence=.35, min_tracking_confidence=.35)
+    options = None if args.skip_pose else vision.PoseLandmarkerOptions(base_options=python.BaseOptions(model_asset_path=str(args.pose_model)), running_mode=vision.RunningMode.VIDEO, num_poses=1, min_pose_detection_confidence=.35, min_pose_presence_confidence=.35, min_tracking_confidence=.35)
     poses, locked, samples = {}, {}, []
     recovery = dict(last_seen={}, pending={}, events=[], segments={}) if args.allow_reacquisition else None
     started = time.perf_counter()
@@ -155,6 +156,9 @@ def main():
             players = select_players(boxes, matrix, locked, recovery, source_frame / fps)
             timestamp = round(source_frame / fps * 1000)
             for player in players:
+                if args.skip_pose:
+                    player.update(keypoints_xy=[], keypoint_scores=[], pose_detected=False)
+                    continue
                 identity = player["side"] if recovery is not None else player["track_id"]
                 if identity not in poses:
                     poses[identity] = vision.PoseLandmarker.create_from_options(options)
@@ -186,6 +190,9 @@ def main():
     report["settings"]["tracker_values"] = tracker_settings
     report["settings"]["tracker_values_sha256"] = hashlib.sha256(json.dumps(tracker_settings, sort_keys=True).encode()).hexdigest()
     report["settings"]["pose_min_input_height"] = 256
+    report["settings"]["pose_enabled"] = not args.skip_pose
+    if args.skip_pose:
+        report["settings"]["pose_model"] = report["settings"]["pose_device"] = None
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, separators=(",", ":")), encoding="utf-8")
     print(json.dumps(dict(output=str(args.output), sampled_frames=len(samples), tracking_stats=stats, elapsed_s=report["elapsed_s"])), flush=True)

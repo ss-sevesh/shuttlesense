@@ -9,9 +9,9 @@ export function AnalysisCamera({ data, videoUrl, replay, onTime }: { data: Revie
   const video = useRef<HTMLVideoElement>(null);
   const bound = useRef<number | null>(null);
   const [time, setTime] = useState(0);
-  const [boxes, setBoxes] = useState(true);
-  const [poses, setPoses] = useState(true);
-  const [shuttle, setShuttle] = useState(true);
+  const [boxes, setBoxes] = useState(data.options?.yolo !== false);
+  const [poses, setPoses] = useState(data.options?.pose !== false);
+  const [shuttle, setShuttle] = useState(data.options?.shuttle !== false);
   const [error, setError] = useState("");
   useEffect(() => {
     let frame = 0, previous = -1;

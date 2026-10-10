@@ -3,6 +3,7 @@ import { promisify } from 'node:util';
 import { mkdir, readFile, writeFile, open, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { analysisOptions, type AnalysisOptions } from './analysis-options.ts';
 
 export const jobsRoot = join(process.cwd(), 'data', 'analysis-jobs');
 export const uploadLimit = 100 * 1024 * 1024;
@@ -45,7 +46,8 @@ export async function acquireAnalysisLock() {
   const lock = await open(lockPath, 'wx');
   return lock;
 }
-export async function startJob(file: File, corners: number[]) {
+export async function startJob(file: File, corners: number[], selected?: AnalysisOptions) {
+  const options = analysisOptions(selected);
   const lock = await acquireAnalysisLock();
   await lock.writeFile(JSON.stringify({ pid: process.pid }));
   await lock.close();
@@ -56,7 +58,7 @@ export async function startJob(file: File, corners: number[]) {
     await mkdir(directory);
     const source = `original${/\.(mp4|mov|webm)$/i.exec(file.name)![0].toLowerCase()}`;
     await writeFile(join(directory, source), new Uint8Array(await file.arrayBuffer()));
-    await writeFile(join(directory, 'request.json'), JSON.stringify({ source, fileName: file.name, corners }));
+    await writeFile(join(directory, 'request.json'), JSON.stringify({ source, fileName: file.name, corners, options }));
     const python = process.env.PYTHON_EXECUTABLE || 'python';
     await execute(python, ['analysis/review_job.py', directory, '--validate'], { cwd: process.cwd(), windowsHide: true, timeout: 30_000, maxBuffer: 1024 * 1024 });
     await writeFile(join(directory, 'status.json'), JSON.stringify({ id, status: 'queued', stage: 'Queued for full-video analysis', progress: 0 }));
