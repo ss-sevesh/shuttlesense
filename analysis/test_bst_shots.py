@@ -3,7 +3,7 @@ import unittest
 
 import numpy as np
 
-from bst_shots import COCO_FROM_MEDIAPIPE, fixed_length, normalize_player, prepare_window, classify_hits
+from bst_shots import COCO_FROM_MEDIAPIPE, fixed_length, normalize_player, prepare_window, classify_hits, shot_window
 
 
 def person(side='near', offset=0):
@@ -14,6 +14,18 @@ def person(side='near', offset=0):
 
 
 class AdapterTests(unittest.TestCase):
+    def test_window_excludes_previous_and_next_hit_and_respects_camera_bounds(self):
+        hits = [{'time_s':9.5},{'time_s':10.,'clip_start_s':9.,'clip_end_s':11.},{'time_s':10.4}]
+        start, stop = shot_window(hits,1,30,0,84)
+        self.assertAlmostEqual(start,9.5+1/30)
+        self.assertEqual(stop,10.4)
+        samples = [{'time_s':t,'players':[person(),person('far')]} for t in (9.5,start,10.,stop)]
+        raw = [{'time_s':s['time_s'],'xy_px':[640,360]} for s in samples]
+        *_, length, quality = prepare_window(samples,raw,start,stop,1280,720)
+        self.assertEqual(length,2)
+        hits[1]['clip_start_s'], hits[1]['clip_end_s'] = 9.9,10.2
+        self.assertEqual(shot_window(hits,1,30,0,84),(9.9,10.2))
+
     def test_raw_shuttle_gaps_and_inpainting_rejected_before_inference(self):
         raw=[{'time_s':i/30,'xy_px':[10,20]} for i in range(30)]
         report={'kind':'raw_tracknet_shuttle_proposals','settings':{'start_s':0,'end_s':1,'fps':30},'samples':raw}

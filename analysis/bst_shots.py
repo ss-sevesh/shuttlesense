@@ -61,6 +61,7 @@ def fixed_length(joints, positions, shuttle, target=100):
 
 
 def prepare_window(samples, shuttle_samples, start, end, width, height, pose_tolerance=.075):
+    samples = [s for s in samples if start <= s['time_s'] < end]
     pose_times = [s['time_s'] for s in samples]
     joints, positions, shuttle = [], [], []
     valid_frames = 0
@@ -105,10 +106,21 @@ def prepare_window(samples, shuttle_samples, start, end, width, height, pose_tol
                       for a, b in BONES], axis=-2)
     features = np.concatenate((joint_arr, bones), axis=-2).reshape(100, 2, 72)
     quality = {'two_player_fraction': valid_frames / len(joints),
+               'shuttle_fraction': sum(s['xy_px'] is not None for s in shuttle_samples if start <= s['time_s'] < end)/len(joints),
                'body_visibility': float(np.mean(visibility)) if visibility else 0,
                'identity_switch': any(len(ids) > 1 for ids in track_ids.values()),
                'track_ids': {side: sorted(ids) for side, ids in track_ids.items()}}
     return features, pos_arr, shuttle_arr, length, quality
+
+
+def shot_window(ordered, index, fps, stream_start, stream_stop):
+    hit = ordered[index]
+    t = hit['time_s']
+    previous = ordered[index-1]['time_s']+1/fps if index else t-.5
+    following = ordered[index+1]['time_s'] if index+1 < len(ordered) else t+.5
+    start = max(previous, t-1.5, stream_start, hit.get('clip_start_s',stream_start))
+    stop = min(following, t+1.75, stream_stop, hit.get('clip_end_s',stream_stop))
+    return start, stop
 
 
 def classify_hits(poses_report, shuttle_report, hits, *, model_dir=Path('data/bst-official'), device='cuda'):
@@ -152,14 +164,15 @@ def classify_hits(poses_report, shuttle_report, hits, *, model_dir=Path('data/bs
         t = hit['time_s']
         if not math.isfinite(t):
             raise ValueError('Hit timestamps must be finite')
-        previous = ordered[i - 1]['time_s'] if i else t - .5
-        following = ordered[i + 1]['time_s'] if i + 1 < len(ordered) else t + .25
-        start = max(previous, t - 1.5, raw_samples[0]['time_s'])
-        end = min(following + .25, t + 1.75, raw_samples[-1]['time_s'] + 1 / fps)
+        start, end = shot_window(ordered,i,fps,raw_samples[0]['time_s'],raw_samples[-1]['time_s']+1/fps)
         inputs = prepare_window(samples, raw_samples, start, end, width, height)
         result = {**hit, 'window_start_s': start, 'window_end_s': end,
                   'shot_type': 'unknown', 'shot_status': 'insufficient_tracking',
                   'confidence': None}
+        if not start <= t < end or hit.get('play_status') == 'outside_play':
+            result['shot_status'] = 'outside_play' if hit.get('play_status') == 'outside_play' else 'invalid_hit_window'
+            shots.append(result)
+            continue
         if hit.get('contact', {}).get('status', 'estimated') != 'estimated':
             result['shot_status'] = 'unresolved_contact'
             shots.append(result)
@@ -169,7 +182,7 @@ def classify_hits(poses_report, shuttle_report, hits, *, model_dir=Path('data/bs
             result['input_quality'] = quality
             if quality['identity_switch']:
                 result['shot_status'] = 'identity_switch'
-            elif length >= 6 and quality['two_player_fraction'] >= .7 and quality['body_visibility'] >= .5:
+            elif length >= 6 and quality['two_player_fraction'] >= .7 and quality['body_visibility'] >= .5 and quality['shuttle_fraction'] >= .5:
                 with torch.inference_mode():
                     tensors = [torch.as_tensor(a, device=device, dtype=torch.float32).unsqueeze(0)
                                for a in (features, shuttle)]
@@ -192,6 +205,7 @@ def classify_hits(poses_report, shuttle_report, hits, *, model_dir=Path('data/bs
                          'sequence_length': 100, 'confidence_kind': 'uncalibrated softmax score',
                          'pose_adapter': 'MediaPipe33 to COCO17; experimental domain shift',
                          'modalities': ['pose joints and bones', 'shuttle trajectory'],
+                         'window_policy': 'strictly_after_previous_hit_before_next_hit_and_clip_boundary',
                          'minimum_score': .5, 'shot_classes': SHOT_NAMES}}
 
 
