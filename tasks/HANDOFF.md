@@ -1,5 +1,37 @@
 # ShuttleSense session handoff
 
+## Court-line alignment v2 and arm-label explanation (2026-10-10)
+
+User reopened sideline alignment concern and asked what pose names mean. Inspected
+Paris434 source at 1/10/20/28/35/43/53/68/82s across all3courtsegments. Perspective
+changes projected angles/convergence; straight markings generally stay straight
+without lens distortion. Old HSV threshold admitted pale floor, and rectified
+pixel/end-point fits were offset. Added stricter bright/low-saturation/local-
+contrast mask, persistent original-resolution cross-section stripe-centre fitting
+with Huber line fit and evidence abstention, plus fitted boundary intersections.
+All8near markings retained in3segments. Synthetic oblique-line regression corrects
+angle/offset to<1px; floor/clutter/missing stripe/intersection tests pass.
+
+Line-only recomputation updated existing saved job463e4a85 and its fused/provenance
+reports, with original reports backed up at artifacts/paris434-lines-before-v2.
+Source hash independently verified as approved434. Asserted samples, shuttle,
+hitPoses, rallies, options and groundLanding unchanged. Fingerprint/pipeline version
+updated to near-lines-hit-pose-v2; previous browser review labels remain under old
+key. Same My Matches link works. Nine-frame visual comparisons look closer and
+nearest-white-pixel distance improves, but this is not independent court truth or
+an accuracy claim. Artifacts/paris434-lines-final-audit.jpg and pixel-audit.json.
+
+UI now explains Raised=selected wrist above shoulder, Torso=shoulder to hip,
+Low=at/below hip. Rule-based image posture descriptions from pretrained MediaPipe
+landmarks, not badminton shot/pose classes; timing/pose logic unchanged. Official
+OpenCV homography documentation checked. No models, LLM or training rerun.
+
+Production build/typecheck, Python line/pose unitchecks and2focusedPlaywrightchecks
+passed (v2saved report, labelcopy, lines/cuts, timestamp desktop/mobile scroll,
+pause/replay, liveheat/rewind, exports, noLLM,a11y,cleanconsole). Movement screenshot
+refreshed. Production127.0.0.1:3000 session17165. Lens distortion/moving cameras and
+other footage untested; fixed camera and approximate calibration remain limits.
+
 ## Playback heatmap and timestamp scrolling (2026-10-10)
 
 Latest user corrected their contact-timing concern: Replay showed surrounding

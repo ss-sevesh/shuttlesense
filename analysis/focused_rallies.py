@@ -136,7 +136,7 @@ def run_focused(directory, request, metadata, original_hash, options, run, stage
     for window in windows:
         stop = window['end_s'] if window['end_s'] is not None else window['review_stop_s']
         window['hit_candidates'] = sum(window['start_s'] <= event['time'] <= stop for event in events)
-    fused = {'video_sha256': source_hash, 'pipeline_version': 'near-lines-hit-pose-v1', 'focus_side': 'near', 'fps': 30, 'hits': [], 'rallies': windows, 'options': options, 'courtLines': lines, 'hitPoses': events}
+    fused = {'video_sha256': source_hash, 'pipeline_version': 'near-lines-hit-pose-v2', 'focus_side': 'near', 'fps': 30, 'hits': [], 'rallies': windows, 'options': options, 'courtLines': lines, 'hitPoses': events}
     write_json(directory/'fused.json', fused)
     result = review_data(poses, shuttle, fused, request['fileName'], False, original_hash, metadata['corners'], ground)
     result['options'] = options

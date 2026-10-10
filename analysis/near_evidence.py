@@ -32,6 +32,51 @@ def fit_markings(mask):
     return lines
 
 
+def white_markings(frame):
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    white = cv2.inRange(hsv, np.array([0,0,170]), np.array([179,55,255]))
+    contrast = cv2.morphologyEx(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), cv2.MORPH_TOPHAT, np.ones((15,15), 'uint8'))
+    white[contrast < 12] = 0  # Pale floor must not pull the marking centre sideways.
+    return white
+
+
+def refine_line(mask, endpoints):
+    endpoints = np.asarray(endpoints, dtype=float)
+    direction = endpoints[1]-endpoints[0]
+    length = np.linalg.norm(direction)
+    if length < 1: return None
+    direction /= length
+    normal = np.array([-direction[1], direction[0]])
+    offsets = np.arange(-9,9.1,.5)
+    centres = []
+    for fraction in np.linspace(.04,.96,120):
+        origin = endpoints[0]+fraction*length*direction
+        probes = np.rint(origin+offsets[:,None]*normal).astype(int)
+        valid = (probes[:,0] >= 0) & (probes[:,0] < mask.shape[1]) & (probes[:,1] >= 0) & (probes[:,1] < mask.shape[0])
+        found = offsets[valid][mask[probes[valid,1],probes[valid,0]] > 0]
+        if 1 <= len(found) <= 16: centres.append(origin+np.median(found)*normal)
+    if len(centres) < 40: return None
+    vx,vy,x,y = cv2.fitLine(np.float32(centres), cv2.DIST_HUBER, 0, .01, .01).flatten()
+    axis, origin = np.array([vx,vy]), np.array([x,y])
+    return (origin+((endpoints-origin)@axis)[:,None]*axis).tolist()
+
+
+def trim_intersections(lines, width, height):
+    lookup = {line['name']:line for line in lines}
+    def intersect(a,b):
+        p,q = np.asarray(a['points']), np.asarray(b['points'])
+        matrix = np.column_stack((p[1]-p[0], q[0]-q[1]))
+        if abs(np.linalg.det(matrix)) < 1e-6: return None
+        point = p[0]+np.linalg.solve(matrix,q[0]-p[0])[0]*(p[1]-p[0])
+        return point.tolist() if np.all(point >= 0) and np.all(point <= [width,height]) else None
+    for line in lines:
+        boundaries = ('Doubles left','Doubles right') if line['name'] in ('Short service','Doubles long service','Back boundary') else (('Short service' if line['name']=='Centre service' else None),'Back boundary')
+        for index, boundary in enumerate(boundaries):
+            if boundary in lookup:
+                point = intersect(line,lookup[boundary])
+                if point is not None: line['points'][index] = point
+
+
 def court_lines(video, corners, segments, fps):
     capture = cv2.VideoCapture(str(video))
     width, height = [capture.get(p) for p in (cv2.CAP_PROP_FRAME_WIDTH, cv2.CAP_PROP_FRAME_HEIGHT)]
@@ -40,23 +85,30 @@ def court_lines(video, corners, segments, fps):
     reports = []
     try:
         for first, stop in segments:
-            masks = []
+            masks, originals = [], []
             for index in np.linspace(first, stop-1, min(11, stop-first)).astype(int):
                 capture.set(cv2.CAP_PROP_POS_FRAMES, int(index))
                 ok, frame = capture.read()
                 if not ok: raise ValueError('Cannot decode court-line reference')
-                hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-                white = cv2.inRange(hsv, np.array([0,0,145]), np.array([179,100,255]))
+                white = white_markings(frame)
+                originals.append(white)
                 masks.append(cv2.warpPerspective(white, matrix, (700, 1050), flags=cv2.INTER_NEAREST))
             persistent = (np.mean(np.asarray(masks)>0, axis=0) >= .45).astype('uint8')*255
             lines = fit_markings(persistent)
+            original = (np.mean(np.asarray(originals)>0, axis=0) >= .45).astype('uint8')*255
+            refined = []
             for line in lines:
                 projected = cv2.perspectiveTransform(np.float32([line['points']]), inverse)[0]
-                line['points'] = (projected/[width,height]).tolist()
-            reports.append({'start': first/fps, 'end': stop/fps, 'lines': lines})
+                points = refine_line(original, projected)
+                if points is not None:
+                    line['points'] = points
+                    refined.append(line)
+            trim_intersections(refined, width, height)
+            for line in refined: line['points'] = (np.asarray(line['points'])/[width,height]).tolist()
+            reports.append({'start': first/fps, 'end': stop/fps, 'lines': refined})
     finally: capture.release()
     # shortcut: a fixed camera and approximate singles corners guide fits; recalibrate moving cameras.
-    return {'method': 'calibrated_persistent_white_pixel_fit', 'segments': reports,
+    return {'method': 'original_pixel_contrast_line_fit_v2', 'segments': reports,
             'reason': 'Observed near-side markings fitted using singles-court geometry. Verify alignment; not an in/out decision.'}
 
 

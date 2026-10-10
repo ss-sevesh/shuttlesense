@@ -11,6 +11,7 @@ test('Paris near-court lines and hit-pose frames are visible without LLM', async
   expect(data.options.pose).toBe(true); expect(data.options.llm).toBe(false);
   expect(data.metrics.farPoses).toBe(0);
   expect(data.hitPoses.length).toBeGreaterThan(0);
+  expect(data.courtLines.method).toBe('original_pixel_contrast_line_fit_v2');
   expect(data.courtLines.segments).toHaveLength(3);
   for (const segment of data.courtLines.segments) expect(segment.lines).toHaveLength(8);
   const errors: string[] = [];
@@ -24,6 +25,7 @@ test('Paris near-court lines and hit-pose frames are visible without LLM', async
   await expect(page.locator('[data-court-line]')).toHaveCount(0);
   await page.getByLabel('Near-side court lines').check();
   const region = page.getByRole('region',{name:'Near-side hit poses'});
+  await expect(region).toContainText('Raised arm means the wrist is above the shoulder');
   const event = data.hitPoses.find((e: {status:string;pose:string}) => e.status==='estimated_contact' && e.pose!=='Pose uncertain') ?? data.hitPoses[0];
   await region.getByRole('button',{name:`Show pose at ${event.time.toFixed(3)} s · frame ${event.frame}`,exact:true}).click();
   const video = page.locator('.review-camera video');

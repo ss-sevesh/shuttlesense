@@ -23,6 +23,15 @@ centre service line, short service line, doubles long service line and baseline.
 Robust straight-line fits require spatial coverage and reject isolated clutter.
 Absent evidence produces no line, rather than a template-only highlight.
 
+Version 2 excludes pale floor using stricter whiteness and local brightness
+contrast. Rectification locates each marking; cross-sections of its persistent
+original-resolution stripe then refine the angle and centre with a robust fit.
+Horizontal ends intersect fitted doubles sidelines; back ends intersect the
+fitted baseline, and the centre service line begins at the fitted short service
+line. Missing original-pixel support abstains. This avoids floor contamination,
+warping bias and guessed endpoints. Perspective makes parallel sidelines
+converge; the projected markings remain straight for an undistorted fixed camera.
+
 The fitted endpoints are mapped back into video coordinates. Cyan near-side
 highlights are enabled initially, can be hidden independently, and disappear
 outside accepted court-view segments. These are line-centre estimates guided
@@ -48,6 +57,10 @@ racket-holding hand. Arm-position descriptions compare the candidate wrist with
 its shoulder/hip when landmark confidence is >=0.5; they do not classify shots.
 Elbow and body-lean angles come from the selected frame. Missing evidence stays
 unknown. Close-ups are excluded from both line overlays and pose events.
+
+Raised arm means the selected wrist is above its shoulder in the image. Torso
+level means between shoulder and hip; low arm means at or below the hip. These
+are simple rules on pretrained landmarks, not learned badminton pose/shot names.
 
 The timestamp list displays seconds to three decimals and the source frame
 number on the normalized 30 FPS timeline. Selecting a timestamp pauses at that
@@ -90,3 +103,11 @@ training or LLM invocation. The earlier rally-only job remains intact.
 Open [local review](http://127.0.0.1:3000/review/463e4a85-6672-4c80-8c47-5ba25b21da38).
 Private visual audits under `artifacts/`: `paris434-lines-{0,1,2}.png`,
 `paris434-hit-poses.jpg`, and `paris434-near-review.png`.
+
+Line-only v2 recomputation refreshed the same saved job, with prior reports
+backed up under `artifacts/paris434-lines-before-v2/`. Poses, rally windows,
+ground candidates and tracking are unchanged. Nine source-frame comparisons
+at 1/10/20/28/35/43/53/68/82s show closer stripe alignment. A nearest-white-pixel
+check improved, but is not independent line ground truth or an accuracy score.
+Lens distortion and moving cameras remain unvalidated. The changed evidence
+fingerprint retains prior browser reviews under their original storage key.
