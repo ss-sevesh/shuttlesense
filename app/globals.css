@@ -691,3 +691,14 @@ strong { font-weight:600; }
 }
 @media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto!important;animation:none!important;transition:none!important; } }
 .detected-rallies { display:flex;flex-wrap:wrap;gap:8px;margin-block:16px; }
+
+.profile-panel {padding:24px;}
+.profile-panel > p,.profile-panel fieldset p {color:var(--muted);line-height:1.6;margin:12px 0;}
+.profile-panel fieldset {border:0;border-top:1px solid var(--line);padding:24px 0;margin-top:24px;min-width:0;}
+.profile-panel legend {font-weight:600;padding:0 8px 0 0;}
+.profile-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
+.profile-field {display:flex;flex-direction:column;gap:8px;min-width:0;}
+.profile-field input,.profile-field select,.chat-question {width:100%;min-width:0;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:12px;font:inherit;}
+.profile-days,.profile-actions {display:flex;flex-wrap:wrap;gap:16px;margin:16px 0;}
+.profile-panel input[type=checkbox] {margin-right:8px;accent-color:var(--accent);}
+@media(max-width:600px) {.profile-grid {grid-template-columns:1fr;} .profile-panel {padding:16px;}}
