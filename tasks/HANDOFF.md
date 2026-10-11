@@ -1,5 +1,68 @@
 # ShuttleSense session handoff
 
+## RAG repair implemented; user acceptance pending (2026-10-11)
+
+Read tasks/rag-repair-plan.md and docs/RAG-CHAT.md for the completed work split and
+measured checks. User requested a proper RAG plan, implementation, saved profile
+reuse and actual reply/speed testing, then requested Code Review MCP and asked
+whether semantic search is used. Yes: Qwen3-Embedding/Qdrant cosine retrieval remains
+local and filtered to selected recording/current evidence. Profiles are read directly,
+never indexed. Short follow-ups preserve the previous eligible question subject.
+
+Baseline reproduced HTTP422 scope/numeric failures, unsupported split-step prose,
+general start questions incorrectly requiring a recording, and targeted drills
+returning a weekly template. Fixed routing and validation at shared callers; added
+four reviewed BWF reference notes and retrievable recording summary. Saved level,
+days/goals direct lookup and concise schedule follow-ups use persisted profile.
+UI explicitly says save once; model prompt avoids reciting profile/missing-known
+details. Up to four profile/evidence-matching turns supplied as untrusted data.
+
+Ending/why-loss questions now use requested original window + matching same-frame
+pose/shuttle/wrist proxy rather than model inference of a cause. Missing tracking
+or wrist stays unavailable. Exact timestamp lookup takes precedence. No user outcome
+was changed, and contact, ground touch, intent and failure cause remain unverified.
+Generated citations use the retrieved set and canonical source metadata. Independent
+review found/fixed cause permutations, personal frequency prescriptions, null-image
+data and source metadata issues. Generic reference explanations no longer fail just
+because of normal coaching phrases; clinical/impact/prescription boundaries remain.
+
+Compared installed 2B and 4B on eight probes with identical retrieved sources in
+disposable Qdrant. Generation means4.994/5.413s (~8% slower4B), but4B had materially
+better grip/follow-up answers in this limited sample. Both can add unsupported prose;
+no general superiority claim. Restored chat pin to existing Qwen3-4B-Instruct-2507
+local tag. Report/vision prompts/models unchanged. Optional RAG installer reuses
+existing report installer for custom tag instead of public ollama pull. Readiness
+supports pinned non-thinking Instruct model without newer thinking metadata.
+
+Final17-question API:17/17 HTTP200, actual replies reviewed. One timestamp-routing
+regression was corrected, then exact gap +ending +why-loss reruns passed63–98ms.
+Matched original12 requests31.090s vs58.905s baseline (~47% lower single run,
+including baseline failures); model prose still8–13s, median8.813s, first cold12.805s.
+Main savings are direct saved-profile/evidence answers, not faster generation.
+Artifacts: rag-final-realistic.json, rag-final-evidence-rerun.json, rag-final-review.md,
+rag-model-review.md and raw comparison JSONs. Reproduce scripts/benchmark-rag.py;
+serialize against profile edits/tests; backups/restoration guard concurrent edits.
+Original profile/history restored byte-for-byte; synthetic fixtures removed.
+
+Production build and optional setup -RagOnly -CheckOnly pass.14 Playwright checks
+pass including actual inference, injection/profile-vector exclusion, stale-in-flight
+rejection, profile CRUD/reload/consent, cited seeking, responsive/axe and both themes.
+11 Python retrieval/prompt/installer tests and3 benchmark isolation checks pass.
+Missing-runtime browser check skipped (runtime installed); earlier isolated pass
+not rerun. Movement screenshot refreshed. No full-video worker/report regeneration,
+new model downloads, Git commits/pushes or cloud deployment. Unrelated untracked
+shuttle_sense/ untouched. Larger/multilingual corpora/fresh machine remain unchecked.
+
+Code Review MCP direct handshake/tools-list succeeds: v0.1.21,31 PR-only tools.
+Cannot review unpublished local diff; no PR/authenticated remote context created
+or private evidence submitted. Capability evidence/helper artifacts/code-review-mcp-*.
+Independent local diff review was used and all concrete findings addressed.
+
+Production preview remains3000/session69526. User subsequently requested committing
+and pushing this repair to GitHub main; see Git history for the delivered revision.
+This repair is tested, not yet user-accepted. Small reviewed corpus can honestly lack
+answers (e.g. undefined basic-grip terminology); do not claim perfect RAG grounding.
+
 ## NEXT SESSION PRIORITY: RAG not accepted by user (2026-10-11)
 
 User ended this session after another chat failure: browser reported HTTP422

@@ -1,6 +1,7 @@
 # ShuttleSense local player profile and RAG chat plan
 
 Status: approved scope implemented locally on 2026-10-11; all six checklist slices verified.
+User did not accept reply quality. The active repair plan is [rag-repair-plan.md](rag-repair-plan.md).
 Measured baseline: docs/rag-spike.md. Setup and limits: docs/RAG-CHAT.md.
 This separate plan preserves the existing analysis/design plans. Task checklist below
 is the target for this feature. User requested a plan before development starts.

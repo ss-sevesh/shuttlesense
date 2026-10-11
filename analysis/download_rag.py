@@ -10,8 +10,13 @@ from rag_chat import api, config, ready
 def install():
     for kind in ('embedding', 'text'):
         model = config()[kind]
-        subprocess.run(['ollama', 'pull', model['name']], check=True,
-                       env={**os.environ, 'OLLAMA_HOST': '127.0.0.1:11434'})
+        report = json.loads((Path(__file__).parent / 'report_model.json').read_text(encoding='utf-8'))
+        if model['name'] == report['ollamaModel']:
+            if not any(t['name'] == model['name'] for t in api('tags')['models']):
+                subprocess.run([os.sys.executable, str(Path(__file__).parent / 'download_report_model.py')], check=True)
+        else:
+            subprocess.run(['ollama', 'pull', model['name']], check=True,
+                           env={**os.environ, 'OLLAMA_HOST': '127.0.0.1:11434'})
         tags = api('tags')['models']
         if not any(t['name'] == model['name'] and t['digest'] == model['manifestDigest'] for t in tags):
             raise ValueError('Official tag changed; expected pinned manifest. Do not use this model.')

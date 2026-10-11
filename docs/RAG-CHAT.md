@@ -12,6 +12,10 @@ in browser localStorage or shared vectors. These are local files, not an encrypt
 vault, protected login or medical screening. Save failures stay visible; an unreadable
 profile cannot be silently overwritten by an empty form.
 
+Save your profile once. The chat server reads it automatically on every question;
+you do not need to paste or re-enter it. General questions do not require profile
+details. Only requested personal food/session drafts ask for relevant missing fields.
+
 Select a recording explicitly in chat, or choose general coaching without a
 recording. Selection is not an assertion that this is the profile owner's footage.
 There is no automatic player-history association of legacy recordings. Reference
@@ -116,7 +120,9 @@ validated profile, selected recording evidence/current report and reference note
 For model replies, the local worker indexes source text only and embeds the question
 for search. Ollama's text model receives rules, the question, the saved profile
 (including health details only with consent), up to three recording sources and two
-reference sources, and at most two recent matching question/answer turns. General
+reference sources, and at most four recent matching question/answer turns. Short
+follow-ups use earlier questions to preserve the retrieval subject; previous answers
+and profile fields are never indexed. General
 chat has no recording sources. Profile data and conversation are not indexed. The
 question is sent to the local embedding model for search, without being saved as a
 vector source. No photos or raw video enter text chat, and no chat data goes to a
@@ -128,9 +134,9 @@ fields and consent; it does not infer health, send a chat or call a model. Save 
 after replacing samples with actual details. Random is disabled if the saved profile
 could not be loaded, preventing accidental replacement of unreadable data.
 
-## Faster chat model follow-up, 2026-10-11
+## Earlier 2B trial, 2026-10-11 (superseded by repair)
 
-Chat now uses official Ollama `qwen3.5:2b-q4_K_M`, separately pinned by manifest,
+The earlier trial used official Ollama `qwen3.5:2b-q4_K_M`, separately pinned by manifest,
 text-weight SHA256 and projector SHA256. Optional RAG setup installs and hashes both
 models. Thinking is explicitly disabled, while the answer schema constrains citation
 IDs to retrieved sources. Profile/health constraints and all server output checks
@@ -150,3 +156,53 @@ Chat no longer labels every lock failure as 429: genuine live contention remains
 429; unreadable/unavailable locks return 503. A malformed-lock regression reproduces
 the old false-busy response and verifies the distinction. The reported earlier 429
 was not reproduced with the original request; no lock/model remained at inspection.
+
+## RAG repair, 2026-10-11
+
+Chat again uses the installed, checksum-pinned Qwen3-4B-Instruct-2507 weights with
+its own chat prompt. Report and vision-ending prompts/models were not changed.
+The optional installer reuses the report-model installer for this local custom tag;
+it does not try to pull a custom name from the public Ollama registry. The original
+2B comparison was too small to establish conversational quality.
+
+Semantic search remains local: Qwen3-Embedding supplies a query vector to Qdrant's
+cosine search, filtered by selected analysis and current evidence hash. Recording
+and guidance vectors remain separate. The recording summary is now retrievable.
+The reviewed corpus adds BWF split-step progression, grips, clear/drop and recovery
+notes with source links. It remains a small corpus, not complete badminton knowledge.
+
+General technique questions no longer turn into exact-recording lookups just because
+they contain “start”, “end” or “lost”. A drill explanation no longer automatically
+produces the weekly template. Saved level/days/goals use direct profile lookup.
+Checked session drafts can focus on a saved backhand goal; short schedule follow-ups
+retain the same saved limits. Other follow-ups retrieve with the previous topic.
+
+Ending/loss explanation questions select the requested original window and the
+matching attempt frame. They describe the user marking, estimated pose and image
+separation; a missing shuttle/wrist remains unavailable. Exact timestamp queries
+take precedence. No model decides a loss cause or first ground contact. Generated
+prose is checked against actual retrieved source IDs and canonical source metadata,
+not the whole available corpus. Personal prescription/impact/cause checks remain.
+
+The realistic baseline reproduced two HTTP422s, an invented split-step description,
+wrong recording routing and a drill replaced by a schedule. The repaired 17-question
+API run returned 17/17 HTTP200; actual replies were reviewed, not just statuses.
+A precise timestamp routing regression found during that run was corrected and
+verified separately. The same original 12 questions took 31.090 s versus 58.905 s
+in single sequential runs, including baseline failures. New ending explanations
+took approximately 0.11 s; model prose had median 8.813 s, first cold/indexing
+request 12.805 s. These are local measurements, not service guarantees.
+
+Two installed models were compared on eight probes with identical retrieved sources.
+Generation-only means were 4.994 s (2B) and 5.413 s (4B), approximately 8% slower for
+4B. Human review favored the 4B's usefulness, but both showed unsupported additions;
+this single-pass comparison does not establish general superiority. Exact numbers
+and uncertain endings therefore do not rely on generative inference. Raw isolated
+answers/timings are in ignored `artifacts/rag-*-realistic.json` and model-comparison
+artifacts. Reproduce with `scripts/benchmark-rag.py`; it backs up/restores private
+profile/history, uses a synthetic profile and copies only approved Paris434 context.
+Do not run it alongside profile-editing tests or user edits.
+
+Code Review MCP handshake succeeded (31 PR tools); it cannot review an unpublished
+local diff. No PR or private evidence was submitted. Independent local review found
+and fixed citation metadata, scope/cause validation and missing-image-data issues.

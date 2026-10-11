@@ -85,7 +85,7 @@ class RagTests(unittest.TestCase):
                 return {'models': [{'name': cfg[k]['name'], 'digest': cfg[k]['manifestDigest']} for k in ('embedding', 'text')]}
             if payload['model'] == cfg['embedding']['name']:
                 return {'modelfile': 'FROM sha256-' + cfg['embedding']['sha256']}
-            return {'modelfile': 'FROM sha256-' + cfg['text']['sha256'] + '\nFROM sha256-' + cfg['text']['projectorSha256'], 'thinking': {'values': [False, True]}}
+            return {'modelfile': '\n'.join('FROM sha256-' + cfg['text'][key] for key in ('sha256','projectorSha256') if key in cfg['text']), 'thinking': {'values': [False, True]}}
         with patch.object(rag, 'api', side_effect=response):
             rag.ready()
         with patch.object(rag, 'api', side_effect=lambda path, payload=None: {**response(path, payload), 'thinking': {'values': [True]}}):

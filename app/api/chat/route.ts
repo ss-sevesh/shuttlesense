@@ -6,7 +6,7 @@ import {acquireAnalysisLock,jobsRoot,jobPath,localRequest} from '@/lib/analysis-
 import {boundedJson,readLocalJson,writeLocalJson} from '@/lib/local-json';
 import {emptyProfile,validateProfile} from '@/lib/player-profile';
 import {chatContext,referenceSources,type ChatSource} from '@/lib/chat-context';
-import {checkedGuidance,exactEvidence,validateGenerated,type ChatAnswer} from '@/lib/chat-policy';
+import {checkedGuidance,exactEvidence,endingEvidence,savedProfileAnswer,validateGenerated,type ChatAnswer} from '@/lib/chat-policy';
 import chatModel from '@/analysis/chat_model.json';
 export const runtime='nodejs';
 export const maxDuration=420;
@@ -61,13 +61,18 @@ export async function POST(request:Request) {
     const context=await chatContext(body.analysisId,body.rallies??{}),path=historyPath(body.analysisId);
     const history:Entry[]=await readLocalJson(path)??[];
     if(!Array.isArray(history))throw new Error('Chat history unreadable.');
-    let result=checkedGuidance(body.question,profile)??exactEvidence(body.question,context);
+    const recentEntries=history.filter(h=>h.evidenceHash===context.evidenceHash&&h.profileHash===profileHash).slice(-4);
+    const prior=recentEntries.at(-1);
+    const guidanceQuestion=prior?.mode==='guidance'&&/\b(shorter|simpler|change|adjust)\b/i.test(body.question)&&/\b(schedule|weekly|routine|plan)\b/i.test(prior.question)?prior.question+'\n'+body.question:body.question;
+    let result=checkedGuidance(guidanceQuestion,profile)??savedProfileAnswer(body.question,profile)??exactEvidence(body.question,context)??endingEvidence(body.question,context);
     if(!result) {
-      const recent=history.filter(h=>h.evidenceHash===context.evidenceHash&&h.profileHash===profileHash).slice(-2).map(h=>({question:h.question,answer:h.answer.slice(0,2000)}));
+      const recent=recentEntries.map(h=>({question:h.question,answer:h.answer.slice(0,1200)}));
       try{await access(join(process.cwd(),'data/hf-racquet-env/Scripts/python.exe'));}catch{throw new Error('Local retrieval/chat unavailable. Run optional RAG setup and check Ollama.');}
       workerRan=true;
       const generated=await runWorker({...context,question:body.question,profile,history:recent,references:referenceSources});
-      result=validateGenerated(generated,[...context.sources,...referenceSources]);
+      const available=[...context.sources,...referenceSources];
+      if(!Array.isArray(generated.sources)||generated.sources.some(s=>!available.some(a=>a.id===s.id&&a.text===s.text)))throw new Error('Local answer failed source checks. Retry.');
+      result=validateGenerated(generated,available.filter(s=>generated.sources.some(g=>g.id===s.id)));
     }
     const current=await chatContext(body.analysisId,body.rallies??{});
     const latestProfile=await readLocalJson(join(process.cwd(),'data/player/profile.json'));

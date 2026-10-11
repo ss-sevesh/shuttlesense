@@ -27,7 +27,7 @@ export async function chatContext(analysisId:string,rallies:unknown):Promise<Cha
   const evidence=reportEvidence(data,reviews,outcomes,losses);
   const evidenceHash=createHash('sha256').update(JSON.stringify(evidence)).digest('hex');
   const facts:ChatSource[]=[{id:'recording',kind:'original_evidence',title:'Selected recording',text:JSON.stringify({duration:data.duration,rallies:evidence.rallies.filter(r=>r.eligible).map(r=>({id:r.id,start:r.start,end:r.end,outcome:r.outcome,outcomeSource:r.outcomeSource})),limits:evidence.interpretation})}];
-  const sources:ChatSource[]=[];
+  const sources:ChatSource[]=[facts[0]];
   for(const rally of evidence.rallies.filter(r=>r.eligible)) {
     const add=(id:string,title:string,time:number,value:unknown)=>{const s={id,kind:'original_evidence',title,rallyId:rally.id,time,text:JSON.stringify(value),reportVersion:evidence.schemaVersion};sources.push(s);facts.push(s);};
     add('rally-'+rally.id,`Window ${rally.id}: boundaries and user outcome`,rally.start,{id:rally.id,start:rally.start,end:rally.end,unit:'seconds',outcome:rally.outcome,outcomeSource:rally.outcomeSource,boundarySource:rally.boundarySource});

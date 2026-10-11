@@ -4,7 +4,7 @@ import {referenceSources} from './chat-context';
 export type ChatAnswer={answer:string;citations:string[];sources:ChatSource[];mode:'evidence'|'guidance'|'scope';};
 const medical=/\b(pain|injur\w*|symptom\w*|diagnos\w*|medicat\w*|prescri\w*|disease\w*|diabet\w*|treat\w*|rehab\w*|clearance|cleared|supplement\w*|steroid\w*|chest|faint\w*|dizz\w*|pregnan\w*|blood|calori\w*|fasting|weight.?loss|lose.?weight|cutting|detox|dosage|drug\w*)\b/i;
 const food=/\b(food|eat|eating|meal\w*|diet\w*|nutrition|snack\w*|allerg\w*|fuel\w*|hydrati\w*)\b/i;
-const schedule=/\b(schedule|weekly|week|routine|plan|session\w*|training|practi[cs]e|drill\w*|exercise\w*|workout\w*)\b/i;
+const schedule=/\b(schedule|weekly|routine|plan|workout)\b|\b(?:draft|make|create|design)\b.{0,40}\b(?:session|training)\b/i;
 function response(answer:string,ids:string[],mode:ChatAnswer['mode']='guidance'):ChatAnswer {
   return {answer,citations:ids,sources:referenceSources.filter(s=>ids.includes(s.id)),mode};
 }
@@ -30,10 +30,25 @@ export function checkedGuidance(question:string,profile:PlayerProfile):ChatAnswe
   const minutes=Math.min(profile.sessionMinutes,30), warm=Math.min(5,Math.floor(minutes/3)),cool=warm,practice=minutes-warm-cool;
   const ordered=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].filter(d=>profile.availableDays.includes(d));
   const chosen=ordered.filter((day,index)=>{const gap=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].indexOf(day)-['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].indexOf(ordered[0]);return index===0||Math.min(gap,7-gap)>1;}).slice(0,2);
-  return response('Draft for the available days '+chosen.join(' and ')+': '+minutes+' minutes per session ('+warm+' minutes comfortable warm-up, '+practice+' minutes gentle ready-position / split-step and return-to-base practice, '+cool+' minutes easy cool-down). Use only a listed time slot; the app does not book or assume a start time. '+(profile.courtAccess?'Use your available court.':'Without court access, use a clear, non-slip space for gentle shadow movement.')+' Keep other days for recovery or your usual activity; this draft is not an extra load prescription. Adapt it with a coach to your level and goals; stop if uncomfortable.'+(profile.age!==null&&profile.age<18?' A parent/carer and coach should supervise young players.':''),['bwf-footwork','ais-recovery']);
+  const backhand=/\bbackhand\b/i.test(profile.goals),focus=backhand?'relaxed backhand grip changes and controlled net-shot technique':'gentle ready-position / split-step and return-to-base practice';
+  if(/\b(shorter|simpler)\b/i.test(question))return response(chosen.join(' and ')+': '+minutes+' minutes each. '+warm+' minutes comfortable warm-up, '+practice+' minutes '+focus+', then '+cool+' minutes easy cool-down. Stay within your saved time slots; stop if uncomfortable.'+(profile.age!==null&&profile.age<18?' Involve a parent/carer and coach.':''),[backhand?'bwf-grips':'bwf-footwork','ais-recovery']);
+  return response('Draft for the available days '+chosen.join(' and ')+': '+minutes+' minutes per session ('+warm+' minutes comfortable warm-up, '+practice+' minutes '+focus+', '+cool+' minutes easy cool-down). Use only a listed time slot; the app does not book or assume a start time. '+(profile.courtAccess?'Use your available court.':'Without court access, use a clear, non-slip space for gentle shadow movement.')+' Keep other days for recovery or your usual activity; this draft is not an extra load prescription. Adapt it with a coach to your level and goals; stop if uncomfortable.'+(profile.age!==null&&profile.age<18?' A parent/carer and coach should supervise young players.':''),[backhand?'bwf-grips':'bwf-footwork','ais-recovery']);
+}
+export function savedProfileAnswer(question:string,profile:PlayerProfile):ChatAnswer|null {
+  if(!/\b(my|saved)\b/i.test(question)||!/\b(profile|level|days|goals?|availability|preferences)\b/i.test(question))return null;
+  if(/\b(schedule|plan|food|eat|drill|improve|explain|why|how)\b/i.test(question))return null;
+  const fields:string[]=[];
+  if(/\blevel\b/i.test(question))fields.push('Level: '+(profile.level||'not saved'));
+  if(/\b(days|availability)\b/i.test(question))fields.push('Available days: '+(profile.availableDays.join(', ')||'not saved'));
+  if(/\bgoals?\b/i.test(question))fields.push('Goal: '+(profile.goals||'not saved'));
+  return fields.length?response(fields.join('. ')+'.',[]):null;
 }
 export function exactEvidence(question:string,context:ChatContext):ChatAnswer|null {
-  if(!/\b(outcomes?|won|lost|wins?|losses|how many|duration|length|timestamps?|seconds?|pixels?|angles?|gap|boundar\w*|start|end)\b/i.test(question))return null;
+  const recording=/\b(recording|video|match|rally|rallies|window|marked|recorded)\b/i.test(question);
+  const exact=/\b(outcomes?|how many|duration|length|timestamps?|seconds?|pixels?|angles?|gap|boundar\w*)\b/i.test(question)||(recording&&/\b(won|win|lost|lose|start|end)\b/i.test(question));
+  if(!exact||(!recording&&!context.facts.length))return null;
+  // Explanations and general techniques belong to retrieval, even when they mention a loss or ending.
+  if(/\b(why|explain|improve|technique|difference|learn)\b/i.test(question))return null;
   if(!context.facts.length)return response('Select a recording to look up its exact evidence.',[],'scope');
   const summary=JSON.parse(context.facts[0].text),windowId=/\b(?:rally|window)\s+(\d+)\b/i.exec(question),timestamp=/\b(\d+(?:\.\d+)?)\s*(?:s\b|seconds?)/i.exec(question);
   const facts=context.facts.slice(1).filter(s=>(!windowId||s.rallyId===Number(windowId[1]))&&(!timestamp||Math.abs((s.time??-1)-Number(timestamp[1]))<0.002));
@@ -45,13 +60,41 @@ export function exactEvidence(question:string,context:ChatContext):ChatAnswer|nu
   const answer='Selected recording length: '+summary.duration+' seconds. '+rallies.length+' completed or verified windows in this selection.\n'+rallies.map((r:{id:number;start:number;end:number;outcome:string;outcomeSource:string})=>`Window ${r.id}: ${r.start}–${r.end} s; ${r.outcome} (${r.outcomeSource.replace(/_/g,' ')}).`).join('\n')+'\nOutcomes are user markings. Contact, intent and the cause of a loss remain unverified.';
   return {answer,citations:['recording',...facts.filter(s=>s.id.startsWith('rally-')).map(s=>s.id)],sources:[context.facts[0],...facts.filter(s=>s.id.startsWith('rally-'))],mode:'evidence'};
 }
+export function endingEvidence(question:string,context:ChatContext):ChatAnswer|null {
+  if(!/\b(why|explain|show|evidence|cause)\b/i.test(question)||!/\b(ending|lost|loss|lose)\b/i.test(question))return null;
+  if(!context.facts.length)return response('Select a recording to review its ending evidence; a loss cause cannot be determined from your profile.',[],'scope');
+  const windows=context.facts.filter(s=>s.id.startsWith('rally-')).sort((a,b)=>(a.time??0)-(b.time??0));
+  const id=/\b(?:rally|window)\s+(\d+)\b/i.exec(question);
+  const window=id?windows.find(s=>s.rallyId===Number(id[1])):/\blast\b/i.test(question)?windows.at(-1):/\bsecond\b/i.test(question)?windows[1]:/\bfirst\b/i.test(question)?windows[0]:windows.length===1?windows[0]:undefined;
+  if(!window)return response('Choose the rally/window to review its ending evidence. The cause of a loss remains unverified.',[],'scope');
+  const facts=context.facts.filter(s=>s.rallyId===window.rallyId),ending=facts.find(s=>s.id.startsWith('ending-'));
+  const boundary=JSON.parse(window.text);
+  let answer=`Window ${window.rallyId}: ${boundary.outcome} (${String(boundary.outcomeSource).replace(/_/g,' ')}).`;
+  const sources=[window];
+  if(ending){
+    const image=JSON.parse(ending.text),pose=facts.find(s=>s.id.startsWith('pose-')&&JSON.parse(s.text).frame===image.frame);
+    const hit=pose?JSON.parse(pose.text):null,shuttle=hit?.shuttle;
+    answer+=` The estimated near-player pose was ${image.pose}.`;
+    if(shuttle?.status==='tracked_image_estimate'){
+      answer+=` At ${shuttle.time} s, the tracked shuttle was ${shuttle.horizontal}, ${shuttle.vertical}.`;
+      answer+=Number.isFinite(shuttle.wristGapPx)?` The wrist-proxy image gap was ${shuttle.wristGapPx} pixels.`:' A same-frame wrist-proxy gap is unavailable.';
+    }else answer+=' Same-frame shuttle position and wrist-proxy separation are unavailable.';
+    sources.push(ending);if(pose)sources.push(pose);
+  }else answer+=' No exact ending image measurement is available for this window.';
+  answer+=' This describes visible posture and image separation. Contact, first ground touch, intent and the cause of the ending remain unverified; a marked outcome does not determine them.';
+  return {answer,citations:sources.map(s=>s.id),sources,mode:'evidence'};
+}
 export function validateGenerated(answer:unknown,sources:ChatSource[]):ChatAnswer {
   const result=answer as {answer:string;citations:string[]};
   if(!result||typeof result.answer!=='string'||!result.answer.trim()||result.answer.length>4000||!Array.isArray(result.citations)||!result.citations.length||result.citations.some(id=>typeof id!=='string'||!sources.some(s=>s.id===id)))throw new Error('Local answer failed citation checks. Retry.');
   // Medical, personal-plan and unsupported-impact output fails closed before display or history.
-  if(medical.test(result.answer)||/\b(?:eat|drink|take|consume|increase|decrease|restrict|cut|skip|fast|medicines?|pills?|capsules?|cure|heal|fracture|rupture|ligament|insulin|ibuprofen|creatine|kratom)\b|\b(?:perform|do)\s+\d|\b(?:mg|kcal|calories|metres|meters)\b|\b(?:confirmed|proven|definite)\s+(?:impact|contact|cause)|\b(?:you should|you must|you need to|your injury|your disease)\b/i.test(result.answer))throw new Error('Local answer failed scope checks. Ask about recording evidence or use the checked food/schedule questions.');
+  if(medical.test(result.answer)||/\b(?:eat|drink|consume|medicines?|pills?|capsules?|cure|heal|fracture|rupture|ligament|insulin|ibuprofen|creatine|kratom)\b|\b(?:perform|do)\s+\d|\b(?:mg|kcal|calories|metres|meters)\b|\b(?:confirmed|proven|definite)\s+(?:impact|contact|cause)|\b(?:your injury|your disease)\b/i.test(result.answer))throw new Error('Local answer failed scope checks. Ask about recording evidence or use the checked food/schedule questions.');
   const cited=sources.filter(s=>result.citations.includes(s.id)).map(s=>s.text).join(' ');
   const numbers=(cited.match(/\b\d+(?:\.\d+)?\b/g)??[]).map(Number);
-  if((result.answer.match(/\b\d+(?:\.\d+)?\b/g)??[]).some(n=>!numbers.includes(Number(n)))||/\b(because|caused|missed|late|fault|mistake)\b|contact (?:occurred|was made)|\b(?:proves|establishes)\b/i.test(result.answer))throw new Error('Local answer asserted an unsupported number or cause. Ask for exact evidence.');
+  const prose=result.answer.replace(/^\s*\d+[.)]\s+/gm,'');
+  if(/\b(?:daily|weekly|every\s+(?:day|morning|evening|week)|times?\s+(?:a|per)\s+(?:day|week))\b/i.test(prose))throw new Error('Local answer failed scope checks. Personal schedules use checked guidance.');
+  const hasEvidence=sources.some(s=>result.citations.includes(s.id)&&s.kind!=='reference');
+  const personalCause=prose.split(/[.!?\n]/).some(sentence=>/\b(lost|loss|missed|fault|mistake)\b/i.test(sentence)&&/\b(because|due to|caused)\b/i.test(sentence));
+  if((prose.match(/\b\d+(?:\.\d+)?\b/g)??[]).some(n=>!numbers.includes(Number(n)))||personalCause||(hasEvidence&&/\b(because|caused|missed|late|fault|mistake)\b/i.test(prose))||/contact (?:occurred|was made)|\b(?:proves|establishes)\b/i.test(prose))throw new Error('Local answer asserted an unsupported number or cause. Ask for exact evidence.');
   return {...result,sources:sources.filter(s=>result.citations.includes(s.id)),mode:'evidence'};
 }
