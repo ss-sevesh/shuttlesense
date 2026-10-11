@@ -1,5 +1,13 @@
 # Review a recording
 
+Start at **http://127.0.0.1:3000**. Choose **Enter workspace**, add an optional
+browser-local display name or continue as a guest, then use **Upload Match**.
+The workspace lives at **/workspace**; the **Website** link returns to the landing
+page. Upload, mark the four singles-court corners, select analysis features, and
+start processing. Once ready, review the rallies and mark outcomes before generating
+a report in **Practice Plan**. Saved full reviews return to the same recording in
+**Rally Review**. Existing root links with `view` or `analysis` still work.
+
 The main workflow is **select rally → inspect replay and movement → review pose
 and ending → turn the evidence into a practice report**. The feature walkthrough
 in the README demonstrates these controls using generated data.
@@ -109,3 +117,30 @@ Rally numbers match the selector; window IDs preserve the original detector iden
 **Download reviewed JSON**
 keeps original detector data and browser corrections separate. Matching reports
 reopen from the local cache; changed windows/outcomes require a refreshed report.
+## Website and local entry
+
+Open `/welcome` for the ShuttleSense website and `/login` for the local entry
+screen. Enter a display name or choose Continue as guest. The workspace header
+shows the saved name; click it to change players. Guest entry clears only that
+name, preserving recordings, reviewed outcomes and annotations. If local storage
+is blocked, guest access remains available. This is a local convenience screen,
+not authentication or access control. No password, email or account request is sent.
+
+The editorial page uses embedded illustrative badminton imagery and diagrams;
+they are not tracking results. Its features link to the actual workspace and
+synthetic demo. The full-screen menu and recording-tips dialog support Escape and
+keyboard focus, and motion respects the system reduced-motion setting. Font and
+smooth-scroll CDNs are optional for navigation; the core analysis stays local.
+
+Fresh analyses keep rally outcomes as Unknown. The detected rally count and replay
+buttons are available before marking outcomes; zero marked losses does not mean
+zero detected rallies. Use Replay selected rally or either detected replay button.
+The live heatmap starts empty outside rally time; Rally total shows full coverage.
+
+The selected completed rally shows its available exact attempt photo, same-frame
+shuttle/pose description and an optional practice suggestion beside the video.
+Possible intent remains uncertain. How rally ended plays only the final three
+seconds of the selected window; Replay selected rally plays the full window.
+Confirmed losses can additionally use the separate local vision explanation.
+Report overview counts come from reviewed metadata; confirmed-loss photos remain
+attached after text generation in the illustrated HTML/PDF exports.

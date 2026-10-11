@@ -1,5 +1,154 @@
 # ShuttleSense session handoff
 
+## Approved connected website/workspace delivery (2026-10-11)
+
+User explicitly approved both designs and requested proper start navigation,
+necessary changes and GitHub commits/push. This supersedes the approval gates in
+older entries below. Root redirects to the single-file website; local entry and
+guest now enter /workspace. Existing root view/analysis links redirect with their
+values preserved. Workspace website link is available on mobile too. Full-review
+Back to Workspace preserves the selected analysis and opens Rally Review. Demo
+and movement return to /workspace. README/user guide explain the complete flow.
+No auth gate, new dependency or model/worker change.
+
+Production build/typecheck, 7 Python validator tests and 21 distinct focused browser
+checks passed (20 initial plus corrected journey selector; final 12 website/workspace
+checks repeated after mobile return-link adjustment all pass). Actual website is
+open in Chrome page3; production port3000 session93094. Movement preview refreshed.
+Real approved Paris434 run from prior task: 84 seconds of footage, original/job
+request written11:27:27, result complete11:38:57 = approximately11m30s processing.
+Full browser upload test11.7minutes includes setup/checks. Not a universal timing;
+selected YOLO/TrackNet/ground/pose/BST/ending on, whole-video LLM off.
+Prior actual report regeneration around43seconds; reports are a separate action.
+Current navigation tests use cached reports; worker not rerun for routing/CSS.
+
+Committing report fixes, connected editorial design and restored rally evidence
+separately, then pushing all approved changes to origin/main. Private video,
+analysis data and exports remain ignored. Unrelated untracked shuttle_sense/
+directory remains untouched. Earlier request/implementation history follows.
+
+
+## Attempt panel restored and ending-only replay (2026-10-11)
+
+User requested the former exact attempt photo, contextual action description and
+alternative practice suggestion beside the video, plus an option to replay only
+how the rally ended. LossReview now renders that panel for any selected completed
+rally with ending evidence, including Unknown outcomes. Existing cached vision
+loss explanations remain preferred; before generation the fallback uses exact
+same-frame shuttleContext, pose, camera side and wrist gap, clearly labels possible
+intent as unverified and supplies optional positioning practice. Vision generation
+remains confirmed-loss-only; no outcome copying/automatic winner decisions.
+AnalysisReview adds How rally ended: final3seconds, bounded by selected/reviewed
+window, using existing camera replay/stop handler. Full replay remains available.
+
+Report validation had rejected valid10-repetition and30-second practice doses;
+fixed the shared regex, retained timestamp/non-dose rejection, added unit coverage.
+Report v18 uses reviewed metadata for whole-recording overview duration/counts so
+synthesis cannot summarize just its last rally. Other report sections remain local
+Qwen text generation, every eligible pose/window supplied, photos attached after.
+Python promptVersion and TS schemaVersion bothv18 invalidate earlier caches.
+
+During the live work the user marked fresh rally3 Lost; preserve that marking.
+Fresh rally5 remains Unknown. Do not reset those to satisfy empty-state tests:
+those tests intercept outcome GET only in their own browser context. Generated
+fresh report contains both windows and correct1loss/1unknown counts; one confirmed-
+loss photo embedded. Old approved report still has2confirmed-loss photos.
+A failed reload test was caused by an outcome changing while generation ran, not
+cache corruption; regeneration with current markings/reload nowPASS.
+
+Production build/typecheck PASS;16 focused browser/report regressions and7 Python
+validator tests PASS. Both ending replay starts37.2/78.5seconds and stop boundaries
+verified; photo/frame alignment preserved, mobile/axe and exports checked.
+Actual local Qwen reports regenerated for both approved and fresh Paris434 jobs.
+Fresh PDF output/pdf/shuttlesense-fresh-report.pdf,3pages, visually rendered/reviewed
+in artifacts/fresh-report-page-*.png. UI artifacts/restored-attempt-*.png.
+Production3000 session21572. Fresh review /review/3e8908b7-6f33-4626-8dcc-a66b1a3947c3.
+No commits/pushes; design approval gate remains active.
+
+## Zero-rally display diagnosis and full upload test (2026-10-11)
+
+User requested a real upload because the review appeared to show zero rallies.
+Reproduced fresh-upload confusion: latest analysis had2 completed rallies but0
+marked losses; live heatmap at time0 also shows0 because it is outside rally time.
+LossReview now shows detected completed count separately, no0-lost-rallies heading
+for unmarked results, both detected replay buttons and initially expanded outcome
+controls. AnalysisReview adds Replay selected rally and explains an empty live map.
+Overview labels Reviewable rallies and gives the positive ready-to-replay count.
+A pending outcome fetch cannot reset an intervening user rally selection (ref guard).
+No automatic outcome marking or model/worker changes; loss coaching remains gated.
+
+Uploaded ONLY approved Paris434 via browser, marked four court corners, enabled
+BST/ending switches, ran full actual worker: PASS in11.7minutes. Fresh job:
+3e8908b7-6f33-4626-8dcc-a66b1a3947c3,84s, completed windows29.4333-40.2 and
+58.2333-81.5;1496 shuttle proposals,36 hit-pose frames,2 ending evidence records.
+Fresh outcomes remain Unknown; prior confirmed-loss analysis is unchanged.
+Build/typecheck and19 production regressions PASS, including both fresh replay
+buttons, mobile/axe and deterministic delayed-outcome selection test. A failing
+pre-fix regression was captured under artifacts/unmarked-rallies-before-fix.
+Production3000 session80276, debug3001 stopped. Chrome page3 shows fresh review.
+Screenshots artifacts/paris434-fresh-visible-rallies.png and fresh-overview.png.
+Upload evidence artifacts/paris434-current-upload.json and real-upload test folder.
+No commits/pushes; original user design approval gate still applies.
+
+## Editorial workspace reconstruction - awaiting approval (2026-10-11)
+
+Latest user approved the website direction and requested matching internal pages.
+Completed shared Onest (local licensed400/500 fonts), black/lime court headers,
+rounded frame/sidebar/navigation, oversized titles, metrics band, numbered next
+steps, library, report cards/download controls, exact loss review, technical panels,
+upload/calibration/model controls and demo/movement pages. Existing data handlers,
+photo overlay coordinates, compact160px photo, five-row paging and model defaults
+remain intact. Court headers explicitly identify the image as illustrative.
+No new dependency, no authentication change, no Git mutation or push.
+
+Production build/typecheck and17 focused Playwright checks pass, including all
+four tabs at320/768/1024/1440, both themes/axe, exact-photo/paging/replay controls,
+PDF print/HTML exports, local entry/menu and approved Paris434 preview/calibration/
+model switches at320/768/1440. Full worker/model regeneration not rerun for CSS.
+Existing unrelated untracked shuttle_sense/ remains untouched.
+Production server3000 session99484. Screenshots artifacts/editorial-*.png and
+workspace-*.png. Main preview /?view=overview&analysis=c278680c-fb33-4b1c-91d1-8daa17db95f6.
+All website/login/workspace changes are LOCAL; user approval required before push.
+
+## Local entry and editorial website - awaiting user approval (2026-10-11)
+
+User selected a local entry screen, then explicitly required preview/approval
+before any GitHub push. NO new commits or pushes have been made for this change.
+Current HEAD remains64adc92 from the prior completed PDF task. Preserve this
+approval gate; do not infer approval from silence or existing push authorization.
+
+Single standalone public/index.html contains the website and a dedicated entry
+view, native HTML/CSS/JS, embedded existing illustrative badminton image and SVGs.
+Onest and Lenis1.1.18 use the supplied CDN importmap; native scrolling/system
+fonts keep navigation functional if CDNs fail. Adapted the Baseline editorial
+structure into ShuttleSense black/lime identity: hero loader/reveals, adaptive rem,
+parallax, tool and workflow carousels, feature rows, evidence cards, factual
+capability band, review questions, footer, accessible menu and tips dialog.
+No tennis photos, fake users/coaches/member counts or private recording images.
+The ghost headline is decorative; accessible headings/captions preserve meaning.
+
+/welcome redirects to/index.html. /login redirects to/index.html?screen=login.
+Root/ remains the real workspace; its header links to Website and Local login.
+The name is optional browser-local convenience, not authentication or security.
+Key shuttlesense-local-player stores only{name}; guests clear that key only.
+Names are validated, safely rendered and restored; blocked storage still allows
+guest access. No password/email collected, no account submission, no model changes.
+
+Build/typecheck and19 production browser checks passed; final website-only checks
+were repeated after accessibility/loader polish. All desktop/mobile views reviewed,
+normal Lenis confirmed in isolated Chrome, failed-CDN/native and reduced-motion
+flows checked, keyboard traps/Escape/focus verified, display name/guest/back paths
+and no POST requests verified. Existing Paris434 review, upload controls, exact
+photo/PDF export and dark-mode tests remain passing. Full real upload was not
+rerun because the worker and upload flow are unchanged. Other browsers unchecked.
+
+Preview server3000 runs production in session42094. Chrome isolated context
+shuttlesense-entry-review: page4 login; page5 website. Artifacts: login-desktop.png,
+login-mobile.png, landing-hero.png, landing-desktop.png, landing-mobile.png.
+Plan/checklist: tasks/entry-design-plan.md and tasks/entry-design-todo.md.
+Existing unrelated untracked shuttle_sense/ directory is untouched.
+
+
 ## Professional PDF export and GitHub delivery (2026-10-11)
 
 The shared reportHtml renderer now supplies a white/forest-green A4 editorial
