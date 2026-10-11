@@ -13,7 +13,7 @@ from review_job import ROOT, write_json
 
 CONFIG = json.loads((ROOT / 'analysis/report_model.json').read_text(encoding='utf-8'))
 MODEL_DIR = ROOT / 'data/models/match-report-qwen3-4b'
-PROMPT_VERSION = 'match-report-v17'
+PROMPT_VERSION = 'match-report-v18'
 CONTEXT = 16384
 OUTPUT_TOKENS = 1200
 FIELDS = ('summary', 'observations', 'training', 'uncertainty')
@@ -75,7 +75,7 @@ def parse_report(text):
     if any(re.search(r'\[\s*[-\d.]+\s*,|\b(?:court|image|normalized) coordinates|cross[- ]court', result[key], re.I)
            for key in ('summary', 'observations', 'training')):
         raise ValueError('Report quotes coordinates or an unsupported cross-court interpretation.')
-    if not re.search(r'(?<![\d.])\b(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:sets?|repetitions?|reps?|times?|seconds?|minutes?)\b', result['training'], re.I):
+    if not re.search(r'(?<![\d.])\b(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)(?:\s+|[-\u2010-\u2014])(?:sets?|repetitions?|reps?|times?|seconds?|minutes?)\b', result['training'], re.I):
         raise ValueError('Report training suggestion needs a concrete practice dose.')
     return result
 
@@ -217,6 +217,13 @@ def generate_answer(tokenizer, evidence, synthesis=False, request_log=None, repa
     return answer
 
 
+def recording_summary(recording, rallies):
+    counts = {outcome: sum(r['outcome'] == outcome for r in rallies) for outcome in ('lost', 'won', 'unknown')}
+    return (f"This {recording['duration']:g}-second recording contains {len(rallies)} completed or verified rally windows. "
+            f"Outcomes: {counts['lost']} user-marked {'loss' if counts['lost'] == 1 else 'losses'}, "
+            f"{counts['won']} user-marked {'win' if counts['won'] == 1 else 'wins'} and {counts['unknown']} unknown.")
+
+
 def main(directory, key):
     started = time.perf_counter()
     directory = directory.resolve()
@@ -267,6 +274,8 @@ def main(directory, key):
     answer = generate_answer(tokenizer, {'recording': evidence['recording'], 'interpretation': evidence['interpretation'],
         'excludedPoseCount': evidence['excludedPoseCount'], 'unconfirmedWindows': sum(not r['eligible'] for r in evidence['rallies']),
         'rallies': rally_reports, 'limitations': evidence['limitations']}, True, request_log)
+    # Whole-recording counts come from reviewed metadata, never a model's choice of one rally.
+    answer['summary'] = recording_summary(evidence['recording'], rally_reports)
     write_json(output / 'report.json', {'status': 'experimental', 'promptVersion': PROMPT_VERSION,
         'analysisSha256': data['analysisSha256'], 'evidenceSha256': key, 'model': CONFIG['model'], 'revision': CONFIG['revision'],
         'quantization': 'Q4_K_M', 'modelSha256': CONFIG['sha256'], 'generatedAt': datetime.now(timezone.utc).isoformat(),

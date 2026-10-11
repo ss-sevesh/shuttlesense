@@ -48,3 +48,34 @@ test('approved Paris recording generates and reopens a local evidence-grounded m
   expect(saved).toEqual(evidence);
   await page.reload();await expect(region).toContainText(report.answer.summary);
 });
+
+test('fresh Paris434 report generates with both rally windows and preserves current marked outcomes',async({page,request})=>{
+  test.setTimeout(900000);
+  const fresh=JSON.parse(readFileSync('artifacts/paris434-current-upload.json','utf8')).id;
+  const markings=await (await request.get(`/api/analysis/${fresh}/landing?losses=1`)).json();
+  await page.goto('/review/'+fresh);
+  const region=page.getByRole('region',{name:'AI match report'});
+  const response=page.waitForResponse(r=>r.url().endsWith('/report')&&r.request().method()==='POST'&&JSON.parse(r.request().postData()||'{}').generate!==false,{timeout:850000});
+  await region.getByRole('button',{name:/Generate match report|Refresh match report/}).click();
+  const generated=await response;expect(generated.status(),await generated.text()).toBe(200);
+  const {report,evidence}=await generated.json();
+  expect(report.rallyReports).toHaveLength(2);
+  expect(report.rallyReports.map((r:{rallyId:number;outcome:string})=>r.outcome)).toEqual(report.rallyReports.map((r:{rallyId:number})=>markings.outcomes[r.rallyId] ?? 'unknown'));
+  expect(evidence.allHitPoses.length).toBeGreaterThan(0);
+  for(const text of Object.values(report.answer))expect(typeof text==='string'&&text.trim().length>0).toBe(true);
+  await expect(region.getByRole('button',{name:'Download report',exact:true})).toBeEnabled();
+  await region.getByText('Read each rally review',{exact:true}).click();
+  await expect(region).toContainText('29.4');await expect(region).toContainText('81.5');
+  const download=page.waitForEvent('download');await region.getByRole('button',{name:'Download report',exact:true}).click();
+  const saved=await download;await saved.saveAs('artifacts/paris434-fresh-report.html');
+  const html=readFileSync((await saved.path())!,'utf8');
+  expect(html).toContain('Rally 1 (window 3)');expect(html).toContain('Rally 2 (window 5)');
+  const photoCount=evidence.rallies.filter((r:{eligible:boolean;outcome:string;ending?:{evidence:unknown}})=>r.eligible&&r.outcome==='lost'&&r.ending?.evidence).length;
+  expect([...html.matchAll(/<image href="data:image\/jpeg;base64,/g)]).toHaveLength(photoCount);
+  const printable=await page.context().newPage();await printable.setContent(html,{waitUntil:'load'});
+  await printable.emulateMedia({media:'print'});mkdirSync('output/pdf',{recursive:true});
+  const pdf=await printable.pdf({path:'output/pdf/shuttlesense-fresh-report.pdf',preferCSSPageSize:true,printBackground:true});
+  expect((pdf.toString('latin1').match(/\/Type \/Page\b/g)||[]).length).toBeGreaterThanOrEqual(3);
+  await printable.close();
+  await page.reload();await expect(region).toContainText(report.answer.summary);
+});

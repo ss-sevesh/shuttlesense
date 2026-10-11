@@ -1,7 +1,7 @@
 import json
 import unittest
 from unittest.mock import patch
-from match_report import batches, fits, parse_report, messages, generate_answer, validate_grounding, CONTEXT, OUTPUT_TOKENS
+from match_report import batches, fits, parse_report, messages, generate_answer, validate_grounding, recording_summary, CONTEXT, OUTPUT_TOKENS
 
 
 class Tokenizer:
@@ -10,6 +10,19 @@ class Tokenizer:
 
 
 class ReportTests(unittest.TestCase):
+    def test_recording_summary_covers_mixed_outcomes_without_guessing_unknowns(self):
+        summary = recording_summary({'duration': 84}, [{'outcome': 'lost'}, {'outcome': 'unknown'}])
+        for fact in ('84-second', '2 completed or verified', '1 user-marked loss', '0 user-marked wins', '1 unknown'):
+            self.assertIn(fact, summary)
+
+    def test_hyphenated_practice_doses_are_valid_but_timestamps_are_not(self):
+        answer = dict(summary='Outcome unknown.', observations='Tracked estimates only.',
+                      training='', uncertainty='Contact and intent are unverified.')
+        for dose in ('10-repetition drill', '30-second practice', 'two-minute practice'):
+            self.assertEqual(parse_report(json.dumps({**answer, 'training': dose}))['training'], dose)
+        with self.assertRaisesRegex(ValueError, 'practice dose'):
+            parse_report(json.dumps({**answer, 'training': 'Review the attempt at 80.533 seconds.'}))
+
     def test_ending_prose_must_discuss_shuttle_at_its_own_time(self):
         evidence = {'ending': {'evidence': {'time': 39.466667,'distancePx':48.1076}}, 'endingContext': []}
         for text in ('At 30.033 s, the arm is overhead.', 'At 39.467 s, the arm is raised.',
