@@ -7,6 +7,7 @@ import { acquireAnalysisLock, jobPath, jobsRoot, localRequest } from '@/lib/anal
 export const runtime = 'nodejs';
 export const maxDuration = 300;
 const execute = promisify(execFile);
+const promptVersion = 'before-landing-v5-shuttle-context';
 const validFrame = (value: unknown): value is number => Number.isSafeInteger(value) && (value as number) >= 0 && (value as number) < 100000000;
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -35,6 +36,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return new Response(await readFile(join(output, 'frames', `${image}.jpg`)), { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' } });
     }
     if (query.has('rally') && String(report.rallyId) !== query.get('rally')) return new Response(null, {status:204});
+    if (!query.has('image') && report.rallyId && report.coaching?.promptVersion !== promptVersion) return new Response(null, {status:204});
     return Response.json(report, { headers: { 'Cache-Control': 'no-store' } });
   } catch { return query.has('rally') ? new Response(null, {status:204}) : Response.json({ error: 'Before-landing review not found.' }, { status: 404 }); }
 }

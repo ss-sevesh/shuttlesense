@@ -11,7 +11,7 @@ MODEL = 'Qwen/Qwen3-VL-2B-Instruct'
 REVISION = '89644892e4d85e24eaac8bacfd4f463576704203'
 MODEL_DIR = Path('data/models/shot-coach-qwen3-vl2b')
 PROMPT_VERSION = 'five-frames-v1'
-LANDING_PROMPT_VERSION = 'before-landing-v2-loss-bounds'
+LANDING_PROMPT_VERSION = 'before-landing-v5-shuttle-context'
 SHOT_TYPES = ['unknown', 'smash', 'clear', 'drop', 'lift', 'drive', 'net shot', 'defensive net shot',
               'push', 'net kill', 'crosscourt net shot', 'short serve', 'long serve']
 
@@ -137,6 +137,9 @@ def coach(directory, landing=False):
                 cached = json.loads(saved.read_text())
                 if cached.get('status') == 'experimental' and cached.get('evidenceSha256') == key:
                     parse_answer(json.dumps(cached['answer']))
+                    if landing:
+                        from landing_coach import validate_loss_answer
+                        validate_loss_answer(cached['answer'], contact)
                     hit['coaching'] = cached
                     continue
             except (ValueError, TypeError, KeyError):
@@ -150,22 +153,38 @@ def coach(directory, landing=False):
             for frame in contact['frames']:
                 with Image.open(frames / f'{frame}.jpg') as image:
                     picture = image.convert('RGB')
-                    picture.thumbnail((512, 512))
+                    context = next((r for r in contact.get('shuttleContext', []) if r['frame'] == frame), None)
+                    if context and context.get('playerBox'):
+                        x, y, w, h = context['playerBox']
+                        points = [(x, y), (x+w, y+h)] + ([context['shuttlePoint']] if context.get('shuttlePoint') else [])
+                        left, top = min(p[0] for p in points), min(p[1] for p in points)
+                        right, bottom = max(p[0] for p in points), max(p[1] for p in points)
+                        picture = picture.crop((max(0, int((left-.12)*image.width)), max(0, int((top-.12)*image.height)),
+                                                min(image.width, int((right+.12)*image.width)), min(image.height, int((bottom+.12)*image.height))))
+                    # Bound five-image inference memory; original evidence JPEGs stay full resolution.
+                    picture.thumbnail((320, 320) if landing else (512, 512))
                     images.append(picture)
             messages = [{'role': 'user', 'content': [{'type': 'image'} for _ in images] + [{'type': 'text', 'text': prompt(hit, fps)}]}]
+            if landing:
+                messages.insert(0, {'role':'system','content':[{'type':'text','text':'You describe badminton image evidence. Use supplied timestamps and tracked image measurements exactly. Return concise JSON. Explain only visible body movement and shuttle relations. Contact, intent, timing error and cause of a marked loss are unknown. Never infer them from an image gap.'}]})
             for attempt in range(3):
                 text = processor.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
                 inputs = processor(text=text, images=images, return_tensors='pt').to('cuda', dtype=torch.bfloat16)
+                print(f'Coaching attempt {attempt+1}: {inputs["input_ids"].shape[1]} input tokens', flush=True)
                 with torch.inference_mode():
-                    generated = model.generate(**inputs, do_sample=False, max_new_tokens=300, max_time=60, use_cache=True)
+                    generated = model.generate(**inputs, do_sample=False, max_new_tokens=600 if landing else 300, max_time=60, use_cache=True)
                 raw = processor.batch_decode(generated[:, inputs['input_ids'].shape[1]:], skip_special_tokens=True)[0]
                 try:
                     answer = parse_answer(raw)
+                    if landing:
+                        from landing_coach import validate_loss_answer
+                        validate_loss_answer(answer, contact)
                     break
-                except ValueError:
+                except ValueError as error:
+                    print(f'Coaching response rejected: {error}', flush=True)
                     if attempt == 2: raise
                     messages.extend([{'role': 'assistant', 'content': [{'type': 'text', 'text': raw}]},
-                                     {'role': 'user', 'content': [{'type': 'text', 'text': 'Fix the JSON. Exactly shotType, visibleEvidence, uncertainty, coaching. Every value must be plain text, not an object or list. Use unknown if unclear.'}]}])
+                                     {'role': 'user', 'content': [{'type': 'text', 'text': 'Correct this review: '+str(error)+'. Exactly shotType, visibleEvidence, uncertainty, coaching. Every value must be plain text. Use the supplied shuttle context and exact ending timestamp. Use unknown shotType.'}]}])
             if hit['play_status'] != 'possible_play':
                 answer['shotType'] = 'unknown'
             hit['coaching'] = {**metadata, 'status': 'experimental', 'evidenceSha256': key, 'answer': answer,

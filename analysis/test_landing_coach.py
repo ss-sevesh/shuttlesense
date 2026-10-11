@@ -1,19 +1,40 @@
 import unittest
-from landing_coach import before_frames, landing_prompt, pose_context, loss_frames
+from landing_coach import before_frames, landing_prompt, pose_context, loss_frames, shuttle_context, validate_loss_answer
 
 
 class LandingTests(unittest.TestCase):
+    def test_same_frame_shuttle_context_and_grounded_loss_validation(self):
+        player={'side':'near','trackId':1,'box':[.4,.5,.1,.3],'court':[.5,.8],'poseDetected':False}
+        data={'fps':30,'width':1000,'height':500,'samples':[{'time':1,'people':[player]}],
+              'shuttle':[{'time':1,'point':[.7,.7]}]}
+        rows=shuttle_context(data,[30,31])
+        self.assertEqual(rows[0]['horizontal'],'camera-right of player box')
+        self.assertEqual(rows[0]['vertical'],'within player box height')
+        self.assertNotIn('wristGapPx',rows[0])
+        self.assertEqual(rows[1]['status'],'unavailable')
+        evidence={'ending':{'evidence':{'time':1}}}
+        with self.assertRaises(ValueError):validate_loss_answer({'visibleEvidence':'The player is in a ready stance.'},evidence)
+        validate_loss_answer({'visibleEvidence':'At 1.000 s, the tracked shuttle is camera-right of the player. A return is possible; contact is unverified.'},evidence)
+        text=landing_prompt({'rallyId':3,'ending':{'evidence':{'frame':30,'time':1.,'distancePx':48.1,'pose':'Arm at torso level'}},'shuttleContext':rows})
+        self.assertIn('At 1.000 s',text)
+        self.assertIn('48.1 px',text)
+        self.assertIn('camera-right of player box',text)
+        for text in ('At 1.000 s, the shuttle is camera-right and the hand makes contact.',
+                     'At 1.000 s, the shuttle gap is consistent with forward motion.'):
+            with self.assertRaises(ValueError):validate_loss_answer({'visibleEvidence':text},evidence)
+
     def test_loss_frames_stay_after_previous_hit_and_inside_camera_segment(self):
         data = {'fps':30,'sceneSummary':{'courtSegments':[[0,10]]},'shots':[
             {'side':'near','time':8.5,'playStatus':'estimated_play_window'},
             {'side':'near','time':9.8,'playStatus':'possible_play'}],
-            'endingReview':[{'rallyId':3,'evidence':{'time':9.7}}]}
+            'endingReview':[{'rallyId':3,'evidence':{'time':9.7,'frame':291}}]}
         rally = {'id':3,'start':7,'end':10}
         frames = loss_frames(data,rally)
         self.assertEqual(len(set(frames)),5)
         self.assertGreater(frames[0],8.5*30)
         self.assertLess(frames[0],9.7*30) # Includes the final attempted return.
         self.assertLess(frames[-1],10*30)
+        self.assertIn(291,frames)
         data['sceneSummary']['courtSegments']=[[9,10]]
         self.assertGreaterEqual(loss_frames(data,rally)[0],270)
         with self.assertRaises(ValueError): loss_frames(data,{**rally,'end':None})

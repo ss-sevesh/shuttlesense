@@ -60,7 +60,8 @@ class CoachTests(unittest.TestCase):
                 self.assertFalse((root / 'fused.tmp').exists())
                 # Before-landing coaching uses a separate report and invalidates old prompt caches.
                 landing = {'side': 'near', 'play_status': 'landing_unverified',
-                           'landing': {'status': 'user_selected', 'landingFrame': 30, 'fps': 30, 'frames': list(range(5)), 'pose': []}}
+                           'landing': {'status': 'user_selected', 'landingFrame': 30, 'fps': 30, 'frames': list(range(5)), 'pose': [],
+                           'shuttleContext': [{'frame': frame, 'playerBox': [.4,.4,.2,.2], 'shuttlePoint': [.75,.5]} for frame in range(5)]}}
                 (root / 'landing.json').write_text(json.dumps({'fps': 30, 'hits': [landing]}))
                 model.generate.side_effect = None
                 processor.batch_decode.side_effect = None
@@ -70,8 +71,9 @@ class CoachTests(unittest.TestCase):
                 coached = json.loads((root / 'landing.json').read_text())['hits'][0]
                 self.assertEqual(coached['coaching']['status'], 'experimental')
                 self.assertEqual(coached['coaching']['answer']['shotType'], 'unknown')
-                self.assertEqual(coached['coaching']['promptVersion'], 'before-landing-v2-loss-bounds')
+                self.assertEqual(coached['coaching']['promptVersion'], 'before-landing-v5-shuttle-context')
                 self.assertEqual(coached['landing'], landing['landing'])
+                self.assertEqual([image.size for image in processor.call_args.kwargs['images']], [(9,7)]*5)
                 coach(root, landing=True)
                 self.assertEqual(model.generate.call_count, prior_calls + 1)
                 with patch('shot_coach.LANDING_PROMPT_VERSION', 'before-landing-v2'):

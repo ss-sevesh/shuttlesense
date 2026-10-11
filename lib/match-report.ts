@@ -1,4 +1,5 @@
 import { hitPoseAngles } from './pose-angles';
+import { shuttleContext } from './shuttle-context';
 import reportModel from '@/analysis/report_model.json';
 import { movementHeatmap, validInterval, type HumanReviews, type ReviewData } from './analysis-review';
 
@@ -7,7 +8,7 @@ export type MatchReportData = {status:'experimental';analysisSha256:string;evide
 
 export function reportEvidence(data:ReviewData,reviews:HumanReviews,outcomes:Record<number,string>,losses:Record<number,unknown>) {
   const round=(value:number)=>Math.round(value*1000)/1000;
-  const poses=(data.hitPoses ?? []).map(event=>({...event,angles:Object.fromEntries(Object.entries(hitPoseAngles(data,event)).map(([name,value])=>[name,value===null?null:round(value)]))}));
+  const poses=(data.hitPoses ?? []).map(event=>({...event,shuttle:shuttleContext(data,event.frame,event.trackId),angles:Object.fromEntries(Object.entries(hitPoseAngles(data,event)).map(([name,value])=>[name,value===null?null:round(value)]))}));
   const rallies=data.rallies.map(r=>{
     const window=reviews.rallies[r.id];
     const start=window?.start ?? r.start, end=window?.end ?? r.end;
@@ -27,13 +28,17 @@ export function reportEvidence(data:ReviewData,reviews:HumanReviews,outcomes:Rec
     }
     const ending=data.endingReview?.find(e=>e.rallyId===r.id);
     const endingInWindow=ending?.evidence && inside(ending.evidence.time);
+    const endingContext=endingInWindow ? [...new Set([
+      ...Array.from({length:5},(_,i)=>Math.round((Math.max(start,ending!.windowStart)+(Math.min(end!,ending!.windowEnd)-1/data.fps-Math.max(start,ending!.windowStart))*i/4)*data.fps)),
+      ending!.evidence!.frame,
+    ])].sort((a,b)=>a-b).map(frame=>shuttleContext(data,frame)) : [];
     return {id:r.id,start:round(start),end:end===null?null:round(end),eligible,outcome:outcomes[r.id] ?? 'unknown',
       outcomeSource:outcomes[r.id]?'user_marked':'unconfirmed',
       boundarySource:window?'user_verified':'detector_estimate',startStatus:r.startStatus,endStatus:r.endStatus,
       hitPoses:poses.filter(p=>inside(p.time)),movement:{trackedSeconds:round(map.seconds),grid:map.grid.map(row=>row.map(round)),timeline},
-      ending:endingInWindow?{...ending,lastShot:ending?.lastShot?{time:ending.lastShot.time,status:ending.lastShot.status}:null}:null,endingExplanation:endingInWindow && outcomes[r.id]==='lost'?losses[r.id] ?? null:null};
+      endingContext,ending:endingInWindow?{...ending,lastShot:ending?.lastShot?{time:ending.lastShot.time,status:ending.lastShot.status}:null}:null,endingExplanation:endingInWindow && outcomes[r.id]==='lost'?losses[r.id] ?? null:null};
   });
-  return {schemaVersion:'match-report-v10',reportModel,analysisSha256:data.analysisSha256,videoSha256:data.videoSha256,
+  return {schemaVersion:'match-report-v17',reportModel,analysisSha256:data.analysisSha256,videoSha256:data.videoSha256,
     recording:{fileName:data.fileName,duration:data.duration,width:data.width,height:data.height,fps:data.fps,focusSide:'near'},
     interpretation:'Estimated rally boundaries and contact candidates; camera-dependent 2D angles. Null means unknown. Outcomes are user marked, independent of unverified impact/ground touch. Court mean x=left to right, y=far to near. Shuttle/wrist points instead use image x=left to right, y=top to bottom; these coordinate systems cannot be compared directly. Shuttle tracking includes both players. Wrist angles use a finger proxy. No racket-face angle, first ground touch, physical distance or proven intent. Temporal tracks are one-second summaries; all hit poses have exact-frame angles. Fresh report prompts exclude cached AI interpretations and legacy shot labels; these remain source-appendix material. modelRequests lists actual text-only requests. Photos are attached to the finished report separately, never sent to the report model.',
     rallies,allHitPoses:poses,excludedPoseCount:poses.filter(p=>!rallies.some(r=>r.eligible&&p.time>=r.start&&p.time<r.end!)).length,

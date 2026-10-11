@@ -1,7 +1,7 @@
 import json
 import unittest
 from unittest.mock import patch
-from match_report import batches, fits, parse_report, messages, generate_answer, CONTEXT, OUTPUT_TOKENS
+from match_report import batches, fits, parse_report, messages, generate_answer, validate_grounding, CONTEXT, OUTPUT_TOKENS
 
 
 class Tokenizer:
@@ -10,6 +10,20 @@ class Tokenizer:
 
 
 class ReportTests(unittest.TestCase):
+    def test_ending_prose_must_discuss_shuttle_at_its_own_time(self):
+        evidence = {'ending': {'evidence': {'time': 39.466667,'distancePx':48.1076}}, 'endingContext': []}
+        for text in ('At 30.033 s, the arm is overhead.', 'At 39.467 s, the arm is raised.',
+                     'At 39.467 s the shuttle is camera-left, indicating a late attempt.'):
+            with self.assertRaises(ValueError): validate_grounding({'observations': text}, evidence)
+        validate_grounding({'observations': 'At 39.467 s, the tracked shuttle is camera-left of the near player, with a wrist proxy gap of 48.1 px. Contact remains unknown.'}, evidence)
+        with self.assertRaisesRegex(ValueError,'not supplied'):
+            validate_grounding({'observations':'At 39.467 s, the shuttle gap is 625.1 px.'},evidence)
+        with self.assertRaisesRegex(ValueError,'boundary'):
+            validate_grounding({'summary':'The rally ends with a marked loss at 39.467 seconds.',
+                                'observations':'At 39.467 s, the shuttle gap is 48.1 px.'}, {**evidence,'end':40.2})
+        validate_grounding({'summary':'The rally ends with a user-marked loss; visible wrist movement at 39.467 seconds is unconfirmed.',
+                            'observations':'At 39.467 s, the shuttle gap is 48.1 px.'},{**evidence,'end':40.2})
+
     def test_context_splitting_preserves_every_event_and_bin(self):
         rally = {'hitPoses': [{'frame': i, 'angles': {'Left elbow': 110}, 'padding': 'x'*500} for i in range(39)],
                  'movement': {'timeline': [{'start': i, 'padding': 'x'*300} for i in range(74)]}}
@@ -34,6 +48,12 @@ class ReportTests(unittest.TestCase):
             with self.assertRaises(ValueError): parse_report(bad)
         answer = dict(summary='Clip only.', observations='Arm raised at 30.033 s. The elbow is 99.9 degrees.',
                       training='Practice a split step for two sets of six repetitions.', uncertainty='Intent unknown.')
+        with self.assertRaisesRegex(ValueError,'Lateness'):
+            parse_report(json.dumps({**answer,'training':'Practise for late shuttle approaches.'}))
+        with self.assertRaisesRegex(ValueError,'practice dose'):
+            parse_report(json.dumps({**answer,'training':'Practice the positioning shown at 80.533 seconds.'}))
+        self.assertIn('10 times',parse_report(json.dumps({**answer,'training':'Repeat the camera-right shadow step 10 times.'}))['training'])
+        self.assertIn('late rally',parse_report(json.dumps({**answer,'training':'Repeat the shadow step 10 times for positioning during late rally sequences.'}))['training'])
         self.assertEqual(parse_report(json.dumps(answer))['observations'], 'Arm raised at 30.033 s.')
         answer['observations'] = 'The elbow is 99.9 degrees.'
         with self.assertRaisesRegex(ValueError, 'only unsupported'): parse_report(json.dumps(answer))

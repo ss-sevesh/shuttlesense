@@ -61,6 +61,12 @@ test('approved Paris rally selection, combined totals, angles and report gates',
   const evidence=reportEvidence(data,{shots:{},rallies:{}},{3:'lost',5:'lost'},{});
   expect(evidence.allHitPoses).toHaveLength(data.hitPoses!.length);
   expect(evidence.rallies.filter(r=>r.eligible)).toHaveLength(2);
+  for(const rally of evidence.rallies.filter(r=>r.ending?.evidence)) {
+    const photo=rally.ending!.evidence!;
+    const matched=rally.endingContext.find(row=>row.frame===photo.frame)!;
+    expect(matched.shuttlePoint).toEqual(photo.shuttlePoint);
+    expect(matched.wristGapPx).toBeCloseTo(photo.distancePx,0);
+  }
   expect(evidence.rallies.filter(r=>!r.eligible).every(r=>r.hitPoses.length===0 && r.movement.trackedSeconds===0)).toBe(true);
   const origin={'origin':'http://127.0.0.1:3000'};
   expect((await request.post(`/api/analysis/${id}/report`,{data:{rallies:{}},headers:{origin:'https://evil.example'}})).status()).toBe(403);
