@@ -112,7 +112,7 @@ Do not run the sandbox repair when commands already work.
 ## Optional local Coach Chat
 
 After ordinary analysis setup, run `scripts/setup-analysis.ps1 -RagOnly` to install
-the pinned embedding/Qdrant runtime; add `-CheckOnly` to verify readiness. Existing
+the pinned embedding, chat model and Qdrant runtime; add `-CheckOnly` to verify readiness. Existing
 website, upload, review and reports remain independent of this optional setup.
 See [RAG-CHAT.md](RAG-CHAT.md) for profile consent, chat source/history behavior,
 exact commands, measured checks and limits.

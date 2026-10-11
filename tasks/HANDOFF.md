@@ -1,5 +1,29 @@
 # ShuttleSense session handoff
 
+## Faster RAG and lock diagnosis follow-up (2026-10-11)
+
+User reported chat 429 with no visible work, then requested a smart/faster local
+model and enabling Code Review MCP. No lock or loaded model remained at inspection;
+the original 429 request was not reproduced. Found/reproduced every lock failure
+being masked as 429; commit fa94e27 makes only EBUSY/EEXIST contention 429, other
+lock failures 503. Malformed-lock regression and real busy protection pass.
+Chat now uses pinned qwen3.5:2b-q4_K_M with thinking off; original report/vision
+models and prompts remain unchanged. Full manifest/text/projector hashes verified.
+Three small generation checks: old 4B average4.51s, new2B average3.97s (~12% faster),
+not a broad intelligence benchmark. Stricter citation-ID enum is essential: initial
+unconstrained candidate failed citation checks. One query embedding now serves
+both filtered collections. Full synthetic chat API reply took12.438s including
+indexing/retrieval; sources/profile guard behavior preserved. Seven Python RAG tests
+and five production chat checks passed (real inference, profile injection, no private
+vectors, persistence, stale-in-flight rejection and model/lock cleanup included).
+Missing-runtime check skipped in main (installed runtime); prior isolated pass stands.
+Preview on3000 session80758. No active work lock/loaded Ollama models after tests.
+User Codex config now enables plugins."code-review@openai-bundled".mcp_servers.
+code-review.enabled=true; backup config.toml.before-code-review-enable. Installed
+plugin bundled default was disabled. Direct handshake/tools-list passed (31tools);
+current session tool inventory still lacks them, needs Codex MCP refresh/restart.
+No PR posted/review submitted, no repository push, unrelated folder untouched.
+
 ## Player profile Random follow-up (2026-10-11)
 
 User requested response timing/data-flow explanation and a Random fill option.
@@ -8,7 +32,7 @@ and consent, and is disabled after profile load failure. Existing Save is requir
 Production build and all five profile tests (including random fill, persistence,
 consent, read-failure protection and responsive/axe checks) passed.
 Timing/data-flow explanation added to docs/RAG-CHAT.md; no new model benchmark
-was run. Preview remains at http://127.0.0.1:3000 (session35155).
+was run. Preview remains at http://127.0.0.1:3000 (session80758).
 
 ## Local RAG feature implemented and verified (2026-10-11)
 
@@ -54,7 +78,7 @@ Existing Paris434 review, ending replay, upload controls, exact photos and HTML/
 regressions PASS. No full-video worker or report regeneration rerun; models/prompts
 unchanged. Chrome/Windows only; larger corpora and multilingual safety unverified.
 
-Final production build passed. Local preview is running on port3000, session35155.
+Final production build passed. Local preview is running on port3000, session80758.
 Fresh checkout under artifacts/rag-fresh-check had npm ci (0 reported vulnerabilities),
 production build and no private data/Python runtimes; its temporary port3001 server
 stopped after tests. No loaded Ollama models or active.json work lock after checks.

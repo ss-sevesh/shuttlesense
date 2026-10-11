@@ -7,7 +7,6 @@ import {boundedJson,readLocalJson,writeLocalJson} from '@/lib/local-json';
 import {emptyProfile,validateProfile} from '@/lib/player-profile';
 import {chatContext,referenceSources,type ChatSource} from '@/lib/chat-context';
 import {checkedGuidance,exactEvidence,validateGenerated,type ChatAnswer} from '@/lib/chat-policy';
-import reportModel from '@/analysis/report_model.json';
 import chatModel from '@/analysis/chat_model.json';
 export const runtime='nodejs';
 export const maxDuration=420;
@@ -80,7 +79,7 @@ export async function POST(request:Request) {
     return Response.json({entry,hasReport:context.hasReport,evidenceHash:context.evidenceHash},{headers});
   }catch(error){return Response.json({error:error instanceof Error?error.message:'Local chat failed. Retry.'},{status:422,headers});}
   finally{
-    if(workerRan)await Promise.allSettled([reportModel.ollamaModel,chatModel.embedding.name].map(model=>fetch('http://127.0.0.1:11434/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model,keep_alive:0}),signal:AbortSignal.timeout(5000)})));
+    if(workerRan)await Promise.allSettled([chatModel.text.name,chatModel.embedding.name].map(model=>fetch('http://127.0.0.1:11434/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model,keep_alive:0}),signal:AbortSignal.timeout(5000)})));
     await lock.close().catch(()=>undefined);await unlink(join(jobsRoot,'active.json')).catch(()=>undefined);
   }
 }

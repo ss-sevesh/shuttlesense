@@ -59,8 +59,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-analysis.ps1 -
 
 This pins `qdrant-client==1.19.1` and installs/verifies Qwen3-Embedding-0.6B Q8_0
 (639 MB, 1024 dimensions). Exact identities are in `analysis/chat_model.json`.
-Text chat reuses the installed Qwen3-4B-Instruct-2507 report weights; prompts remain
-separate. Qdrant uses persistent Python local mode in ignored `data/rag/qdrant`,
+Text chat now uses separately pinned Qwen3.5-2B Q4_K_M (about 1.9 GB including
+its projector), with thinking disabled. The existing Qwen3-4B report and vision
+models/prompts remain unchanged; text chat still receives no images. Qdrant uses persistent Python local mode in ignored `data/rag/qdrant`,
 with separate guidance/evidence collections named by embedding checksum, dimensions
 and chunking version. No Docker, Qdrant server, cloud account or extra npm package.
 
@@ -101,7 +102,7 @@ No authentication, calendar integration, multi-user serving or cloud vector host
 
 ## Response time and request data
 
-The measured tiny spike took 33.85 seconds for three questions including cold loads
+The original 4B model tiny spike took 33.85 seconds for three questions including cold loads
 and indexing, about 11 seconds per question on average. This is not a timing promise
 for larger reports. New or changed reports need embedding first; source count,
 answer length and current machine load affect time. Models unload after each chat,
@@ -126,3 +127,26 @@ information typed into a question can therefore remain there until chat deletion
 fields and consent; it does not infer health, send a chat or call a model. Save only
 after replacing samples with actual details. Random is disabled if the saved profile
 could not be loaded, preventing accidental replacement of unreadable data.
+
+## Faster chat model follow-up, 2026-10-11
+
+Chat now uses official Ollama `qwen3.5:2b-q4_K_M`, separately pinned by manifest,
+text-weight SHA256 and projector SHA256. Optional RAG setup installs and hashes both
+models. Thinking is explicitly disabled, while the answer schema constrains citation
+IDs to retrieved sources. Profile/health constraints and all server output checks
+still apply. Embedding a question once supplies both recording and reference search;
+filters and separate collections remain intact. Models still unload after each chat.
+
+Three identical tiny grounding questions averaged 4.51 seconds with the prior 4B
+model and 3.97 seconds with the new 2B model (including load/unload, excluding
+retrieval/indexing), about 12% faster. All three basic content/citation checks passed
+with the constrained schema. The initial unconstrained 2B candidate failed citation
+checks; do not remove the enum/schema or server checks. These are small feasibility
+checks, not proof of superior intelligence, semantic truth or medical safety.
+A successful full API reply including indexing/retrieval took 12.438 seconds on a
+synthetic recording. Larger reports still need a broader latency benchmark.
+
+Chat no longer labels every lock failure as 429: genuine live contention remains
+429; unreadable/unavailable locks return 503. A malformed-lock regression reproduces
+the old false-busy response and verifies the distinction. The reported earlier 429
+was not reproduced with the original request; no lock/model remained at inspection.

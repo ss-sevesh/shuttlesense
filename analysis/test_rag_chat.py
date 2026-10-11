@@ -33,6 +33,16 @@ class RagTests(unittest.TestCase):
                     rag.replace_sources(client, 'A', 'new', [{'id': 'b', 'text': 'new'}])
             self.assertEqual(rag.retrieve(client, 'question', 'A', 'old')[0]['id'], 'a')
 
+    def test_shared_query_vector_keeps_recording_and_reference_filters(self):
+        vector = [1.] + [0.] * 1023
+        with closing(QdrantClient(':memory:')) as client, patch.object(rag, 'embed', return_value=[vector]):
+            rag.replace_sources(client, 'A', 'current', [{'id': 'a', 'text': 'recording'}])
+            rag.replace_sources(client, 'references', 'guidance', [{'id': 'ref', 'text': 'reference'}])
+            with patch.object(rag, 'embed', side_effect=AssertionError('Question must not be embedded twice')):
+                self.assertEqual(rag.retrieve(client, 'question', 'A', 'current', query_vector=vector)[0]['id'], 'a')
+                self.assertEqual(rag.retrieve(client, 'question', 'references', 'guidance', query_vector=vector)[0]['id'], 'ref')
+                self.assertEqual(rag.retrieve(client, 'question', 'A', 'stale', query_vector=vector), [])
+
     def test_gpu_lock_never_steals_existing_work_and_releases_on_failure(self):
         with tempfile.TemporaryDirectory() as path, patch.object(rag, 'ROOT', Path(path)):
             active = Path(path) / 'data/analysis-jobs/active.json'
@@ -54,7 +64,10 @@ class RagTests(unittest.TestCase):
             with patch.object(rag, 'api', side_effect=[{'message': {'content': json.dumps({'answer': 'Lost.', 'citations': citations})}}, {}]) as api:
                 with self.assertRaises(ValueError):
                     rag.answer('Outcome?', sources)
-                self.assertEqual(api.call_args.args, ('generate', {'model': rag.REPORT_CONFIG['ollamaModel'], 'keep_alive': 0}))
+                request = api.call_args_list[0].args[1]
+                self.assertFalse(request['think'])
+                self.assertEqual(request['format']['properties']['citations']['items']['enum'], ['a'])
+                self.assertEqual(api.call_args.args, ('generate', {'model': rag.config()['text']['name'], 'keep_alive': 0}))
         self.assertEqual(rag.answer('Anything?', [])['citations'], [])
 
     def test_embedding_dimension_and_manifest_changes_fail_closed(self):
@@ -63,6 +76,20 @@ class RagTests(unittest.TestCase):
                 rag.embed(['question'])
         with patch.object(rag, 'api', return_value={'models': []}):
             with self.assertRaisesRegex(ValueError, 'manifest'):
+                rag.ready()
+
+    def test_chat_identity_and_no_thinking_readiness_fail_closed(self):
+        cfg = rag.config()
+        def response(path, payload=None):
+            if path == 'tags':
+                return {'models': [{'name': cfg[k]['name'], 'digest': cfg[k]['manifestDigest']} for k in ('embedding', 'text')]}
+            if payload['model'] == cfg['embedding']['name']:
+                return {'modelfile': 'FROM sha256-' + cfg['embedding']['sha256']}
+            return {'modelfile': 'FROM sha256-' + cfg['text']['sha256'] + '\nFROM sha256-' + cfg['text']['projectorSha256'], 'thinking': {'values': [False, True]}}
+        with patch.object(rag, 'api', side_effect=response):
+            rag.ready()
+        with patch.object(rag, 'api', side_effect=lambda path, payload=None: {**response(path, payload), 'thinking': {'values': [True]}}):
+            with self.assertRaisesRegex(ValueError, 'thinking disabled'):
                 rag.ready()
 
 
