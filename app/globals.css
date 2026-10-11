@@ -702,3 +702,16 @@ strong { font-weight:600; }
 .profile-days,.profile-actions {display:flex;flex-wrap:wrap;gap:16px;margin:16px 0;}
 .profile-panel input[type=checkbox] {margin-right:8px;accent-color:var(--accent);}
 @media(max-width:600px) {.profile-grid {grid-template-columns:1fr;} .profile-panel {padding:16px;}}
+.coach-chat {padding:24px;min-width:0;}
+.coach-chat>p {color:var(--muted);line-height:1.6;margin:16px 0;}
+.coach-chat a {color:var(--accent);}
+.chat-suggestions {display:flex;flex-wrap:wrap;gap:12px;margin:24px 0;}
+.chat-history {list-style:none;padding:0;}
+.chat-history>li {border-top:1px solid var(--line);padding:24px 0;}
+.chat-history h3,.chat-answer,.chat-history details p {overflow-wrap:anywhere;}
+.chat-answer {white-space:pre-wrap;line-height:1.7;margin:16px 0;}
+.chat-provenance,.chat-history small {color:var(--muted);font-size:12px;}
+.chat-history details {margin:8px 0;}
+.chat-history details p {white-space:pre-wrap;font-size:12px;line-height:1.5;}
+@media(max-width:600px) {.coach-chat {padding:16px;}}
+.coach-chat a {text-decoration:underline;text-underline-offset:3px;}

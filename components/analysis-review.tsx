@@ -34,6 +34,12 @@ export function AnalysisReview({ data, videoUrl, showReport=true }: { data: Revi
   useEffect(() => {
     try { setReviews(parseReviews(localStorage.getItem(storageKey), data)); } catch { setMessage("Browser storage is unavailable. Download your review to keep it."); }
     setLoaded(true);
+    const query=new URLSearchParams(location.search),target=data.rallies.find(r=>String(r.id)===query.get('rally'));
+    const timestamp=query.get('time')===null?NaN:Number(query.get('time'));
+    let current:HumanReviews={shots:{},rallies:{}};
+    try{current=parseReviews(localStorage.getItem(storageKey),data);}catch{/* Read-only citation cannot invent a window. */}
+    if(target){const start=current.rallies[target.id]?.start??target.start,end=current.rallies[target.id]?.end??target.end;
+      if(end!==null&&Number.isFinite(timestamp)&&timestamp>=start&&timestamp<end){setRallyId(target.id);setReplay({start:timestamp,end:timestamp,token:1,paused:true});}}
   }, [storageKey, data]);
   function save(next: HumanReviews) {
     setReviews(next);

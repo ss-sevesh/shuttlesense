@@ -55,7 +55,7 @@ def embed(texts, query=False):
 
 def collection(analysis_id=None):
     model = config()['embedding']
-    return ('guidance_' if analysis_id == 'references' else 'evidence_') + model['sha256'][:16] + '_' + str(model['dimensions']) + '_chunks1'
+    return ('guidance_' if analysis_id == 'references' else 'evidence_') + model['sha256'][:16] + '_' + str(model['dimensions']) + '_chunks2'
 
 
 def source_filter(analysis_id, evidence_hash):

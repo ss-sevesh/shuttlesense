@@ -6,6 +6,7 @@ import { AnalysisReview } from './analysis-review';
 import { MatchReport } from './match-report';
 import { UploadDialog } from './upload-dialog';
 import { PlayerProfile } from './player-profile';
+import { CoachChat } from './coach-chat';
 import { isReviewData, parseReviews, reviewStorageKey, type HumanReviews, type ReviewData } from '@/lib/analysis-review';
 
 const sections = [
@@ -14,6 +15,7 @@ const sections = [
   {id:'practice',label:'Practice Plan',icon:Target},
   {id:'matches',label:'My Matches',icon:VideoCamera},
   {id:'profile',label:'Player Profile',icon:Target},
+  {id:'chat',label:'Coach Chat',icon:Target},
 ] as const;
 type View = typeof sections[number]['id'];
 
@@ -44,7 +46,7 @@ export function CoachWorkspace({savedAnalyses=[]}:{savedAnalyses?:{id:string;nam
   },[savedAnalyses]);
   useEffect(()=>{document.documentElement.dataset.theme=dark?'dark':'light';},[dark]);
   useEffect(()=>{
-    if(!selected || view==='matches' || view==='profile')return;
+    if(!selected || view==='matches' || view==='profile' || view==='chat')return;
     const controller=new AbortController();setLoading(true);setError('');setData(null);
     async function load() {
       try {
@@ -77,8 +79,8 @@ export function CoachWorkspace({savedAnalyses=[]}:{savedAnalyses?:{id:string;nam
   const completed=data?.rallies.filter(r=>r.end!==null || reviews.rallies[r.id]) ?? [];
   const lost=completed.filter(r=>outcomes[r.id]==='lost').length;
   const won=completed.filter(r=>outcomes[r.id]==='won').length;
-  const titles={overview:'Own your next rally.',rallies:'See the whole attempt.',practice:'Make the next one count.',matches:'Your game. On record.',profile:'Your practice. Your context.'};
-  const descriptions={overview:'Choose a recording to see reviewed outcomes and the evidence available.',rallies:'Replay the near player, tracked shuttle and final attempt together.',practice:'Generate a recording-specific review and an optional drill from its shuttle and player evidence.',matches:'Analyses and footage saved locally on this computer.',profile:'Optional details for local coaching. Edit or delete them whenever you choose.'};
+  const titles={overview:'Own your next rally.',rallies:'See the whole attempt.',practice:'Make the next one count.',matches:'Your game. On record.',profile:'Your practice. Your context.',chat:'Ask. Review. Practise.'};
+  const descriptions={overview:'Choose a recording to see reviewed outcomes and the evidence available.',rallies:'Replay the near player, tracked shuttle and final attempt together.',practice:'Generate a recording-specific review and an optional drill from its shuttle and player evidence.',matches:'Analyses and footage saved locally on this computer.',profile:'Optional details for local coaching. Edit or delete them whenever you choose.',chat:'Answers grounded in selected evidence and reviewed guidance.'};
   return <IconContext.Provider value={{'aria-hidden':true}}><div className="workspace real-workspace" data-view={view}>
     <a href="#main" className="skip-link">Skip to content</a>
     <aside className="sidebar"><a className="brand" href="/workspace?view=overview" onClick={e=>nav(e,'overview')}><span className="brand-mark"><Feather size={26}/></span>Shuttle<span>Sense</span></a><span className="brand-caption">Review a rally. Build your next session.</span>
@@ -87,7 +89,7 @@ export function CoachWorkspace({savedAnalyses=[]}:{savedAnalyses?:{id:string;nam
     </aside>
     <div className="app-body"><header className="topbar"><div className="breadcrumb"><span>Workspace /</span><strong>{current.label}</strong></div><div className="topbar-actions"><a className="text-button workspace-website" href="/">Website <ArrowUpRight size={14}/></a><a className="text-button workspace-player" href="/login" aria-label={playerName?`Local profile: ${playerName}`:'Local login'}>{playerName||'Local login'}</a><button className="icon-button" aria-label={dark?'Switch to light theme':'Switch to dark theme'} onClick={()=>setDark(!dark)}>{dark?<Sun size={20}/>:<Moon size={20}/>}</button></div></header>
       <main id="main" className="main-content"><div className="page-heading workspace-hero"><div><div className="intro-label">SHUTTLESENSE · {current.label.toUpperCase()}</div><h1>{titles[view]}</h1><p>{descriptions[view]}</p><span className="hero-photo-note">Illustrative court · your recording below</span></div><button className="primary-button" onClick={()=>setUpload(true)}><UploadSimple size={18}/>Upload Match</button></div>
-        {view==='profile'?<PlayerProfile/>:view==='matches'?<section className="panel library"><div className="panel-heading"><div><h2>Saved analyses</h2><p>{savedAnalyses.length} recordings · original videos stay on this computer</p></div></div>{savedAnalyses.map(a=><a className="match-library-row" key={a.id} href={'/review/'+a.id}><span className="library-thumbnail"><VideoCamera size={28}/></span><span><strong>{a.name}</strong><span>Local recording · analysis ready</span></span><span className="library-result">Review rallies</span><ArrowUpRight size={20}/></a>)}{!savedAnalyses.length&&<div className="library-empty"><h3>No recordings yet</h3><p>Upload a match to track its shuttle, divide rallies and review the near player.</p><button className="secondary-button" onClick={()=>setUpload(true)}>Choose a Video <ArrowRight size={17}/></button></div>}</section>:<>
+        {view==='chat'?<CoachChat savedAnalyses={savedAnalyses}/>:view==='profile'?<PlayerProfile/>:view==='matches'?<section className="panel library"><div className="panel-heading"><div><h2>Saved analyses</h2><p>{savedAnalyses.length} recordings · original videos stay on this computer</p></div></div>{savedAnalyses.map(a=><a className="match-library-row" key={a.id} href={'/review/'+a.id}><span className="library-thumbnail"><VideoCamera size={28}/></span><span><strong>{a.name}</strong><span>Local recording · analysis ready</span></span><span className="library-result">Review rallies</span><ArrowUpRight size={20}/></a>)}{!savedAnalyses.length&&<div className="library-empty"><h3>No recordings yet</h3><p>Upload a match to track its shuttle, divide rallies and review the near player.</p><button className="secondary-button" onClick={()=>setUpload(true)}>Choose a Video <ArrowRight size={17}/></button></div>}</section>:<>
           {savedAnalyses.length>0?<div className="recording-selector"><label htmlFor="workspace-recording">Recording</label><select id="workspace-recording" value={selected} onChange={e=>navigate(view,e.target.value)}>{savedAnalyses.map(a=><option value={a.id} key={a.id}>{a.name} · {a.id.slice(0,8)}</option>)}</select><a className="text-button" href={'/review/'+selected}>Open full review <ArrowUpRight size={16}/></a></div>:<section className="panel workspace-empty"><VideoCamera size={32}/><h2>Start with your own match</h2><p>Upload a video, mark the court, then review its rallies and shuttle evidence here.</p><button className="primary-button" onClick={()=>setUpload(true)}>Choose Video <UploadSimple size={17}/></button></section>}
           {loading&&<p className="workspace-loading" role="status">Loading recording and saved outcomes…</p>}
           {error&&<p role="alert" className="inline-error">{error}</p>}

@@ -25,7 +25,7 @@ test('profile boundary rejects hostile origins, invalid fields and oversized dat
   expect((await request.put('/api/profile',{data:{age:25}})).status()).toBe(403);
   expect((await request.put('/api/profile',{headers:{Origin:'https://example.com'},data:{age:25}})).status()).toBe(403);
   for(const body of [{age:-1},{healthConsent:'yes'},{availableDays:['Monday','Monday']},{unexpected:'data'},{name:'x'.repeat(20000)}])
-    expect((await request.put('/api/profile',{headers:{Origin:'http://127.0.0.1:3000'},data:body})).status()).toBe(400);
+    expect((await request.put('/api/profile',{headers:{Origin:process.env.PLAYWRIGHT_BASE_URL??'http://127.0.0.1:3000'},data:body})).status()).toBe(400);
 });
 test('profile responsive, keyboard accessible and axe clean',async({page})=>{
   for(const width of [320,768,1024,1440]) {
