@@ -23,9 +23,9 @@ export function UploadDialog({ open, onClose }: { open: boolean; onClose: () => 
   }
   return <dialog className="modal upload-modal" ref={dialog} onClose={onClose} aria-labelledby="upload-heading">
     <div className="modal-header"><span className="modal-mark"><UploadSimple size={24}/></span><button className="icon-button" aria-label="Close upload" onClick={() => dialog.current?.close()}><X size={22}/></button></div>
-    <h2 id="upload-heading">Upload a Recording to Review</h2><p className="modal-subtitle">Keep both players and the full court visible. Review actual shot predictions, player posture and rally candidates.</p>
-    <div className={`dropzone ${dragging ? "dragging" : ""}`} onDragOver={event => {event.preventDefault(); setDragging(true);}} onDragLeave={() => setDragging(false)} onDrop={event => {event.preventDefault(); setDragging(false); select(event.dataTransfer.files[0]);}}>
-      <FileVideo size={40} weight="light"/><h3>Drop your match video here</h3><p>MP4, MOV, or WebM. Up to 100 MB.</p><button className="primary-button" onClick={() => input.current?.click()}>Choose Video <UploadSimple size={17}/></button>
+    <h2 id="upload-heading">Upload a Recording to Review</h2><p className="modal-subtitle">Track the shuttle, divide rallies and inspect the near player's attempts. Start with a clear, fixed court view.</p>
+    <div className={`dropzone ${preview ? 'dropzone-compact' : ''} ${dragging ? "dragging" : ""}`} onDragOver={event => {event.preventDefault(); setDragging(true);}} onDragLeave={() => setDragging(false)} onDrop={event => {event.preventDefault(); setDragging(false); select(event.dataTransfer.files[0]);}}>
+      <FileVideo size={40} weight="light"/><h3>{preview?'Recording selected':'Drop your match video here'}</h3><p>MP4, MOV, or WebM. Up to 100 MB.</p><button className="primary-button" onClick={() => input.current?.click()}>{preview?'Change Video':'Choose Video'} <UploadSimple size={17}/></button>
       <input ref={input} type="file" name="match-video" aria-label="Match video" tabIndex={-1} accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm" className="sr-only" onChange={event => {select(event.target.files?.[0]); event.target.value = "";}}/>
     </div>
     <p className="inline-error" role="alert">{error}</p>

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CourtMap } from "@/components/court-map";
 import { StartShotAnalysis } from "@/components/analysis-job";
-import { AnalysisReview } from "@/components/analysis-review";
 import type { ReviewData } from "@/lib/analysis-review";
 
 type Point = [number, number];
@@ -22,8 +21,7 @@ export function UploadAnalysis({ file, url, onReady, onError }: { file: File; ur
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [side, setSide] = useState("near");
-  const [full, setFull] = useState<{ data: ReviewData; id: string } | null>(null);
-  const fullReady = useCallback((data: ReviewData, id: string) => setFull({ data, id }), []);
+  const fullReady = useCallback((_data: ReviewData, id: string) => window.location.assign(`/review/${id}`), []);
   useEffect(() => () => request.current?.abort(), []);
   useEffect(() => { if (picking) picker.current?.focus(); }, [picking]);
   useEffect(() => {
@@ -74,7 +72,6 @@ export function UploadAnalysis({ file, url, onReady, onError }: { file: File; ur
     } finally { if (!controller.signal.aborted) setBusy(false); }
   }
   const boxes = result && sample >= 0 ? result.samples[sample].people : [];
-  if (full) return <div className="upload-analysis"><div className="review-upload-actions"><button className="text-button" onClick={() => setFull(null)}>Back to Court Setup</button><a className="secondary-button" href={`/review/${full.id}`} target="_blank" rel="noopener">Open Full Review</a></div><AnalysisReview key={full.data.analysisSha256} data={full.data} videoUrl={`/api/analysis/${full.id}/video`}/></div>;
   return <div className="upload-analysis">
     <div className="analysis-layout">
       <div>

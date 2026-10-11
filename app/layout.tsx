@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   icons: { icon: "/favicon.svg" },
   description: "Local AI badminton and shuttle video analysis: rally replay, player poses, court heatmaps and evidence-based practice reports.",
 };
-export const viewport: Viewport = { themeColor: [{ media: "(prefers-color-scheme: light)", color: "#f5f6f4" }, { media: "(prefers-color-scheme: dark)", color: "#141917" }] };
+export const viewport: Viewport = { themeColor: [{ media: "(prefers-color-scheme: light)", color: "#f5f6f4" }, { media: "(prefers-color-scheme: dark)", color: "#000000" }] };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en" className={sans.variable}><body>{children}</body></html>;

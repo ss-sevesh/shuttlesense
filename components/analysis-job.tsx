@@ -83,8 +83,8 @@ export function StartShotAnalysis({ file, corners, onMarkCourt, onComplete }: { 
   }
   return <section className="shot-upload-start" aria-label="Shot and rally analysis">
     {!id && <fieldset disabled={busy}><legend>Analysis options</legend><p>Choose your tracking features. Local AI explanations are available separately for lost rallies after analysis.</p>
-      {([['yolo', 'YOLO player tracking'], ['shuttle', 'Shuttle tracking (TrackNet)'], ['ground', 'Ground segmentation and touch candidates'], ['pose', 'Body pose'], ['ending','Near-player ending review']] as const).map(([key,label]) =>
-        <label key={key} style={{ display: 'block' }}><input type="checkbox" checked={options[key] ?? false} onChange={event => toggle(key,event.target.checked)}/>{label}</label>)}
+      {([['yolo', 'YOLO player tracking'], ['shuttle', 'Shuttle tracking (TrackNet)'], ['ground', 'Ground segmentation and touch candidates'], ['pose', 'Body pose'], ['shots','Estimated shot types (BST)'], ['ending','Near-player ending review']] as const).map(([key,label]) =>
+        <label key={key}><input type="checkbox" checked={options[key] ?? false} onChange={event => toggle(key,event.target.checked)}/>{label}</label>)}
     </fieldset>}
     {!id && <><div><span className="intro-label">YOUR VIDEO · REAL ANALYSIS</span><h3>Review Your Rallies & Poses</h3><p>See body posture, shuttle detections and rally movement. Review endings and generate a local match report.</p></div>
       <button className="primary-button" disabled={busy} onClick={() => void start()}><UploadSimple size={17} aria-hidden="true"/>{busy ? "Uploading Video…" : failed ? "Retry Rallies & Poses" : "Analyze Rallies & Poses"}</button></>}

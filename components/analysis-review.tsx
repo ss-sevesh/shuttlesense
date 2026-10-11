@@ -11,7 +11,7 @@ import { MatchReport } from "./match-report";
 
 const number = new Intl.NumberFormat("en", { maximumFractionDigits: 1 });
 const clock = (seconds: number) => `${Math.floor(seconds / 60)}:${(seconds % 60).toFixed(1).padStart(4,"0")}`;
-export function AnalysisReview({ data, videoUrl }: { data: ReviewData; videoUrl: string }) {
+export function AnalysisReview({ data, videoUrl, showReport=true }: { data: ReviewData; videoUrl: string; showReport?:boolean }) {
   const [time, setTime] = useState(0);
   const [lossReviews, setLossReviews] = useState<{outcomes:Record<number,string>;explanations:Record<number,LossReport>}>({outcomes:{},explanations:{}});
   const [posePage, setPosePage] = useState(0);
@@ -84,7 +84,7 @@ export function AnalysisReview({ data, videoUrl }: { data: ReviewData; videoUrl:
       </div>
       <aside className="review-sidebar" aria-label="Selected loss explanation and attempt photo"><LossReview data={data} videoUrl={videoUrl} selected={rallyId} onSelect={setRallyId} onReview={onLossReview} replay={value=>setReplay(previous=>({...value,token:(previous?.token ?? 0)+1}))}/></aside>
     </div>
-    <MatchReport data={data} videoUrl={videoUrl} reviews={reviews} outcomes={lossReviews.outcomes}/>
+    {showReport&&<MatchReport data={data} videoUrl={videoUrl} reviews={reviews} outcomes={lossReviews.outcomes}/>}
     <details className="review-technical"><summary>Technical details: poses &amp; rally boundaries</summary>
       <p>Supporting evidence for {rally ? `rally ${rally.start.toFixed(1)}-${(rally.end ?? rally.reviewStop).toFixed(1)} s` : 'the selected rally'}. Predictions and body poses are estimates.</p>
       <div className="review-tab-controls" role="group" aria-label="Review category"><button type="button" aria-pressed={tab==='poses'} onClick={()=>setTab('poses')}>Hit poses</button><button type="button" aria-pressed={tab==='rallies'} onClick={()=>setTab('rallies')}>Rally boundaries</button></div>
