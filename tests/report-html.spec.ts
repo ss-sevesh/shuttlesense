@@ -14,7 +14,7 @@ test('portable report embeds exact loss images, escapes text and works without a
   expect(html).toContain('Wrist proxy');expect(html).toContain('frame 135');
   await page.setContent(html);
   expect(await page.locator('script').count()).toBe(0);
-  await expect(page.getByRole('heading',{name:'Rally 1 · 1.000–5.000 s'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Rally 1 · 1.000-5.000 s'})).toBeVisible();
   expect(await page.locator('image').getAttribute('href')).toBe(image);
   const bounds=attemptPhotoGeometry(demoData,demoData.endingReview![0].evidence!,demoData.endingReview![0].evidence!.wristPoint);
   expect(await page.locator('svg').getAttribute('viewBox')).toBe(`${bounds.left} ${bounds.top} ${bounds.width} ${bounds.height}`);
@@ -31,10 +31,25 @@ test('synthetic illustrated download reports missing images and excludes unconfi
   await page.route('**/api/demo/frames/135',route=>route.fulfill({status:404}));
   await region.getByRole('button',{name:'Download report',exact:true}).click();
   await expect(region).toContainText('no incomplete report was saved');
+  await region.getByRole('button',{name:'Save as PDF',exact:true}).click();
+  await expect(region).toContainText('no incomplete report was saved');
+  await expect(page.locator('iframe[title="Print match report"]')).toHaveCount(0);
   await page.unroute('**/api/demo/frames/135');
   const download=page.waitForEvent('download');await region.getByRole('button',{name:'Download report',exact:true}).click();
   const file=await download;expect(file.suggestedFilename()).toBe('shuttlesense-match-report.html');
   expect(readFileSync((await file.path())!,'utf8').match(/<image href=/g)).toHaveLength(2);
+  await page.addInitScript(()=>{window.print=()=>{
+    parent.document.body.dataset.printedReport=document.body.textContent ?? '';
+    parent.document.body.dataset.printedPhotos=String(document.querySelectorAll('svg image').length);
+    window.dispatchEvent(new Event('afterprint'));
+  };});
+  await page.reload();await region.getByRole('button',{name:'Generate match report',exact:true}).click();
+  await expect(region.getByRole('button',{name:'Save as PDF',exact:true})).toBeVisible();
+  await region.getByRole('button',{name:'Save as PDF',exact:true}).click();
+  await expect(page.locator('body')).toHaveAttribute('data-printed-report',/Match review\./);
+  await expect(page.locator('body')).toHaveAttribute('data-printed-photos','2');
+  await expect(page.locator('iframe[title="Print match report"]')).toHaveCount(0);
+  await expect(region.getByRole('button',{name:'Save as PDF',exact:true})).toBeFocused();
   await page.route('**/api/demo/report',async route=>{
     const response=await route.fetch(),result=await response.json();
     if(result.evidence){result.evidence.rallies[0].outcome='unknown';result.report.rallyReports[0].outcome='unknown';}
@@ -46,4 +61,19 @@ test('synthetic illustrated download reports missing images and excludes unconfi
   await expect(region.getByRole('figure',{name:'Lost rally 2 report photo'})).toBeVisible();
   const secondDownload=page.waitForEvent('download');await region.getByRole('button',{name:'Download report',exact:true}).click();
   expect(readFileSync((await (await secondDownload).path())!,'utf8').match(/<image href=/g)).toHaveLength(1);
+});
+
+test('A4 report paginates long future reviews without dropping sections or photos',async({page})=>{
+  const image=`data:image/jpeg;base64,${readFileSync('public/demo/attempt-1.jpg').toString('base64')}`;
+  const answer={...demoReport.answer,observations:(demoReport.answer.observations+' ').repeat(30)+'END OF LONG OBSERVATIONS'};
+  await page.setContent(reportHtml(demoData,{...demoReport,rallyReports:[{...demoReport.rallyReports[0],answer}]},
+    [{rallyId:1,dataUrl:image,evidence:demoData.endingReview![0].evidence!,racket:null}],{}));
+  await page.emulateMedia({media:'print'});
+  expect(await page.locator('.rally').evaluate(el=>getComputedStyle(el).breakBefore)).toBe('page');
+  expect(await page.locator('figure').evaluate(el=>getComputedStyle(el).breakInside)).toBe('avoid');
+  await expect(page.getByText(/END OF LONG OBSERVATIONS/)).toBeVisible();
+  await expect(page.locator('.rally .training')).toContainText(demoReport.answer.training);
+  const pdf=await page.pdf({path:'artifacts/long-review-print.pdf',preferCSSPageSize:true,printBackground:true});
+  expect(pdf.subarray(0,5).toString()).toBe('%PDF-');
+  expect(pdf.toString('latin1').match(/\/Type \/Page\b/g)!.length).toBeGreaterThan(2);
 });

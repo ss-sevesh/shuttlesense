@@ -1,5 +1,76 @@
 # ShuttleSense session handoff
 
+## Professional PDF export and GitHub delivery (2026-10-11)
+
+The shared reportHtml renderer now supplies a white/forest-green A4 editorial
+layout, recording metrics, ordered sections, a fresh page per rally, large exact
+attempt photos beside observations, practice bands and numbered margin footers.
+Save as PDF in MatchReport prints that same offline-safe document through a local
+iframe; choose Save as PDF in Chrome with default margins. No new app dependency
+or backend browser service. Missing photos abort both HTML and PDF preparation;
+stale reviews disable both exports. Print cleanup restores focus. Long reviews
+flow to additional pages; no fixed-height clipping or hardcoded Paris prose.
+
+Actual approved Paris434 export: output/pdf/shuttlesense-match-report.pdf, three
+A4 pages. All pages rendered/visually inspected, timestamps, gaps, provenance,
+footers and text bounds verified. Exact embedded JPEGs still match original frame
+endpoints. Root shuttlesense-match-report.html is updated to the same new layout.
+Private PDFs, HTML, analysis data and footage stay ignored. Long synthetic export
+retains all final sections. Build/typecheck,15 production browser tests and11
+Python unit checks passed; print/export checks repeated after final focus fix.
+Earlier full real upload still passed; upload pipeline was unchanged by PDF work.
+Chrome verified; other print engines and physical printing remain unchecked.
+User explicitly authorized commits and GitHub push of all completed session work.
+
+
+## Shuttle-specific reports, real tabs and black/green UI (2026-10-11)
+
+Completed the user's report/upload/all-tabs review and subsequent black-mode and
+recording-independent prompt requests. Overview, Rally Review, Practice Plan and
+My Matches now use actual saved analyses, reviewed boundaries and user outcomes.
+No sample performance/drills remain in these tabs; /demo stays separate. Newest
+completed recording is the default, with a shared recording selector and URL state.
+Dark page is #000, neutral black panels/sidebar, green controls. Upload setup is
+compact after selection, exposes optional BST, and completion opens /review/id.
+
+Shared lib/shuttle-context.ts joins exact frames, near identity and confident
+wrists. Shuttle points are already normalized; scale only pixel-gap calculations.
+Report v17 supplies every eligible pose/angle plus bounded ending sample relations.
+Prompts use each recording's own timestamps/boxes/gaps; no Paris-specific branches.
+Summary uses windows/outcomes; observations keep image facts at their own times.
+Validation rejects generic endings, invented gaps, contact/lateness diagnoses,
+whole-rally extrapolation and timestamp-only practice doses. One wording repair,
+then a visible failure, with raw requests/responses saved; no fabricated fallback.
+
+Vision ending prompt v5 uses the same pinned Qwen3-VL model, five bounded frames
+including the exact attempt, near-player/shuttle crops and an evidence-specific
+draft generated from that recording. Temporary previews are capped at320px to
+avoid GPU memory spill; original saved photos/overlays remain full resolution.
+Cache reuse validates prose; old generic prompt caches stay hidden. Both confirmed
+losses were regenerated; contact, intent and cause remain unknown, not a winner call.
+
+Only approved Paris350_434 footage was used for real-video tests. Full browser
+upload/worker test passed in11 minutes, new job76cb3498-4c2d-4e5d-bf6e-85acc929f737.
+YOLO, TrackNet, ground, pose, BST and ending enabled; whole-video LLM off. Fresh
+outcomes remain Unknown. Existing confirmed losses stay separately saved in c278680c.
+Main review: http://127.0.0.1:3000/?view=rallies&analysis=c278680c-fb33-4b1c-91d1-8daa17db95f6
+
+Root shuttlesense-match-report.html now matches the verified illustrated export.
+Old file backup: artifacts/shuttlesense-match-report-before.html. New artifacts:
+paris434-match-report.html, paris434-report-evidence.json, current-loss-3/5.json,
+paris434-current-upload.json and workspace/black-mode/upload screenshots. Photos
+remain frame1184/39.467s/48.1px and2416/80.533s/130.6px wrist proxy; not ground touch.
+
+Final production build/typecheck,14 focused production Playwright checks and11
+Python checks pass. Browser checks cover all tabs,320/768/1024/1440 widths, both
+themes, axe, exact photo bytes/geometry, outcome gates, paging and offline export.
+All22 eligible pose angles supplied;35 total poses preserved in the appendix.
+Movement preview refreshed via npm.cmd run screenshot. Production server3000 is
+session41670; Chrome DevTools page3 is open on the real Rally Review in black mode.
+No commits, new dependencies or models. Pre-existing untracked shuttle_sense/
+directory was left alone. Other footage, clean-machine setup and detector/coaching
+accuracy were not evaluated. Read tasks/current-review-plan.md for completed scope.
+
 ## Text-only Qwen3-4B illustrated reports (2026-10-11)
 
 Report model is now Qwen/Qwen3-4B-Instruct-2507 with pinned Unsloth Q4_K_M GGUF

@@ -1,5 +1,5 @@
 import {test,expect} from '@playwright/test';
-import {readFileSync} from 'node:fs';
+import {mkdirSync,readFileSync,copyFileSync} from 'node:fs';
 const id=JSON.parse(readFileSync('artifacts/paris434-shot-job.json','utf8')).id;
 
 test('approved Paris recording generates and reopens a local evidence-grounded match report',async({page,request})=>{
@@ -23,7 +23,7 @@ test('approved Paris recording generates and reopens a local evidence-grounded m
   for(const pose of supplied)expect(pose.angles).toEqual(eligiblePoses.find((p:{frame:number})=>p.frame===pose.frame).angles);
   expect(report.answer.training.length).toBeGreaterThan(20);
   expect(report.answer.training).toMatch(/practi[cs]e|drill|repetitions|repeat|sets|step/i);
-  for(const rally of report.rallyReports){expect(rally.outcome).toBe('lost');expect(rally.answer.training).toMatch(/repetitions|reps|sets|seconds|minutes/i);expect(rally.answer.observations).not.toMatch(/\[0\.\d|coordinates/i);}
+  for(const rally of report.rallyReports){expect(rally.outcome).toBe('lost');expect(rally.answer.training).toMatch(/\b\d+\s+(repetitions|reps|sets|times|seconds|minutes)\b/i);expect(rally.answer.observations).not.toMatch(/\[0\.\d|coordinates/i);}
   for(const answer of [report.answer,...report.rallyReports.map((r:{answer:Record<string,string>})=>r.answer)])expect(Object.values(answer).join(' ')).not.toMatch(/\d\s*(degrees?\b|deg\b|°)/i);
   await page.goto(`/review/${id}`);
   const region=page.getByRole('region',{name:'AI match report'});
@@ -34,6 +34,12 @@ test('approved Paris recording generates and reopens a local evidence-grounded m
   expect(html).toContain('Rally 1 (window 3)');expect(html).toContain('frame 1184');expect(html).toContain('frame 2416');
   const photos=[...html.matchAll(/<image href="data:image\/jpeg;base64,([A-Za-z0-9+/=]+)"/g)];expect(photos).toHaveLength(2);
   for(const [index,frame] of [1184,2416].entries())expect(Buffer.from(photos[index][1],'base64')).toEqual(await (await request.get(`/api/analysis/${id}/frames/${frame}`)).body());
+  copyFileSync('artifacts/paris434-match-report.html','shuttlesense-match-report.html');
+  const printable=await page.context().newPage();await printable.setContent(html,{waitUntil:'load'});
+  await printable.emulateMedia({media:'print'});mkdirSync('output/pdf',{recursive:true});
+  const pdf=await printable.pdf({path:'output/pdf/shuttlesense-match-report.pdf',preferCSSPageSize:true,printBackground:true});
+  expect(pdf.toString('latin1').match(/\/Type \/Page\b/g)).toHaveLength(3);
+  await printable.close();
   await region.getByText('Read each rally review',{exact:true}).click();
   for(const window of [3,5])await expect(region.getByRole('figure',{name:`Lost rally ${window} report photo`})).toBeVisible();
   download=page.waitForEvent('download');await region.getByRole('button',{name:'Download AI evidence',exact:true}).click();

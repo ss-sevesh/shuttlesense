@@ -46,8 +46,9 @@ The workspace is **http://127.0.0.1:3000**; saved recordings appear in **My Matc
 | AI match report | Text-only Qwen3-4B reviews; lost-rally photos attached beside descriptions after generation. |
 | Private exports | Download report, exact AI evidence, and original detector data with separate corrections. |
 
-Shot-type classification is removed from review and upload controls.
-Legacy classifier fields remain readable in saved reports and JSON exports.
+Upload optionally enables pretrained BST shot estimates as context. Displayed
+player evidence remains near-side; shot labels do not confirm impacts or intent.
+The workspace tabs use real saved recordings; `/demo` uses generated sample data.
 
 ## Real video analysis
 
@@ -91,7 +92,8 @@ The current implementation is a research prototype, not a hosted analysis servic
   calls, then releases report weights so vision workers can use the GPU.
   A wording check allows one automatic correction per response when needed;
   failed validation is shown instead of fabricating a fallback report.
-  The portable HTML download embeds exact loss photos; Print saves it as PDF.
+  Save as PDF opens a designed A4 report with page numbers and exact loss photos.
+  The same layout downloads as portable offline HTML.
 
 Independent detection accuracy and coaching usefulness remain unvalidated.
 See [the evaluation protocol](docs/evaluation.md).

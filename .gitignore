@@ -23,6 +23,9 @@ __pycache__/
 *.pt
 *.onnx
 artifacts/*
+shuttlesense-match-report.html
+output/pdf/
+tmp/pdfs/
 !artifacts/shuttlesense-preview.png
 !artifacts/shuttlesense-desktop.png
 !artifacts/shuttlesense-practice.png

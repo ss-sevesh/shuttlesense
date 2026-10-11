@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 import type { ReviewData, HumanReviews } from '@/lib/analysis-review';
 import type { MatchReportData, reportEvidence } from '@/lib/match-report';
 import { reportHtml, type ReportPhoto } from '@/lib/report-html';
@@ -37,12 +38,13 @@ export function MatchReport({data,videoUrl,reviews,outcomes}:{data:ReviewData;vi
     }catch(e){setError(e instanceof Error?e.message:'Report failed.');}
     finally{setBusy(false);}
   }
-  async function download(format:'report'|'evidence') {
+  async function download(format:'report'|'evidence'|'pdf') {
     if(!report || exporting)return;
+    const focused=document.activeElement;
     setExporting(true);setError('');
     try {
       const photos:ReportPhoto[]=[];
-      if(format==='report')for(const rally of report.rallyReports) {
+      if(format!=='evidence')for(const rally of report.rallyReports) {
         const ending=photoFor(rally.rallyId);if(!ending)continue;
         const response=await fetch(`${videoUrl.replace(/\/video$/,'')}/frames/${ending.frame}`);
         if(!response.ok || response.headers.get('content-type')?.split(';')[0]!=='image/jpeg')throw new Error('Could not load a loss photo. Retry the download; no incomplete report was saved.');
@@ -52,20 +54,37 @@ export function MatchReport({data,videoUrl,reviews,outcomes}:{data:ReviewData;vi
         photos.push({rallyId:rally.rallyId,dataUrl,evidence:ending,racket});
       }
       const text=format==='evidence'?JSON.stringify(evidence,null,2):reportHtml(data,report,photos,Object.fromEntries(report.rallyReports.map(r=>[r.rallyId,rallyLabel(r.rallyId)])));
-      const url=URL.createObjectURL(new Blob([text],{type:format==='report'?'text/html':'application/json'}));
+      const url=URL.createObjectURL(new Blob([text],{type:format==='evidence'?'application/json':'text/html'}));
+      if(format==='pdf'){
+        const frame=document.createElement('iframe');frame.title='Print match report';frame.tabIndex=-1;frame.setAttribute('aria-hidden','true');
+        frame.style.cssText='position:fixed;width:1px;height:1px;bottom:0;opacity:0;border:0;pointer-events:none';
+        // Re-enable the invoking button before restoring keyboard focus.
+        const clean=()=>{frame.remove();URL.revokeObjectURL(url);flushSync(()=>setExporting(false));if(focused instanceof HTMLElement)focused.focus();};
+        try{
+          await new Promise<void>((resolve,reject)=>{
+            const timeout=setTimeout(()=>reject(new Error('Could not prepare PDF. Download the report and print it instead.')),15000);
+            frame.onload=()=>{clearTimeout(timeout);resolve();};frame.onerror=()=>{clearTimeout(timeout);reject(new Error('Could not open the printable report.'));};
+            frame.src=url;document.body.append(frame);
+          });
+          if(!frame.contentWindow)throw new Error('Could not open the printable report.');
+          frame.contentWindow.addEventListener('afterprint',clean,{once:true});
+          frame.contentWindow.print();
+        }catch(e){clean();throw e;}
+        return;
+      }
       const anchor=document.createElement('a');anchor.href=url;anchor.download=format==='report'?'shuttlesense-match-report.html':'shuttlesense-report-evidence.json';anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
     }catch(e){setError(e instanceof Error?e.message:'Could not download report.');}
     finally{setExporting(false);}
   }
   return <section className="match-report" aria-label="AI match report" aria-busy={busy}>
-    <div className="review-event-heading"><div><span className="intro-label">MATCH REVIEW · LOCAL AI</span><h3>Your match report</h3></div><button type="button" disabled={busy} onClick={()=>void generate()}>{busy?'Preparing report locally…':report?'Refresh match report':'Generate match report'}</button></div>
-    <p>Qwen3-4B reviews text evidence: eligible rallies, every hit-pose timestamp and available body angle, movement and endings. Loss photos are attached afterwards, never sent to this model. Covers this recording only; attempted shots remain cautious interpretations.</p>
+    <div className="review-event-heading"><div><span className="intro-label">MATCH REVIEW · LOCAL AI</span><h2>Your match report</h2></div><button type="button" disabled={busy} onClick={()=>void generate()}>{busy?'Preparing report locally…':report?'Refresh match report':'Generate match report'}</button></div>
+    <p>The local report reviews tracked shuttle positions relative to the near player, the ending attempt and every eligible hit pose. Each drill should refer to a visible sequence in this recording. Loss photos are attached afterwards; this model receives text only.</p>
     <p role="status" aria-live="polite">{error || (busy?'The local model is reviewing each rally. This can take several minutes.':'')}</p>
     {report && <><p className="report-meta">{report.model} · {report.rallyReports.length} rally reviews · {new Date(report.generatedAt).toLocaleString()}{report.generationSeconds!==undefined?` · Generated in ${report.generationSeconds.toFixed(1)} s`:''}</p>{snapshot!==windows&&<p role="alert">Rally boundaries or outcomes changed. Refresh the report before using it.</p>}
-      <div className="report-sections">{Object.entries(report.answer).map(([key,value])=><section key={key}><h4>{key[0].toUpperCase()+key.slice(1)}</h4><p>{value}</p></section>)}</div>
-      <details><summary>Read each rally review</summary>{report.rallyReports.map(r=><section className="report-rally" key={r.rallyId}><h4>{rallyLabel(r.rallyId)} · {r.start.toFixed(1)}–{r.end.toFixed(1)} s</h4><p className="report-meta">Outcome: {r.outcome}{r.outcome!=='unknown'?' · user marked':''}</p>{photoFor(r.rallyId)&&<AttemptPhoto data={data} videoUrl={videoUrl} evidence={photoFor(r.rallyId)!} readOnly label={`Lost rally ${r.rallyId} report photo`}/>}<div>{Object.entries(r.answer).map(([key,value])=><p key={key}><strong>{key}: </strong>{value}</p>)}</div>{evidence?.rallies.find(item=>item.id===r.rallyId)?.outcome==='lost'&&!photoFor(r.rallyId)&&<p>No reliable attempt photo is available for this rally.</p>}</section>)}</details>
-      <p className="report-meta">The illustrated HTML download embeds loss photos and works offline. Open it in your browser and use Print to save as PDF. The separate evidence appendix preserves all angles and actual text requests.</p>
-      <div className="report-downloads"><button type="button" disabled={exporting||busy||snapshot!==windows} onClick={()=>void download('report')}>{exporting?'Preparing download…':'Download report'}</button><button type="button" disabled={exporting} onClick={()=>void download('evidence')}>Download AI evidence</button></div>
+      <div className="report-sections">{Object.entries(report.answer).map(([key,value])=><section key={key}><h3>{key[0].toUpperCase()+key.slice(1)}</h3><p>{value}</p></section>)}</div>
+      <details><summary>Read each rally review</summary>{report.rallyReports.map(r=><section className="report-rally" key={r.rallyId}><h3>{rallyLabel(r.rallyId)} · {r.start.toFixed(1)}–{r.end.toFixed(1)} s</h3><p className="report-meta">Outcome: {r.outcome}{r.outcome!=='unknown'?' · user marked':''}</p>{photoFor(r.rallyId)&&<AttemptPhoto data={data} videoUrl={videoUrl} evidence={photoFor(r.rallyId)!} readOnly label={`Lost rally ${r.rallyId} report photo`}/>}<div>{Object.entries(r.answer).map(([key,value])=><p key={key}><strong>{key}: </strong>{value}</p>)}</div>{evidence?.rallies.find(item=>item.id===r.rallyId)?.outcome==='lost'&&!photoFor(r.rallyId)&&<p>No reliable attempt photo is available for this rally.</p>}</section>)}</details>
+      <p className="report-meta">Save as PDF opens a formatted A4 report with page numbers; choose “Save as PDF” in the print dialog and keep the default margins. Download report saves the same illustrated layout as offline HTML. The separate evidence appendix preserves all angles and actual text requests.</p>
+      <div className="report-downloads"><button type="button" disabled={exporting||busy||snapshot!==windows} onClick={()=>void download('pdf')}>Save as PDF</button><button type="button" disabled={exporting||busy||snapshot!==windows} onClick={()=>void download('report')}>{exporting?'Preparing download…':'Download report'}</button><button type="button" disabled={exporting} onClick={()=>void download('evidence')}>Download AI evidence</button></div>
     </>}
   </section>;
 }
