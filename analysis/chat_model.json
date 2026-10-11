@@ -1,0 +1,10 @@
+{
+  "qdrantClient": "1.19.1",
+  "embedding": {
+    "name": "qwen3-embedding:0.6b",
+    "manifestDigest": "ac6da0dfba84a81fdbfbaf330198c33cd77c4cdfc53e8bc50eb581914a15621d",
+    "sha256": "06507c7b42688469c4e7298b0a1e16deff06caf291cf0a5b278c308249c3e439",
+    "dimensions": 1024,
+    "quantization": "Q8_0"
+  }
+}

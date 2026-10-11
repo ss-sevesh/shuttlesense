@@ -1,4 +1,4 @@
-param([switch]$CheckOnly)
+param([switch]$CheckOnly,[switch]$RagOnly)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
 Set-Location -LiteralPath $projectRoot
@@ -7,6 +7,16 @@ function Run-Python([string]$Executable,[string[]]$Arguments) {
   if ($LASTEXITCODE -ne 0) { throw "Python command failed: $Executable" }
 }
 $runtimePython = Join-Path $projectRoot 'data/hf-racquet-env/Scripts/python.exe'
+if ($RagOnly) {
+  if (-not (Test-Path -LiteralPath $runtimePython)) { throw 'Run the analysis setup first to create the Python runtime.' }
+  if ($CheckOnly) {
+    Run-Python $runtimePython @('analysis/rag_chat.py','--check-only')
+  } else {
+    Run-Python $runtimePython @('-m','pip','install','-r','analysis/requirements-rag.txt')
+    Run-Python $runtimePython @('analysis/download_rag.py')
+  }
+  exit
+}
 if ($CheckOnly) {
   foreach ($relative in @('data/hf-racquet-env/Scripts/python.exe','data/player-pose-env/Scripts/python.exe','data/tracknet-env/Scripts/python.exe','data/hf-racquet-baseline/yolo11n-pose.pt','data/models/mediapipe/pose_landmarker_full.task','data/models/tracknetv3/TrackNet_best.pt','data/models/tracknetv3/model.py','data/models/segformer-floor/provenance.json','data/models/shot-coach-qwen3-vl2b/provenance.json','data/models/match-report-qwen3-4b/provenance.json')) {
     if (-not (Test-Path -LiteralPath (Join-Path $projectRoot $relative))) { throw "Missing: $relative. Run setup without -CheckOnly." }
