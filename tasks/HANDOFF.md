@@ -1,5 +1,36 @@
 # ShuttleSense session handoff
 
+## Fresh-checkout startup and analysis setup checks (2026-10-11)
+
+User requested that anyone cloning the redesigned UI can run the project.
+Archived committed tracked files into ignored artifacts/fresh-clone-check (no
+node_modules, private recordings or model data), ran npm ci successfully (zero
+reported npm vulnerabilities), built production and started the isolated checkout.
+Six public UI/demo checks passed against its empty library, including all responsive
+website views, guest/named entry, blocked storage/CDN, upload controls and synthetic
+report/download/pose/replay. Tests now support both empty and populated libraries;
+public-demo heading matches the new design. npm run test:public is the model-free
+suite; package engine documents Node22+. Main production data was untouched.
+
+Found/fixed installer omission: optional BST UI had no new-machine source/weight
+installation or positional-encodings/torchinfo dependencies. Added stdlib-only
+analysis/download_bst.py with pinned official revision, exact two source and weight
+SHA256s, Google Drive confirmation handling, partial-file/atomic verified install,
+and no-network --check-only. Actual three-file fresh download succeeded (7.35MB
+checkpoint); four downloader tests pass including corrupt-file preservation and
+Drive confirmation. Existing setup -CheckOnly passes CUDA/player/shuttle/BST/Ollama
+identity checks. No inference or default analysis options changed.
+
+README/docs/SETUP now give clone > npm ci > website/entry/workspace, production
+startup, model-free checks and Windows/CUDA/FFmpeg/Ollama prerequisites. Full Python
+environment/model installer was NOT run on a fresh Windows machine; CPU/macOS/Linux
+inference remains unverified. UI installation/build/browser validation was genuinely
+isolated from existing node_modules and saved recordings.
+Normal production server restored on port3000, session43238. Saved-recording
+journey also passes. Final package/lockfile clean npm ci repeated successfully.
+Delivering this setup-only fix to GitHub.
+Unrelated untracked shuttle_sense/ remains untouched.
+
 ## Approved connected website/workspace delivery (2026-10-11)
 
 User explicitly approved both designs and requested proper start navigation,

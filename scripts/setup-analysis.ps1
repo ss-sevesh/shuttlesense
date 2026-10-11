@@ -14,6 +14,8 @@ if ($CheckOnly) {
   Run-Python $runtimePython @('-c',"import torch, transformers, cv2, numpy; print('CUDA available:', torch.cuda.is_available()); assert torch.cuda.is_available(), 'An NVIDIA CUDA GPU is required for the current local vision pipeline'")
   Run-Python (Join-Path $projectRoot 'data/player-pose-env/Scripts/python.exe') @('-c',"import mediapipe, ultralytics; print('Player runtime ready')")
   Run-Python (Join-Path $projectRoot 'data/tracknet-env/Scripts/python.exe') @('-c',"import torch, cv2; print('Shuttle runtime ready')")
+  Run-Python $runtimePython @('analysis/download_bst.py','--check-only')
+  Run-Python $runtimePython @('-c',"import positional_encodings, torchinfo; import sys; sys.path.insert(0,'data/bst-official'); from model.bst import BST_0; print('BST runtime ready')")
   Run-Python $runtimePython @('-c',"import sys; sys.path.insert(0,'analysis'); from match_report import ollama, CONFIG; assert 'sha256-' + CONFIG['sha256'] in ollama('show', {'model':CONFIG['ollamaModel']})['modelfile']; print('Pinned text report model ready')")
   Write-Output 'Analysis files and imports ready. This is not an end-to-end accuracy check.'
   exit
@@ -23,7 +25,7 @@ Get-Command ollama -ErrorAction Stop | Out-Null
 Write-Output 'Preparing local environments and official pretrained models. Downloads may take several GB.'
 if (-not (Test-Path -LiteralPath $runtimePython)) { Run-Python 'python' @('-m','venv','data/hf-racquet-env') }
 Run-Python $runtimePython @('-m','pip','install','torch==2.11.0','--index-url','https://download.pytorch.org/whl/cu128')
-Run-Python $runtimePython @('-m','pip','install','transformers==4.57.6','huggingface-hub==0.36.2','safetensors==0.8.0','accelerate==1.12.0','numpy==2.5.3','opencv-python==5.0.0.93','pillow==12.3.0','mediapipe==0.10.35','ultralytics==8.4.174','onnxruntime==1.30.0')
+Run-Python $runtimePython @('-m','pip','install','transformers==4.57.6','huggingface-hub==0.36.2','safetensors==0.8.0','accelerate==1.12.0','numpy==2.5.3','opencv-python==5.0.0.93','pillow==12.3.0','mediapipe==0.10.35','ultralytics==8.4.174','onnxruntime==1.30.0','positional-encodings==6.0.4','torchinfo==1.8.0')
 $sharedPackages = Join-Path $projectRoot 'data/hf-racquet-env/Lib/site-packages'
 foreach ($name in @('player-pose-env','tracknet-env')) {
   $linkedPython = Join-Path $projectRoot "data/$name/Scripts/python.exe"
@@ -38,6 +40,7 @@ if (-not (Test-Path -LiteralPath 'data/models/mediapipe/pose_landmarker_full.tas
   Move-Item -LiteralPath 'data/models/mediapipe/pose_landmarker_full.task.partial' -Destination 'data/models/mediapipe/pose_landmarker_full.task'
 }
 Run-Python $runtimePython @('analysis/download_tracknet.py')
+Run-Python $runtimePython @('analysis/download_bst.py')
 Run-Python $runtimePython @('analysis/ground_landing.py','--download')
 Run-Python $runtimePython @('analysis/download_shot_coach.py')
 Run-Python $runtimePython @('analysis/download_report_model.py')

@@ -17,15 +17,16 @@ It demonstrates the interface, not model accuracy.
 
 ## Try it in two minutes
 
-Install Node.js 22 or newer and Git:
+Install Node.js 22 or newer and Git. The website, empty workspace and synthetic demo need only Node; Python/GPU setup is needed for real uploads:
 
 ```sh
 git clone https://github.com/ss-sevesh/shuttlesense.git
 cd shuttlesense
-npm install
+npm ci
 npm run dev
 ```
 
+Open **http://127.0.0.1:3000** and choose **Start your review** to enter the workspace. A fresh install starts with an empty match library.
 Open **http://127.0.0.1:3000/demo** for the interactive feature demo.
 No Python, GPU, API key, model download or private footage is needed for the demo.
 On Windows PowerShell use `npm.cmd` and `npx.cmd` instead of the `.ps1` shims.
@@ -56,6 +57,8 @@ account. The website and local profile are linked from the workspace header.
 Upload optionally enables pretrained BST shot estimates as context. Displayed
 player evidence remains near-side; shot labels do not confirm impacts or intent.
 The workspace tabs use real saved recordings; `/demo` uses generated sample data.
+
+For a production build, run `npm run build`, then `npm start` and open the same URL.
 
 ## Real video analysis
 
@@ -110,11 +113,11 @@ See [the evaluation protocol](docs/evaluation.md).
 ```sh
 npm run build
 npm run typecheck
-npx playwright test tests/public-demo.spec.ts
+npm run test:public
 python -m unittest discover -s analysis -p test_match_report.py
 ```
 
-Playwright uses an installed Chrome browser. Public-demo tests need no private files
+Playwright uses an installed Chrome browser (only needed for tests). Public UI/demo tests need no private files
 or models. Real-video tests require local saved reports and approved footage;
 do not run historical footage suites indiscriminately.
 

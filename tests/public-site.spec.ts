@@ -106,7 +106,7 @@ test('blocked local storage still permits a guest to open the workspace',async({
 });
 
 
-test('front door leads through entry, upload and saved review back to the same workspace',async({page})=>{
+test('front door leads through entry and upload, with empty or saved workspace navigation',async({page})=>{
   await page.emulateMedia({reducedMotion:'reduce'});
   await page.goto('/');
   await expect(page).toHaveURL(/index\.html$/);
@@ -118,12 +118,18 @@ test('front door leads through entry, upload and saved review back to the same w
   await page.getByRole('button',{name:'Upload Match',exact:true}).click();
   await expect(page.getByLabel('Match video',{exact:true})).toBeAttached();
   await page.getByRole('button',{name:'Close upload'}).click();
-  await page.getByRole('link',{name:'Open full review'}).click();
-  const id=new URL(page.url()).pathname.split('/').pop();
-  await expect(page.getByRole('heading',{name:'Your recording',exact:true})).toBeVisible();
-  await page.getByRole('link',{name:'Back to Workspace'}).click();
-  await expect(page).toHaveURL(new RegExp('/workspace\\?view=rallies&analysis='+id+'$'));
-  await expect(page.getByRole('combobox',{name:'Recording',exact:true})).toHaveValue(id!);
+  if(await page.getByRole('link',{name:'Open full review'}).count()) {
+    await page.getByRole('link',{name:'Open full review'}).click();
+    const id=new URL(page.url()).pathname.split('/').pop();
+    await expect(page.getByRole('heading',{name:'Your recording',exact:true})).toBeVisible();
+    await page.getByRole('link',{name:'Back to Workspace'}).click();
+    await expect(page).toHaveURL(new RegExp('/workspace\\?view=rallies&analysis='+id+'$'));
+    await expect(page.getByRole('combobox',{name:'Recording',exact:true})).toHaveValue(id!);
+  } else {
+    await expect(page.getByRole('heading',{name:'Start with your own match'})).toBeVisible();
+    await page.getByRole('link',{name:/^My Matches/}).click();
+    await expect(page.getByRole('heading',{name:'No recordings yet'})).toBeVisible();
+  }
   await page.getByRole('link',{name:'Website',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Own The Rally'})).toBeVisible();
 });

@@ -3,7 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 test('fresh-clone synthetic demo plays and demonstrates review without model inference',async({page,request})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/demo');
-  await expect(page.getByRole('heading',{name:'Explore ShuttleSense.'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Explore your next rally.'})).toBeVisible();
   await expect(page.locator('main')).toContainText('synthetic evidence');
   const video=page.locator('video');await expect.poll(()=>video.evaluate((v:HTMLVideoElement)=>v.duration)).toBe(12);
   await page.getByRole('button',{name:'Show attempt at 4.500 s',exact:true}).click();
