@@ -111,6 +111,9 @@ regression. Synthetic profile/history originals were restored by the checks.
 
 GitHub Actions runs the reproducible model-free checks on Linux and Windows.
 Actual local inference stays opt-in; no private video, profile or vectors enter CI.
+Both OS jobs passed [the published release checks](https://github.com/ss-sevesh/shuttlesense/actions/runs/38158901310)
+at e01d333, including production build, types, browser/API tests and synthetic
+Python retrieval/conversation/installer/attempt-photo suites.
 See the current release checklist in [tasks/todo.md](../tasks/todo.md).
 
 - Measured model/retrieval spike: persistent reopen, Windows competing-process lock,

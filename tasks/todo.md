@@ -5,9 +5,14 @@
 - [x] Trace attempt-photo selection and reproduce chat service failure.
 - [x] Fix runtime/Ollama error status and verify outage recovery without saved turns.
 - [x] Enable standalone Windows text RAG setup; update current model/run instructions.
-- [ ] Publish verified fresh-install checks as Linux/Windows model-free CI.
+- [x] Publish verified fresh-install checks as Linux/Windows model-free CI.
 - [x] Review actual local chat answers and synthetic photo-selection regression.
-- [ ] Review diff, update handoff, commit/push and inspect GitHub checks.
+- [x] Review diff, update handoff, commit/push and inspect GitHub checks.
+
+Published implementation ccf4f4b; Linux and Windows both passed the complete
+[fresh-clone workflow](https://github.com/ss-sevesh/shuttlesense/actions/runs/38158901310)
+at e01d333. Documentation status follows in a separate commit. Independent
+model accuracy and user acceptance are not completed by these software checks.
 
 See the current priority in [plan.md](plan.md). Earlier unchecked research tasks
 are retained; this release does not claim independent model accuracy.

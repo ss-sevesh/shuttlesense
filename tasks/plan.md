@@ -27,6 +27,12 @@ chat setup does not require FFmpeg/CUDA; service outages give actionable errors;
 the measured local chat suite passes; published fresh-clone checks pass. A fresh
 GPU machine and independent detection/coaching accuracy remain unverified.
 
+Implementation and software verification complete. Published ccf4f4b and e01d333;
+both Linux and Windows passed [GitHub run38158901310](https://github.com/ss-sevesh/shuttlesense/actions/runs/38158901310).
+The workflow tests production build, types, public/profile/chat browser/API flows
+and synthetic retrieval/conversation/installer/photo checks with no private data
+or downloaded model weights. User acceptance and research gates remain open.
+
 ## Text-only illustrated match report (2026-10-11)
 
 1. Pin Qwen3-4B-Instruct-2507 and Unsloth Q4_K_M GGUF by revision and SHA256;

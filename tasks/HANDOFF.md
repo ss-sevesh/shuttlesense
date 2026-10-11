@@ -2,13 +2,14 @@
 
 ## Runnable RAG release follow-up (2026-10-11)
 
-Publication: local implementation commitccf4f4b is ready, but GitHub rejected the
-push because the OAuth credential lacks workflow scope for .github/workflows/ci.yml.
-No remote changes occurred; origin/main remains4ec6655. Started gh auth refresh
---hostname github.com --scopes workflow (session8170) and asked the user to complete
-device authorization in their browser. After authorization, retry git push origin
-main and inspect both Actions jobs, fixing actual failures before checking the
-remaining release tasks. Do not remove CI or claim publication succeeded.
+Publication complete: implementation ccf4f4b and handoff e01d333 pushed to GitHub
+main after the user granted GitHub CLI workflow scope in the renewed device flow.
+The initial rejection was OAuth scope, not code/build failure. Both Linux and Windows
+passed every fresh-clone CI gate in run38158901310:
+https://github.com/ss-sevesh/shuttlesense/actions/runs/38158901310
+Build, typecheck, npm audit, public/profile/chat browser/API tests and all four
+synthetic Python suites passed on fresh GitHub machines with no private data or
+model weights. These checks do not establish fresh GPU installation or model accuracy.
 Additional7 report and5 ending-coach synthetic regressions pass. Full existing
 analysis -CheckOnly passed CUDA/player/shuttle/BST/report readiness; no inference
 or independent accuracy was measured there. Three wording reruns also pass and
@@ -51,8 +52,8 @@ Ollama weights: not a cold download or separate GPU machine. Private originals
 restored by benchmark/tests. Preview remains3000/session6772; Ollama restarted.
 
 Fresh-check copy is ignored artifacts/release-fresh-20261011; benchmark artifacts
-readiness-rag-*. GitHub Actions prepared for Linux/Windows production/model-free
-checks. GitHub publication/check results pending below. No private evidence uploaded,
+readiness-rag-*. GitHub Actions published and passing on Linux/Windows for production/
+model-free checks. No private evidence uploaded,
 new video processing or report regeneration. Unrelated shuttle_sense/ untouched;
 next-env.d.ts dev-generated difference excluded from commits. Model usefulness and
 independent detection/coaching accuracy remain unvalidated; user acceptance pending.
