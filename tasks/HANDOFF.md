@@ -1,5 +1,38 @@
 # ShuttleSense session handoff
 
+## NEXT SESSION PRIORITY: RAG not accepted by user (2026-10-11)
+
+User ended this session after another chat failure: browser reported HTTP422
+(Unprocessable Entity). Exact response body/question was not captured, so root
+cause is unknown. User explicitly says the current RAG is unsatisfactory and wants
+proper models and proper responses next session. Do NOT describe the existing
+implementation as user-accepted or the user-facing issue as resolved. Do not resume
+feature expansion or make another size-only model swap.
+
+First reproduce the failing user flow and inspect the actual /api/chat response
+body.422 can arise from worker/setup failures or source/scope/numeric validation;
+HTTP status alone cannot identify which. Understand current retrieval, sources,
+constraints and refusal behavior before changing them. Keep the source/privacy/
+medical boundaries; fix excessive or incorrect rejection without bypassing them.
+
+Evaluate candidate models on realistic report/evidence and general badminton
+questions, answer usefulness, source grounding, refusal accuracy, success rate and
+end-to-end latency on this RTX4060 laptop. Tiny three-question generation checks
+and safe rejections do not establish production answer quality or model superiority.
+Current model qwen3.5:2b-q4_K_M, thinking false, pinned in analysis/chat_model.json;
+previous chat model was the unchanged report model Qwen3-4B-Instruct-2507.
+Generation-only improvement was modest (~12%); one full indexed API answer12.438s.
+User has not accepted that tradeoff. Existing report/vision models, UI, rally review,
+marked outcomes and reports must remain preserved. Only Paris350_434 for real video
+checks; synthetic fixtures for privacy/isolation. All inference remains local.
+
+Current local commits:7d6cfef (smaller chat/query embedding reuse), fa94e27
+(lock error classification), ddf13f5 (Random profile). No push/cloud deployment.
+Preview last running port3000/session80758; verify next session, do not assume live.
+Code Review MCP enabled in user config; direct handshake/list31tools passed, but
+current session inventory lacked it. Refresh/restart Codex to load plugin tools.
+User explicitly ended session: no additional model download/analysis/debugging now.
+
 ## Faster RAG and lock diagnosis follow-up (2026-10-11)
 
 User reported chat 429 with no visible work, then requested a smart/faster local
