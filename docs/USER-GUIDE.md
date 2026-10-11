@@ -148,7 +148,9 @@ attached after text generation in the illustrated HTML/PDF exports.
 ## Player Profile and Coach Chat
 
 Use **Player Profile** in the workspace to save, edit or delete optional local
-details. Health details require separate consent; withdrawing it clears them.
+details. **Random** fills an editable sample without saving; replace it with actual
+details before saving. It clears health fields and leaves health consent off.
+Health details require separate consent; withdrawing it clears them.
 Use **Coach Chat** or a current report's **Chat about this match** link. Choose
 general coaching or an explicit recording; cited times open paused review frames.
 Old replies are historical. **Delete this chat** removes that context's saved turns.

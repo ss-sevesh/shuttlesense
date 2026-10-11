@@ -98,3 +98,31 @@ No new full-video worker run or report-model regeneration was needed for this fe
 existing Paris350_434 cached evidence and synthetic fixtures were used. Other browsers,
 new hardware/OS installs, large-corpus load and multilingual safety are unverified.
 No authentication, calendar integration, multi-user serving or cloud vector hosting.
+
+## Response time and request data
+
+The measured tiny spike took 33.85 seconds for three questions including cold loads
+and indexing, about 11 seconds per question on average. This is not a timing promise
+for larger reports. New or changed reports need embedding first; source count,
+answer length and current machine load affect time. Models unload after each chat,
+so a repeat request still reloads them. Exact facts and checked food/schedule paths
+skip model generation. Busy analysis/report work returns a retry message rather
+than queueing; model worker timeout is six minutes, not the expected response time.
+
+The browser sends the question, selected analysis ID (or general context), and
+current reviewed rally boundaries to the local chat API. The server reads the saved
+validated profile, selected recording evidence/current report and reference notes.
+For model replies, the local worker indexes source text only and embeds the question
+for search. Ollama's text model receives rules, the question, the saved profile
+(including health details only with consent), up to three recording sources and two
+reference sources, and at most two recent matching question/answer turns. General
+chat has no recording sources. Profile data and conversation are not indexed. The
+question is sent to the local embedding model for search, without being saved as a
+vector source. No photos or raw video enter text chat, and no chat data goes to a
+cloud model. Questions, validated replies and citations are saved in local history;
+information typed into a question can therefore remain there until chat deletion.
+
+**Random** fills only an unsaved sample profile in the form. It clears health
+fields and consent; it does not infer health, send a chat or call a model. Save only
+after replacing samples with actual details. Random is disabled if the saved profile
+could not be loaded, preventing accidental replacement of unreadable data.

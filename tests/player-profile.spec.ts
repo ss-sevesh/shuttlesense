@@ -42,4 +42,23 @@ test('failed profile reads cannot overwrite unseen saved details',async({page})=
   await page.route('**/api/profile',route=>route.fulfill({status:500,json:{error:'Profile could not be read.'}}));
   await page.goto('/workspace?view=profile');await expect(page.locator('.profile-panel').getByRole('alert')).toContainText('Reload to retry');
   await expect(page.getByRole('button',{name:'Save profile',exact:true})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'Random',exact:true})).toBeDisabled();
+});
+test('Random fills an editable valid sample without saving or consenting to health use',async({page,request})=>{
+  const before=await (await request.get('/api/profile')).json();
+  await page.goto('/workspace?view=profile');await page.getByLabel('I consent').check();
+  await page.getByLabel('Current pain / injury').fill('Synthetic unsaved injury');
+  await page.getByRole('button',{name:'Random',exact:true}).click();
+  await expect(page.getByLabel('Display name',{exact:true})).toHaveValue(/^Sample /);
+  await expect(page.getByLabel('Age in years')).toHaveValue(/^(1[89]|[23]\d|40)$/);
+  await expect(page.getByLabel('I consent')).not.toBeChecked();
+  await expect(page.getByLabel('Current pain / injury')).toHaveCount(0);
+  await expect(page.getByRole('status')).toContainText('not saved');
+  expect(await (await request.get('/api/profile')).json()).toEqual(before);
+  await page.getByLabel('Display name',{exact:true}).fill('Edited sample');
+  await page.getByRole('button',{name:'Save profile',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('Profile saved');
+  const saved=(await (await request.get('/api/profile')).json()).profile;
+  expect(saved.name).toBe('Edited sample');expect(saved.healthConsent).toBe(false);
+  for(const key of ['conditions','injuries','restrictions'])expect(saved[key]).toBe('');
 });
