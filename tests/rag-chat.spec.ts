@@ -63,6 +63,9 @@ test('chat API validates input, isolates saved turns and refuses concurrent GPU 
   const active=join(root,'active.json');await writeFile(active,JSON.stringify({pid:process.pid}),{flag:'wx'});
   try{expect((await request.post('/api/chat',{headers:origin,data:{analysisId:ids[0],question:'outcome',rallies:{}}})).status()).toBe(429);}
   finally{await unlink(active);}
+  await writeFile(active,'',{flag:'wx'});
+  try{expect((await request.post('/api/chat',{headers:origin,data:{analysisId:ids[0],question:'outcome',rallies:{}}})).status()).toBe(503);}
+  finally{await unlink(active);}
   expect((await request.delete('/api/chat?analysis='+ids[0],{headers:origin})).ok()).toBe(true);
   expect((await (await request.get('/api/chat?analysis='+ids[0])).json()).history).toEqual([]);
 });

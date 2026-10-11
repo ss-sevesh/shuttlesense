@@ -35,7 +35,7 @@ export async function acquireAnalysisLock() {
   await mkdir(jobsRoot, { recursive: true });
   try {
     const active = JSON.parse(await readFile(lockPath, 'utf8'));
-    try { process.kill(active.pid, 0); throw new Error('Another full-video analysis is running. Wait for it to finish.'); }
+    try { process.kill(active.pid, 0); throw Object.assign(new Error('Another full-video analysis is running. Wait for it to finish.'), {code:'EBUSY'}); }
     catch (error) {
       if (!(error instanceof Error) || !('code' in error) || error.code !== 'ESRCH') throw error;
       await unlink(lockPath);

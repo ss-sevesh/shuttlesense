@@ -14,6 +14,10 @@ export const maxDuration=420;
 const headers={'Cache-Control':'private, no-store'};
 type Entry=ChatAnswer&{question:string;createdAt:string;evidenceHash:string;profileHash:string};
 function historyPath(id:string) {if(id)jobPath(id);return join(process.cwd(),'data/chat',id||'coach','history.json');}
+function lockFailure(error:unknown) {
+  const busy=!!error&&typeof error==='object'&&'code' in error&&['EBUSY','EEXIST'].includes(String(error.code));
+  return Response.json({error:busy?'Analysis/report/chat is busy. Retry when finished.':'Local work lock unavailable. Retry; if this persists, restart the local app.'},{status:busy?429:503,headers});
+}
 function runWorker(payload:unknown):Promise<{answer:string;citations:string[];sources:ChatSource[]}> {
   return new Promise((resolve,reject)=>{
     const child=spawn(/* turbopackIgnore: true */ join(process.cwd(),'data/hf-racquet-env/Scripts/python.exe'),['analysis/rag_chat.py','--worker'],{cwd:process.cwd(),windowsHide:true,stdio:['pipe','pipe','pipe']});
@@ -37,7 +41,7 @@ export async function DELETE(request:Request) {
   if(!localRequest(request,true))return Response.json({error:'Local chat only.'},{status:403});
   let lock;
   try{lock=await acquireAnalysisLock();await lock.writeFile(JSON.stringify({pid:process.pid,kind:'chat-delete'}));await lock.close();}
-  catch{return Response.json({error:'Analysis/report/chat is busy. Retry when finished.'},{status:429,headers});}
+  catch(error){return lockFailure(error);}
   try{await unlink(historyPath(new URL(request.url).searchParams.get('analysis')??'')).catch(error=>{if(error.code!=='ENOENT')throw error;});return Response.json({deleted:true},{headers});}
   catch{return Response.json({error:'Chat could not be deleted.'},{status:400,headers});}
   finally{await lock.close().catch(()=>undefined);await unlink(join(jobsRoot,'active.json')).catch(()=>undefined);}
@@ -49,7 +53,7 @@ export async function POST(request:Request) {
   catch{return Response.json({error:'Invalid or oversized chat request.'},{status:400,headers});}
   let lock;
   try{lock=await acquireAnalysisLock();await lock.writeFile(JSON.stringify({pid:process.pid,kind:'chat'}));await lock.close();}
-  catch{return Response.json({error:'Analysis/report/chat is busy. Retry when finished.'},{status:429,headers});}
+  catch(error){return lockFailure(error);}
   let workerRan=false;
   try {
     const stored=await readLocalJson(join(process.cwd(),'data/player/profile.json'));
