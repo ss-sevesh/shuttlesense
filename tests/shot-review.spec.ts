@@ -10,8 +10,8 @@ test('workspace skips unfinished analysis folders without browser errors', async
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
   page.on('pageerror', error => errors.push(error.message));
   try {
-    await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'See the rally. Find the reason.' })).toBeVisible();
+    await page.goto('/workspace');
+    await expect(page.getByRole('heading', { name: 'Own your next rally.' })).toBeVisible();
     expect(errors).toEqual([]);
   } finally {
     rmdirSync(directory);
@@ -21,7 +21,7 @@ test('workspace skips unfinished analysis folders without browser errors', async
 test('saved recording is discoverable from the workspace without uploading again', async ({ page }) => {
   const id = 'b5af3dc2-a4a0-42d0-838a-c84c6a6adae6';
   test.skip(!existsSync(`data/analysis-jobs/${id}/result.json`), 'Requires the saved private analysis');
-  await page.goto('/');
+  await page.goto('/workspace');
   const saved = page.getByRole('region', { name: 'Your saved video analyses' });
   const recording = saved.locator(`a[href="/review/${id}#camera-values"]`);
   await expect(recording).toContainText('WhatsApp Video');
@@ -91,7 +91,7 @@ test('near-player contact evidence loads exact frames and exports separate coach
 });
 
 async function upload(page: Page, file: string) {
-  await page.goto('/');
+  await page.goto('/workspace');
   await page.getByRole('button', { name: 'Upload Match', exact: true }).click();
   await page.getByLabel('Match video', { exact: true }).setInputFiles(file);
   await expect(page.locator('.local-preview')).toHaveAttribute('aria-busy', 'false');

@@ -29,7 +29,14 @@ npm run dev
 Open **http://127.0.0.1:3000/demo** for the interactive feature demo.
 No Python, GPU, API key, model download or private footage is needed for the demo.
 On Windows PowerShell use `npm.cmd` and `npx.cmd` instead of the `.ps1` shims.
-The workspace is **http://127.0.0.1:3000**; saved recordings appear in **My Matches**.
+The workspace is **http://127.0.0.1:3000/workspace**; saved recordings appear in **My Matches**.
+
+Start at **http://127.0.0.1:3000** for the editorial website. Local entry is
+**http://127.0.0.1:3000/login**. Both use one self-contained `public/index.html`
+with embedded badminton imagery, Onest and pinned CDN Lenis. Native scrolling and
+system fonts remain available when those CDNs cannot load. Local entry remembers
+a display name in this browser, supports guests and does not create or protect an
+account. The website and local profile are linked from the workspace header.
 
 ## Features
 

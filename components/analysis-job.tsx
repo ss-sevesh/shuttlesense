@@ -96,8 +96,8 @@ export function StartShotAnalysis({ file, corners, onMarkCourt, onComplete }: { 
 export function SavedAnalysisReview({ id }: { id: string }) {
   const [data, setData] = useState<ReviewData | null>(null);
   const ready = useCallback((result: ReviewData) => setData(result), []);
-  return <main id="main" className="saved-analysis main-content"><a className="skip-link" href="#review-content">Skip to review</a><a className="text-button" href="/">Back to Workspace <ArrowUpRight size={16} aria-hidden="true"/></a>
-    <div className="page-heading"><div><div className="intro-label">YOUR VIDEO REVIEW</div><h1>Review the rallies you lost.</h1><p>Watch the final seconds, inspect the attempt, and understand what could improve.</p></div>{data && <span className="review-badge"><CheckCircle size={16} aria-hidden="true"/>Analysis Ready</span>}</div>
+  return <main id="main" className="saved-analysis main-content"><a className="skip-link" href="#review-content">Skip to review</a><a className="text-button" href={'/workspace?view=rallies&analysis='+encodeURIComponent(id)}>Back to Workspace <ArrowUpRight size={16} aria-hidden="true"/></a>
+    <div className="page-heading workspace-hero"><div><div className="intro-label">SHUTTLESENSE · FULL REVIEW</div><h1>Look closer. Play smarter.</h1><p>Watch the final seconds, inspect the attempt, and understand what could improve.</p><span className="hero-photo-note">Illustrative court · your recording below</span></div>{data && <span className="review-badge"><CheckCircle size={16} aria-hidden="true"/>Analysis Ready</span>}</div>
     <div id="review-content">{data ? <AnalysisReview key={data.analysisSha256} data={data} videoUrl={`/api/analysis/${encodeURIComponent(id)}/video`}/> : <AnalysisJobProgress id={id} onComplete={ready}/>}</div>
   </main>;
 }

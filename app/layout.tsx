@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 
-const sans = localFont({ src: "../public/fonts/geist-latin.woff2", display: "swap", variable: "--font-sans" });
+const sans = localFont({ src: [{ path: "../public/fonts/onest-400.ttf", weight: "400" }, { path: "../public/fonts/onest-500.ttf", weight: "500" }], display: "swap", variable: "--font-sans" });
 export const metadata: Metadata = {
   title: "ShuttleSense | AI Badminton Video Analysis",
   icons: { icon: "/favicon.svg" },

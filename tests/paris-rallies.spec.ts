@@ -5,7 +5,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 test('analysis switches default to the focused rally test and enforce dependencies', async ({ page, request }) => {
   const file = readdirSync('.').find(name => name.endsWith('350_434.mp4'));
   test.skip(!file, 'Requires the specified Paris clip');
-  await page.goto('/');
+  await page.goto('/workspace');
   await page.getByRole('button', { name: 'Upload Match', exact: true }).click();
   await page.getByLabel('Match video', { exact: true }).setInputFiles(file!);
   const options = page.getByRole('group', { name: 'Analysis options' });

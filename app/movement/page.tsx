@@ -28,9 +28,9 @@ export default async function MovementPage() {
       message = "Movement analysis could not be loaded. Please regenerate this clip’s analysis.";
     }
   }
-  return <main id="main" className="main-content movement-preview">
-    <a className="text-button" href="/">← Back to workspace</a>
-    <div className="page-heading"><div><div className="intro-label">TRACKED CLIP · APPROXIMATE</div><h1>Movement from your clip.</h1><p>Coarse player positions from the white-shirt tracking experiment.</p></div></div>
+  return <main id="main" className="main-content saved-analysis movement-preview">
+    <a className="text-button" href="/workspace">← Back to workspace</a>
+    <div className="page-heading workspace-hero"><div><div className="intro-label">TRACKED CLIP · APPROXIMATE</div><h1>Movement from your clip.</h1><p>Coarse player positions from the white-shirt tracking experiment.</p><span className="hero-photo-note">Illustrative court · movement evidence below</span></div></div>
     {data ? <div className="movement-preview-grid">
       <section className="panel heatmap-panel" aria-labelledby="movement-heading">
         <div className="panel-heading"><div><h2 id="movement-heading">Approximate court coverage</h2><p>{data.start_s.toFixed(2)}–{data.end_s.toFixed(2)}s · {data.player_id}</p></div></div>
