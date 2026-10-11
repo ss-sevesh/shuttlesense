@@ -2,6 +2,19 @@
 
 ## Runnable RAG release follow-up (2026-10-11)
 
+Publication: local implementation commitccf4f4b is ready, but GitHub rejected the
+push because the OAuth credential lacks workflow scope for .github/workflows/ci.yml.
+No remote changes occurred; origin/main remains4ec6655. Started gh auth refresh
+--hostname github.com --scopes workflow (session8170) and asked the user to complete
+device authorization in their browser. After authorization, retry git push origin
+main and inspect both Actions jobs, fixing actual failures before checking the
+remaining release tasks. Do not remove CI or claim publication succeeded.
+Additional7 report and5 ending-coach synthetic regressions pass. Full existing
+analysis -CheckOnly passed CUDA/player/shuttle/BST/report readiness; no inference
+or independent accuracy was measured there. Three wording reruns also pass and
+restore originals. No loaded Ollama model, active work lock or benchmark backup
+remains. User-facing app remains available on3000.
+
 User requested auditing/completing RAG and runnable setup, proper plan/execution
 on GitHub, and the actual condition behind the rally attempt photo. Current scope
 and checklist are at the top of tasks/plan.md and tasks/todo.md; retain historical
