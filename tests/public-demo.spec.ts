@@ -27,6 +27,6 @@ test('fresh-clone synthetic demo plays and demonstrates review without model inf
   await expect(page.getByRole('region',{name:'AI match report'}).getByRole('alert')).toContainText('Rally boundaries or outcomes changed');
   for(const width of [320,768,1024,1440]){await page.setViewportSize({width,height:1000});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);}
   expect((await new AxeBuilder({page}).include('main').analyze()).violations).toEqual([]);
-  expect((await request.post('/api/demo/landing',{headers:{origin:'http://127.0.0.1:3000'},data:{rallyId:99,outcome:'lost'}})).status()).toBe(400);
+  expect((await request.post('/api/demo/landing',{headers:{origin:process.env.PLAYWRIGHT_BASE_URL??'http://127.0.0.1:3000'},data:{rallyId:99,outcome:'lost'}})).status()).toBe(400);
   expect(errors).toEqual([]);
 });

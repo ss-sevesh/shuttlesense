@@ -64,9 +64,14 @@ Mark completed outcomes as Won/Lost/Unknown. Only confirmed losses get local end
 explanations. Select a loss, replay the full rally or final seconds, and inspect its
 small attempt photo beside the description.
 
-The photo is the closest observed wrist-to-shuttle gap relative to player height
-within the final two seconds of continuous valid ending evidence. It is not the
-first ground-touch frame or a guaranteed impact. **Why this photo?** explains this.
+The photo is the closest observed wrist-to-shuttle gap divided by the detected
+player-box height within the final two seconds of continuous valid ending
+evidence. It does not detect the moment the racket and shuttle lose contact,
+prove a mistake, or identify first ground touch. **Why this photo?** explains this.
+Selection requires a visible near-player pose and shuttle, confident wrists and
+torso landmarks, and a continuous tracked tail up to the estimated ending.
+Cuts, missing detections and identity changes break that tail; insufficient
+evidence produces no photo. The same original frame supplies the crop and overlay.
 The ending explanation uses five chronological frames, including the exact attempt
 photo, after the previous near hit and within the rally/court segment. The vision
 model sees crops preserving the near player and tracked shuttle plus same-frame

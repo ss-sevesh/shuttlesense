@@ -32,6 +32,25 @@ class EndingTests(unittest.TestCase):
             raw['xy_px']=[210,120]
         self.assertEqual(self.review()['status'],'reach_or_swing_observed')
 
+    def test_photo_uses_normalized_wrist_gap_not_last_frame_or_raw_gap(self):
+        self.shuttle['samples'][10]['xy_px']=[120,120]
+        self.shuttle['samples'][20]['xy_px']=[130,120]
+        self.poses['samples'][20]['players'][0]['box_xywh'][3]=400
+        evidence=self.review()['evidence']
+        self.assertEqual(evidence['frame'],20)
+        self.assertEqual(evidence['distancePx'],30)
+        self.assertEqual(evidence['distanceHeights'],.075)
+
+    def test_photo_excludes_earlier_gap_outside_final_two_seconds(self):
+        self.poses['samples']=[dict(time_s=i/30,source_frame=i,players=copy.deepcopy(self.poses['samples'][0]['players'])) for i in range(90)]
+        self.shuttle['samples']=[dict(time_s=i/30,source_frame=i,xy_px=[500,120],inpainted=False) for i in range(90)]
+        self.shuttle['samples'][10]['xy_px']=[100,120]
+        self.shuttle['settings']['end_s']=3
+        self.scenes=[dict(court=True,reset=False) for _ in range(90)]
+        self.windows[0].update(end_s=3,review_stop_s=3)
+        self.assertGreaterEqual(self.review()['evidence']['time'],1)
+        self.assertEqual(self.review()['evidence']['distancePx'],400)
+
     def test_unknown_end_missing_tail_cut_and_identity_switch_abstain(self):
         self.windows[0]['end_s']=None
         self.assertIsNone(self.review()['evidence'])

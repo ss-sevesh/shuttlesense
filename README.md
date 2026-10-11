@@ -41,6 +41,30 @@ account. The website and local profile are linked from the workspace header.
 
 ## Features
 
+### Local Coach Chat (RAG)
+
+Save an optional **Player Profile** once, then ask **Coach Chat** general badminton
+questions or select a recording. Semantic search uses local Qwen3-Embedding-0.6B
+and persistent Qdrant; Qwen3-4B-Instruct-2507 writes text answers with source links.
+Exact rally facts use direct evidence lookup. Profiles and photos are not indexed;
+text chat receives no images. The separate vision ending coach is unchanged.
+
+On Windows, install Python 3.11+ and [Ollama](https://ollama.com/download/windows),
+open Ollama (or keep `ollama serve` running in another terminal), then:
+
+```powershell
+npm.cmd run setup:rag
+npm.cmd run check:rag
+npm.cmd run dev
+```
+
+Open **http://127.0.0.1:3000/workspace?view=chat**. This text-only setup downloads
+about 3.2 GB of pinned model weights; it does not install CUDA, FFmpeg or video
+models. Real uploads need the separate analysis setup below. Chat setup/worker
+paths currently target Windows; the website/demo run independently on other OSes.
+Model speed depends on hardware. No API key or cloud inference is used.
+See [RAG operation and limits](docs/RAG-CHAT.md).
+
 | Feature | What it does |
 | --- | --- |
 | Rally replay | Play a bounded rally or final seconds; correct observed boundaries. |
@@ -84,6 +108,12 @@ The current implementation is a research prototype, not a hosted analysis servic
 
 ## What the evidence means
 
+The **attempt photo** is a frame selected by the smallest wrist-to-shuttle image
+gap divided by player-box height, in continuous valid tracking within the final
+two seconds before the estimated rally end. It is not selected by racket/shuttle
+contact loss and does not prove a mistake. The image, pose and gap use that same
+original frame; a manually marked racket head changes the overlay, not selection.
+
 - Rally endings are estimated shuttle stops, **not confirmed first ground touch**.
   Line highlights do not provide verified in/out calls. Outcomes are user marked.
 - Hit poses are swing/contact candidates, not a validated hit count. Their count
@@ -109,6 +139,11 @@ Independent detection accuracy and coaching usefulness remain unvalidated.
 See [the evaluation protocol](docs/evaluation.md).
 
 ## Development
+
+[Fresh-clone checks](https://github.com/ss-sevesh/shuttlesense/actions/workflows/ci.yml)
+build and test the website/demo, profile and model-free RAG paths on Linux and
+Windows without private footage or model downloads. They do not establish
+full-video accuracy or fresh-machine GPU compatibility.
 
 ```sh
 npm run build

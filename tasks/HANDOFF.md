@@ -1,5 +1,49 @@
 # ShuttleSense session handoff
 
+## Runnable RAG release follow-up (2026-10-11)
+
+User requested auditing/completing RAG and runnable setup, proper plan/execution
+on GitHub, and the actual condition behind the rally attempt photo. Current scope
+and checklist are at the top of tasks/plan.md and tasks/todo.md; retain historical
+unchecked research/accuracy gates. No subagents used. Existing latest repair was
+already on GitHub main at4ec6655 when this work began.
+
+Reproduced six model-backed HTTP422s because Ollama was not running. Readiness
+showed connection refused; starting local Ollama restored17/17 API successes.
+Now missing runtime/failed worker is503, stopped Ollama is503 with start instructions,
+and output validation remains422. Added outage regression: no saved answer and no
+leftover work lock. Do not log raw worker diagnostics/profile data.
+
+RagOnly setup now creates/reuses the Python environment and installs text dependencies
+without requiring full CUDA/video setup. npm setup:rag/check:rag shortcuts; main
+README/setup/RAG docs explain demo, standalone Windows text chat and full analysis.
+Corrected stale2B setup copy to current pinned4B. Added an attributed Badminton
+England basic/thumb-grip note; aligned split-step paraphrase with original BWF
+wording. Reference content remains small and prose can still add unsupported details.
+
+Attempt image is minimum wrist-gap/player-box-height in valid continuous final-two-
+second evidence before estimated end. Not racket/shuttle separation-on-contact,
+confirmed ground touch or proof of a mistake. Crop/pose/gap share original frame;
+manual racket mark changes overlay only. Added two synthetic selection regressions;
+all6 ending tests pass. Existing report/vision models and selection behavior unchanged.
+
+Local verification:17/17 API responses (60.840s total; prose8.6–12.7s),11 Python
+RAG/prompt/installer checks,3 benchmark isolation checks,10 main browser profile/chat
+checks with real inference, and service-outage regression pass. New tracked-file
+checkout npm ci reports0 vulnerabilities, production build/typecheck and16 model-
+free browser/API tests pass before installing Python. Standalone setup then creates
+new text-only venv, verifies model hashes/readiness and passes actual production
+inference/profile-vector exclusion/staleness without torch/cv2. Reused installed
+Ollama weights: not a cold download or separate GPU machine. Private originals
+restored by benchmark/tests. Preview remains3000/session6772; Ollama restarted.
+
+Fresh-check copy is ignored artifacts/release-fresh-20261011; benchmark artifacts
+readiness-rag-*. GitHub Actions prepared for Linux/Windows production/model-free
+checks. GitHub publication/check results pending below. No private evidence uploaded,
+new video processing or report regeneration. Unrelated shuttle_sense/ untouched;
+next-env.d.ts dev-generated difference excluded from commits. Model usefulness and
+independent detection/coaching accuracy remain unvalidated; user acceptance pending.
+
 ## RAG repair implemented; user acceptance pending (2026-10-11)
 
 Read tasks/rag-repair-plan.md and docs/RAG-CHAT.md for the completed work split and

@@ -1,5 +1,17 @@
 # ShuttleSense task breakdown
 
+## Current release: runnable RAG (2026-10-11)
+
+- [x] Trace attempt-photo selection and reproduce chat service failure.
+- [x] Fix runtime/Ollama error status and verify outage recovery without saved turns.
+- [x] Enable standalone Windows text RAG setup; update current model/run instructions.
+- [ ] Publish verified fresh-install checks as Linux/Windows model-free CI.
+- [x] Review actual local chat answers and synthetic photo-selection regression.
+- [ ] Review diff, update handoff, commit/push and inspect GitHub checks.
+
+See the current priority in [plan.md](plan.md). Earlier unchecked research tasks
+are retained; this release does not claim independent model accuracy.
+
 Analysis tasks remain pending unless checked below; the desktop frontend exists. Paths below are proposed for analysis implementation. S means roughly 1-2 files; M means roughly 3-5 files. Check actual scope before starting, and split a task if it exceeds one focused session. Checkpoints record evidence; they do not require repeated permission within an authorized build.
 
 Feasibility preparation: [evaluation protocol](../docs/evaluation.md), manual annotation validator, and synthetic court/side-change regression checks are available. The [first-video report](../docs/first-video.md) records a real detector baseline on user-supplied, permission-confirmed footage and initial manual court mapping. Identity tracking, representative annotations, and a qualified coaching reviewer are still needed; Checkpoint A remains open.

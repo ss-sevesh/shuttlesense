@@ -23,11 +23,11 @@ function runWorker(payload:unknown):Promise<{answer:string;citations:string[];so
     let output='',settled=false,failed=false;
     const fail=()=>{if(settled)return;failed=true;child.kill();};
     const timer=setTimeout(fail,360000);
-    child.on('error',()=>{clearTimeout(timer);settled=true;reject(new Error('Local retrieval/chat unavailable. Run optional RAG setup and check Ollama.'));});
+    child.on('error',()=>{clearTimeout(timer);settled=true;reject(new Error('Local retrieval/chat unavailable. Run optional RAG setup and check Ollama.',{cause:503}));});
     child.stdout.on('data',chunk=>{output+=chunk.toString();if(output.length>1024*1024)fail();});
     child.stderr.resume(); // Requests, health details and model diagnostics are never logged.
     child.stdin.on('error',fail);
-    child.on('exit',code=>{clearTimeout(timer);if(settled)return;settled=true;if(failed||code!==0)return reject(new Error('Local retrieval/chat unavailable. Run optional RAG setup and check Ollama.'));try{resolve(JSON.parse(output));}catch{reject(new Error('Local answer unreadable. Retry.'));}});
+    child.on('exit',code=>{clearTimeout(timer);if(settled)return;settled=true;if(failed||code!==0)return reject(new Error('Local retrieval/chat unavailable. Run optional RAG setup and check Ollama.',{cause:503}));try{resolve(JSON.parse(output));}catch{reject(new Error('Local answer unreadable. Retry.'));}});
     child.stdin.end(JSON.stringify(payload));
   });
 }
@@ -67,7 +67,9 @@ export async function POST(request:Request) {
     let result=checkedGuidance(guidanceQuestion,profile)??savedProfileAnswer(body.question,profile)??exactEvidence(body.question,context)??endingEvidence(body.question,context);
     if(!result) {
       const recent=recentEntries.map(h=>({question:h.question,answer:h.answer.slice(0,1200)}));
-      try{await access(join(process.cwd(),'data/hf-racquet-env/Scripts/python.exe'));}catch{throw new Error('Local retrieval/chat unavailable. Run optional RAG setup and check Ollama.');}
+      try{await access(join(process.cwd(),'data/hf-racquet-env/Scripts/python.exe'));}catch{throw new Error('Local retrieval/chat unavailable. Run optional RAG setup and check Ollama.',{cause:503});}
+      try{const service=await fetch('http://127.0.0.1:11434/api/tags',{cache:'no-store',signal:AbortSignal.timeout(3000)});if(!service.ok)throw new Error();}
+      catch{throw new Error('Ollama is unavailable. Open Ollama or run ollama serve, then retry. No model-backed answer was saved.',{cause:503});}
       workerRan=true;
       const generated=await runWorker({...context,question:body.question,profile,history:recent,references:referenceSources});
       const available=[...context.sources,...referenceSources];
@@ -82,7 +84,7 @@ export async function POST(request:Request) {
     // shortcut: latest 50 turns per explicitly selected recording; add archival/export only when requested.
     await writeLocalJson(path,[...history,entry].slice(-50));
     return Response.json({entry,hasReport:context.hasReport,evidenceHash:context.evidenceHash},{headers});
-  }catch(error){return Response.json({error:error instanceof Error?error.message:'Local chat failed. Retry.'},{status:422,headers});}
+  }catch(error){return Response.json({error:error instanceof Error?error.message:'Local chat failed. Retry.'},{status:error instanceof Error&&error.cause===503?503:422,headers});}
   finally{
     if(workerRan)await Promise.allSettled([chatModel.text.name,chatModel.embedding.name].map(model=>fetch('http://127.0.0.1:11434/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model,keep_alive:0}),signal:AbortSignal.timeout(5000)})));
     await lock.close().catch(()=>undefined);await unlink(join(jobsRoot,'active.json')).catch(()=>undefined);

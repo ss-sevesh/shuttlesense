@@ -47,7 +47,7 @@ test('local entry validates a display name, enters the real workspace and suppor
   expect((await new AxeBuilder({page}).analyze()).violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)}))).toEqual([]);
   await page.screenshot({path:'artifacts/login-desktop.png',fullPage:true});
   await page.getByRole('button',{name:'Open my workspace'}).click();
-  await expect(page).toHaveURL('http://127.0.0.1:3000/workspace');
+  await expect(page).toHaveURL(/\/workspace$/);
   await expect(page.getByRole('link',{name:'Local profile: Alex Rivera'})).toBeVisible();
   await page.goBack();await expect(page.getByRole('button',{name:'Open my workspace'})).toBeEnabled();
   await page.goto('/login');await expect(name).toHaveValue('Alex Rivera');

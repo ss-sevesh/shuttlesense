@@ -4,6 +4,13 @@ Use the README quickstart and `/demo` first. Preserve the existing cream/green U
 plain language, keyboard accessibility and honest evidence labels. Read AGENTS.md
 and tasks/HANDOFF.md before changing the local model pipeline.
 
+`npm run test:portable` runs the public site/demo, profile and model-free chat
+checks. GitHub Actions runs them against a production build on Windows and Linux,
+with `RAG_MISSING=1` to exercise missing optional runtime messaging. Actual model
+tests use `RAG_INFERENCE=1` on the configured Windows machine and are opt-in.
+`PLAYWRIGHT_BASE_URL` allows a separate local port (for example 3001); CI starts
+the production server, local tests reuse/start the development server.
+
 For UI changes run the production build, typecheck and public-demo browser test:
 
 ```sh

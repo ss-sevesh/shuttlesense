@@ -53,8 +53,9 @@ truth or medical safety. Ask about exact evidence when a prose answer is refused
 
 ## Optional setup
 
-Ordinary analysis setup and website installation remain unchanged. After installing
-the analysis runtime and pinned report model, run:
+Ordinary analysis setup and website installation remain unchanged. Text chat can
+be installed independently on Windows with Python 3.11+ and a running local
+Ollama service; no CUDA/video pipeline is needed. Run:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-analysis.ps1 -RagOnly
@@ -63,9 +64,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-analysis.ps1 -
 
 This pins `qdrant-client==1.19.1` and installs/verifies Qwen3-Embedding-0.6B Q8_0
 (639 MB, 1024 dimensions). Exact identities are in `analysis/chat_model.json`.
-Text chat now uses separately pinned Qwen3.5-2B Q4_K_M (about 1.9 GB including
-its projector), with thinking disabled. The existing Qwen3-4B report and vision
-models/prompts remain unchanged; text chat still receives no images. Qdrant uses persistent Python local mode in ignored `data/rag/qdrant`,
+Text chat uses the pinned Qwen3-4B-Instruct-2507 Q4_K_M model (about 2.5 GB),
+with thinking disabled, reusing the report-model installer and Ollama tag.
+The earlier Qwen3.5-2B trial is superseded. The existing report and vision
+models/prompts remain unchanged; text chat still receives no images. Setup creates
+or reuses the shared Python environment and installs only the text dependencies.
+Use `npm.cmd run setup:rag` / `npm.cmd run check:rag` as command shortcuts.
+Qdrant uses persistent Python local mode in ignored `data/rag/qdrant`,
 with separate guidance/evidence collections named by embedding checksum, dimensions
 and chunking version. No Docker, Qdrant server, cloud account or extra npm package.
 
@@ -77,6 +82,36 @@ its lock. Missing optional runtimes show setup guidance; website, review, report
 profile and checked guidance remain usable without them.
 
 ## Verification, 2026-10-11
+
+### Release readiness follow-up
+
+Reproduced six generic HTTP422 failures with Ollama stopped; exact evidence and
+checked guidance remained usable. Stopped-service requests now return actionable
+503 responses; the browser/API regression verifies no saved answer and no leftover
+work lock. Optional-runtime failures use 503; model-output validation remains 422.
+
+The configured local API benchmark passed 17/17 requests in 60.840 seconds total
+after starting Ollama, including concepts, follow-ups, saved profile, medical scope,
+injection and approved Paris434 metadata. Model prose took 8.6–12.7 seconds in this
+run; original-evidence lookups were 0.1–0.2 seconds. These are local timings, not a
+speed guarantee. Review found missing basic-grip coverage, now addressed by a short
+Badminton England reference; split-step wording was aligned with the BWF source.
+The model can still add unsupported qualitative details; HTTP success is not proof
+that every sentence is source-supported or coaching is validated.
+
+A new tracked-file checkout passed npm ci (zero reported vulnerabilities),
+production build/typecheck and 16 model-free browser/API tests without private
+data or Python runtimes. Standalone `setup:rag` then created a new Python environment
+and passed checksum/readiness checks and actual production chat inference, profile
+vector exclusion and stale-evidence rejection. That environment had no PyTorch or
+OpenCV. It reused this machine's installed Ollama weights, so this is not a cold
+model download or a different-machine GPU test. The main configured app also passed
+10 profile/chat browser tests with actual inference and the separate service-outage
+regression. Synthetic profile/history originals were restored by the checks.
+
+GitHub Actions runs the reproducible model-free checks on Linux and Windows.
+Actual local inference stays opt-in; no private video, profile or vectors enter CI.
+See the current release checklist in [tasks/todo.md](../tasks/todo.md).
 
 - Measured model/retrieval spike: persistent reopen, Windows competing-process lock,
   deletion, stale exclusion, two-recording isolation, correct cited sample answers.

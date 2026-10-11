@@ -111,8 +111,32 @@ Do not run the sandbox repair when commands already work.
 
 ## Optional local Coach Chat
 
-After ordinary analysis setup, run `scripts/setup-analysis.ps1 -RagOnly` to install
-the pinned embedding, chat model and Qdrant runtime; add `-CheckOnly` to verify readiness. Existing
-website, upload, review and reports remain independent of this optional setup.
+Text chat does **not** require ordinary video-analysis setup. On Windows install
+Python 3.11+, Node.js 22+, Git and Ollama. Open Ollama, or keep `ollama serve`
+running in a separate terminal. In the cloned project, after `npm.cmd ci`:
+
+```powershell
+npm.cmd run setup:rag
+npm.cmd run check:rag
+npm.cmd run dev
+```
+
+Open `/workspace?view=profile` to save optional details and `/workspace?view=chat`
+to ask a general question. A recording is needed only for its evidence. The
+installer creates/reuses `data/hf-racquet-env` and downloads pinned Qwen3-4B chat
+weights plus Qwen3-Embedding-0.6B (about 3.2 GB total), with local Qdrant. It does
+not download the video models or install PyTorch/CUDA/FFmpeg. Ollama can run text
+models on CPU, but CPU latency and non-Windows chat workers are not verified.
+
+The underlying commands remain `scripts/setup-analysis.ps1 -RagOnly` and
+`-RagOnly -CheckOnly`. Later run ordinary analysis setup for real video uploads;
+it reuses the same environment. Existing website, upload, review and reports
+remain independent of optional RAG setup.
 See [RAG-CHAT.md](RAG-CHAT.md) for profile consent, chat source/history behavior,
 exact commands, measured checks and limits.
+
+If model questions fail, run `npm.cmd run check:rag` first. A stopped Ollama now
+returns HTTP 503 with instructions to start it; runtime/setup failures also use
+503. Invalid model output still returns 422, live work contention 429, and changed
+evidence/profile 409. Failed requests are not saved as chat answers. Keep Ollama
+running while using chat; `npm.cmd run dev` starts only the website.

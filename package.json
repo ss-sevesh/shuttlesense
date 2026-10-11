@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "setup:rag": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-analysis.ps1 -RagOnly",
+    "check:rag": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-analysis.ps1 -RagOnly -CheckOnly",
+    "test:portable": "playwright test tests/public-site.spec.ts tests/public-demo.spec.ts tests/player-profile.spec.ts tests/rag-chat.spec.ts",
     "sandbox:fix": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/fix-sandbox.ps1",
     "test:sandbox": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-sandbox-fix.ps1",
     "screenshot": "playwright screenshot --channel chrome --viewport-size=1440,1000 --color-scheme light --full-page --wait-for-selector main http://127.0.0.1:3000/movement artifacts/movement-preview.png",

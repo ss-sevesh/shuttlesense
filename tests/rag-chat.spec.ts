@@ -113,8 +113,22 @@ test('optional real model answer persists across Qdrant reopen without profile v
   const stale=await pending;expect([409,422]).toContain(stale.status());
   expect((await (await request.get('/api/chat?analysis='+ids[0])).json()).history.length).toBe(before);
 });
+test('stopped Ollama gives actionable 503 without saving an answer or leaving a work lock',async({request})=>{
+  test.skip(process.env.RAG_OFFLINE!=='1','Opt-in with installed runtime and stopped local Ollama');
+  const before=(await (await request.get('/api/chat?analysis='+ids[0])).json()).history;
+  const response=await request.post('/api/chat',{headers:origin,data:{analysisId:ids[0],question:'What is a split step?',rallies:{}}});
+  expect(response.status()).toBe(503);
+  expect((await response.json()).error).toContain('run ollama serve');
+  expect((await (await request.get('/api/chat?analysis='+ids[0])).json()).history).toEqual(before);
+  await expect.poll(async()=>{try{await readFile(join(root,'active.json'));return true;}catch{return false;}}).toBe(false);
+});
+
 test('missing optional runtime displays setup guidance and leaves profile and review usable',async({page})=>{
   test.skip(process.env.RAG_MISSING!=='1','Run in isolated fresh checkout without data/model runtimes');
+  const response=await page.request.post('/api/chat',{headers:origin,data:{analysisId:'',question:'What is a split step?',rallies:{}}});
+  expect(response.status()).toBe(503);
+  expect((await response.json()).error).toContain('optional RAG setup');
+  expect((await (await page.request.get('/api/chat')).json()).history).toEqual([]);
   await page.goto('/workspace?view=chat');await page.getByLabel('Your question').fill('What is a split step?');await page.getByRole('button',{name:'Ask coach',exact:true}).click();
   await expect(page.locator('.coach-chat').getByRole('alert')).toContainText('optional RAG setup');
   await page.getByRole('link',{name:'Player Profile',exact:true}).click();await expect(page.getByRole('button',{name:'Save profile',exact:true})).toBeVisible();

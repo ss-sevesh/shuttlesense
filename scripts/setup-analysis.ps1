@@ -8,10 +8,15 @@ function Run-Python([string]$Executable,[string[]]$Arguments) {
 }
 $runtimePython = Join-Path $projectRoot 'data/hf-racquet-env/Scripts/python.exe'
 if ($RagOnly) {
-  if (-not (Test-Path -LiteralPath $runtimePython)) { throw 'Run the analysis setup first to create the Python runtime.' }
   if ($CheckOnly) {
+    if (-not (Test-Path -LiteralPath $runtimePython)) { throw 'Text chat runtime missing. Run setup-analysis.ps1 -RagOnly without -CheckOnly.' }
     Run-Python $runtimePython @('analysis/rag_chat.py','--check-only')
   } else {
+    Get-Command python,ollama -ErrorAction Stop | Out-Null
+    try { Invoke-RestMethod 'http://127.0.0.1:11434/api/tags' -TimeoutSec 3 | Out-Null }
+    catch { throw 'Open Ollama or run ollama serve, then rerun text chat setup.' }
+    if (-not (Test-Path -LiteralPath $runtimePython)) { Run-Python 'python' @('-m','venv','data/hf-racquet-env') }
+    Run-Python $runtimePython @('-m','pip','install','huggingface-hub==0.36.2')
     Run-Python $runtimePython @('-m','pip','install','-r','analysis/requirements-rag.txt')
     Run-Python $runtimePython @('analysis/download_rag.py')
   }

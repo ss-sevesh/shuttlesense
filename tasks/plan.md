@@ -1,5 +1,32 @@
 # ShuttleSense implementation plan
 
+## Current priority: runnable RAG release (2026-10-11)
+
+User requested an audit, execution and GitHub delivery after adding RAG, plus the
+actual condition behind the rally attempt photo. Historical research gates below
+remain open; they are not missing software features or proof of model accuracy.
+
+1. Reproduce chat failures with response bodies and verify local service readiness.
+   Distinguish unavailable runtime/Ollama (503) from rejected model output (422).
+   Preserve privacy, source checks, saved profiles, reports and the vision coach.
+2. Let Windows users install text RAG without downloading the full CUDA/video
+   pipeline. Reuse the existing Python environment and pinned report/embedding
+   installers. Document demo-only, chat-only and full-analysis paths separately.
+3. Run a tracked-file fresh checkout without private data; verify production build,
+   website/demo, profile/chat boundaries and missing-runtime messaging. Add GitHub
+   Actions for those reproducible model-free checks on Linux and Windows.
+4. Benchmark real local chat against approved Paris434 metadata and synthetic
+   profiles, restoring originals. Verify the photo-selection condition with a
+   synthetic regression; document what the image does and does not establish.
+5. Review the diff, update setup/status/handoff, commit and push only project changes,
+   and inspect the GitHub checks. Keep private evidence and the unrelated directory
+   out of Git. No automatic winner/contact decisions or new model training.
+
+Acceptance: a new user can run the synthetic demo with Node alone; Windows text
+chat setup does not require FFmpeg/CUDA; service outages give actionable errors;
+the measured local chat suite passes; published fresh-clone checks pass. A fresh
+GPU machine and independent detection/coaching accuracy remain unverified.
+
 ## Text-only illustrated match report (2026-10-11)
 
 1. Pin Qwen3-4B-Instruct-2507 and Unsloth Q4_K_M GGUF by revision and SHA256;
