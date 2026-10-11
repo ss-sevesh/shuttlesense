@@ -42,7 +42,7 @@ export function exactEvidence(question:string,context:ChatContext):ChatAnswer|nu
     return {answer:specific.length?'Exact supplied image evidence (camera-dependent estimates; contact and physical distance remain unverified):\n'+specific.map(s=>s.title+': '+s.text).join('\n'):'No matching exact measurement is available. Check the selected recording and timestamp.',citations:specific.map(s=>s.id),sources:specific,mode:'evidence'};
   }
   const rallies=summary.rallies.filter((r:{id:number})=>!windowId||r.id===Number(windowId[1]));
-  const answer='Selected recording length: '+summary.duration+' seconds. '+rallies.length+' completed or verified windows in this selection.\n'+rallies.map((r:{id:number;start:number;end:number;outcome:string;outcomeSource:string})=>`Window ${r.id}: ${r.start}–${r.end} s; ${r.outcome} (${r.outcomeSource}).`).join('\n')+'\nOutcomes are user markings. Contact, intent and the cause of a loss remain unverified.';
+  const answer='Selected recording length: '+summary.duration+' seconds. '+rallies.length+' completed or verified windows in this selection.\n'+rallies.map((r:{id:number;start:number;end:number;outcome:string;outcomeSource:string})=>`Window ${r.id}: ${r.start}–${r.end} s; ${r.outcome} (${r.outcomeSource.replace(/_/g,' ')}).`).join('\n')+'\nOutcomes are user markings. Contact, intent and the cause of a loss remain unverified.';
   return {answer,citations:['recording',...facts.filter(s=>s.id.startsWith('rally-')).map(s=>s.id)],sources:[context.facts[0],...facts.filter(s=>s.id.startsWith('rally-'))],mode:'evidence'};
 }
 export function validateGenerated(answer:unknown,sources:ChatSource[]):ChatAnswer {

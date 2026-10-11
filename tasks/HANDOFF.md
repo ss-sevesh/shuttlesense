@@ -1,5 +1,91 @@
 # ShuttleSense session handoff
 
+## Local RAG feature implemented and verified (2026-10-11)
+
+Completed approved tasks/rag-chat-plan.md slices 1-6, in order. Commits 194400a,
+c8666f2, 7ce1918 and 16bd3b7 contain the spike, profile, retrieval and chat. Final
+acceptance fixes/documentation follow. No GitHub push or cloud deployment occurred.
+Plan checklist is updated; docs/RAG-CHAT.md describes operation and limitations.
+
+Optional pinned Qwen3-Embedding-0.6B Q8_0 downloaded (639 MB) and full model SHA256
+verified. Qdrant client 1.19.1 was already installed, now optional/pinned. Spike:
+persistent reopen, Windows competing-process lock, stale/filter isolation and deletion
+PASS; top-1 2/3, top-3 3/3, three correct cited answers in 33.85s, sampled peak GPU
+4328 MiB of 8188 MiB. Exact facts therefore use direct lookup. See docs/rag-spike.md.
+Setup: scripts/setup-analysis.ps1 -RagOnly; -RagOnly -CheckOnly passes. Ordinary
+setup and website do not require RAG. Collections include model checksum, dimensions
+and chunks2 version, separate guidance/evidence, stored under ignored data/rag/qdrant.
+
+Workspace now has optional Player Profile and Coach Chat in the existing design.
+Current real reports link Chat about this match. Profiles use validated loopback APIs
+and ignored data/player/profile.json. Health consent withdrawal clears health fields;
+no profile/health data is browser-localStorage, vectors or diagnostic logs. Existing
+browser name remains a convenience, not authentication. Local files are not encrypted.
+Chats are separate ignored data/chat files, latest 50 turns/context, deletable in UI.
+Profile edits exclude old-profile conversation; reload labels old replies historical.
+Recording selection is explicit and is not automatic player-history association.
+Source hashes include current reviewed evidence/report/reference content. Changed
+outcomes/windows/reports exclude stale sources; final recheck rejects changes during
+inference. Original measurements and generated interpretations are labelled separately.
+Timestamp citations open a paused exact frame only inside current reviewed boundaries.
+Food/schedule paths use checked bounded app templates; clinical restrictions prevent
+personal plans. General source notes are not personalized professional assessments.
+Prose output is buffered until citation, numeric and scope checks pass; still experimental.
+
+28 distinct main production browser/unit checks and 15 distinct isolated model-free
+fresh-checkout checks PASS, plus 5 Python RAG and 7 report-validator tests. Checked
+320/768/1024/1440, keyboard/axe, light/dark populated chat, profile CRUD/consent/read
+failures, hostile origins/size limits, two synthetic recordings, stale reports, minors,
+allergies/restrictions, busy lock, missing setup, history/reload/delete and exact seeking.
+Real local model/API reopen and injected-profile tests PASS; inspecting test-owned
+vectors found no profile/health sentinel. Changed an outcome while model generated:
+no stale response returned or saved. Synthetic profile/history fixtures restored/removed.
+Existing Paris434 review, ending replay, upload controls, exact photos and HTML/PDF
+regressions PASS. No full-video worker or report regeneration rerun; models/prompts
+unchanged. Chrome/Windows only; larger corpora and multilingual safety unverified.
+
+Final production build passed. Local preview is running on port3000, session56482.
+Fresh checkout under artifacts/rag-fresh-check had npm ci (0 reported vulnerabilities),
+production build and no private data/Python runtimes; its temporary port3001 server
+stopped after tests. No loaded Ollama models or active.json work lock after checks.
+No real health data collected. Unrelated untracked shuttle_sense/ remains untouched.
+
+## Prior planning handoff (superseded by implementation above, 2026-10-11)
+
+User explicitly approved tasks/rag-chat-plan.md, then requested closing this session
+and opening a new one. Do not ask them to explain or approve the same plan again.
+Implementation has NOT started; no embedding/Qdrant download, dependency install,
+profile health-data collection or application change has occurred for this feature.
+The approved plan and this handoff are saved locally, not committed/pushed yet.
+Latest delivered GitHub main remains b569111 (fresh-start/BST setup fix).
+
+Read tasks/rag-chat-plan.md before starting. First implementation slice is the local
+model/retrieval spike: reuse pinned Qwen3-4B-Instruct-2507 through installed Ollama;
+add/pin Qwen3-Embedding-0.6B; test Qdrant persistent Python local mode, Windows locking,
+retrieval quality and RAM/VRAM before building full UI. No Qdrant integration or
+port6333 listener was found in planning. Docker executable exists but no Docker
+requirement is planned. Keep all new inference local and serialize against existing
+analysis/report GPU work. Current UI must still work without RAG dependencies.
+
+Approved feature includes optional player profile (name/age/height/weight, badminton
+level/goals, availability, food preferences/allergies, optional conditions/injuries/
+clinician restrictions with explicit consent), profile save/edit/delete, Coach Chat,
+Chat about this match, report/evidence retrieval and reviewed source-based practice,
+schedule and general sports-food guidance. Existing local entry remains a local
+profile, not authenticated public accounts. Health details are not browser-localStorage
+or shared vectors. Profile constraints go directly into each request. Match evidence
+uses current selected recording and reviewed source hash; stale reports and other
+recordings must not leak. Generated report interpretations remain distinct from
+original evidence. No diagnoses, treatment diets, medication changes, supplement
+prescriptions, medical clearance, physical-distance or confirmed-impact claims.
+
+Use approved plan checklist for incremental implementation/verification. Preserve
+existing website/workspace design, exact attempt photos, final3-second replay, current
+user outcomes and PDF/report features. Only Paris350_434 for actual footage tests;
+synthetic fixtures for retrieval/profile/isolation/safety tests. Keep unrelated
+untracked shuttle_sense/ directory untouched. Normal production server3000 last ran
+in session43238; inspect current listener before starting/stopping any server.
+
 ## Fresh-checkout startup and analysis setup checks (2026-10-11)
 
 User requested that anyone cloning the redesigned UI can run the project.

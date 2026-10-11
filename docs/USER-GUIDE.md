@@ -144,3 +144,13 @@ seconds of the selected window; Replay selected rally plays the full window.
 Confirmed losses can additionally use the separate local vision explanation.
 Report overview counts come from reviewed metadata; confirmed-loss photos remain
 attached after text generation in the illustrated HTML/PDF exports.
+
+## Player Profile and Coach Chat
+
+Use **Player Profile** in the workspace to save, edit or delete optional local
+details. Health details require separate consent; withdrawing it clears them.
+Use **Coach Chat** or a current report's **Chat about this match** link. Choose
+general coaching or an explicit recording; cited times open paused review frames.
+Old replies are historical. **Delete this chat** removes that context's saved turns.
+Food examples and weekly drafts use checked templates; clinical questions are
+referred to professionals. [RAG-CHAT.md](RAG-CHAT.md) explains setup and limitations.

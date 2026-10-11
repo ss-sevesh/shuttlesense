@@ -1,6 +1,6 @@
 import {spawn} from 'node:child_process';
 import {join} from 'node:path';
-import {unlink} from 'node:fs/promises';
+import {access,unlink} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {acquireAnalysisLock,jobsRoot,jobPath,localRequest} from '@/lib/analysis-jobs';
 import {boundedJson,readLocalJson,writeLocalJson} from '@/lib/local-json';
@@ -61,6 +61,7 @@ export async function POST(request:Request) {
     let result=checkedGuidance(body.question,profile)??exactEvidence(body.question,context);
     if(!result) {
       const recent=history.filter(h=>h.evidenceHash===context.evidenceHash&&h.profileHash===profileHash).slice(-2).map(h=>({question:h.question,answer:h.answer.slice(0,2000)}));
+      try{await access(join(process.cwd(),'data/hf-racquet-env/Scripts/python.exe'));}catch{throw new Error('Local retrieval/chat unavailable. Run optional RAG setup and check Ollama.');}
       workerRan=true;
       const generated=await runWorker({...context,question:body.question,profile,history:recent,references:referenceSources});
       result=validateGenerated(generated,[...context.sources,...referenceSources]);
