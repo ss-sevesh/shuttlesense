@@ -9,7 +9,7 @@ import {chatContext,referenceSources,type ChatSource} from '@/lib/chat-context';
 import {checkedGuidance,exactEvidence,endingEvidence,savedProfileAnswer,validateGenerated,type ChatAnswer} from '@/lib/chat-policy';
 import chatModel from '@/analysis/chat_model.json';
 export const runtime='nodejs';
-export const maxDuration=420;
+export const maxDuration=300;
 const headers={'Cache-Control':'private, no-store'};
 type Entry=ChatAnswer&{question:string;createdAt:string;evidenceHash:string;profileHash:string};
 function historyPath(id:string) {if(id)jobPath(id);return join(process.cwd(),'data/chat',id||'coach','history.json');}

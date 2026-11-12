@@ -8,7 +8,7 @@ import { isReviewData, validInterval, type HumanReviews } from '@/lib/analysis-r
 import { reportEvidence } from '@/lib/match-report';
 
 export const runtime='nodejs';
-export const maxDuration=900;
+export const maxDuration=300;
 const execute=promisify(execFile);
 
 export async function POST(request:Request,{params}:{params:Promise<{id:string}>}) {
